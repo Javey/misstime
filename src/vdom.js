@@ -1,19 +1,28 @@
 import {Types} from './vnode';
+import {patchProps} from './vpatch';
 
 export function createElement(vNode, parentDom) {
     const type = vNode.type;
-    let dom;
     switch (type) {
         case Types.HtmlElement:
-            dom = createHtmlElement(vNode, parentDom);
-            break;
+            return createHtmlElement(vNode, parentDom);
         case Types.Text:
-            dom = document.createTextNode(vNode.children); 
-            break;
+            return createTextElement(vNode, parentDom);
         default:
             throw new Error('Unknown vnode type');
     }
-    
+}
+
+export function createHtmlElement(vNode, parentDom) {
+    const dom = document.createElement(vNode.tag);
+    const children = vNode.children;
+
+    vNode.dom = dom;
+
+    createElements(children, dom);
+
+    patchProps(null, vNode);
+
     if (parentDom) {
         parentDom.appendChild(dom);
     }
@@ -21,19 +30,12 @@ export function createElement(vNode, parentDom) {
     return dom;
 }
 
-export function createHtmlElement(vNode, parentDom) {
-    const dom = document.createElement(vNode.tag);
-    const children = vNode.children;
-    const props = vNode.props;
-
+export function createTextElement(vNode, parentDom) {
+    const dom = document.createTextNode(vNode.children); 
     vNode.dom = dom;
 
-    createElements(children, dom);
-
-    if (props) {
-        for (let prop in props) {
-            dom[prop] = props[prop];
-        }
+    if (parentDom) {
+        parentDom.appendChild(dom);
     }
 
     return dom;

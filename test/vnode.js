@@ -41,6 +41,21 @@ describe('vnode', () => {
         console.log(performance.now() - start);
         console.log(vNode);
     })
+
+    it('handle event', () => {
+        var vNode = h(Types.HtmlElement, 'div', {
+            className: 'container',
+            'ev-click': function(e) {
+                console.log('click', e);
+            }
+        }, [
+            h(Types.HtmlElement, 'header', {className: 'header'}, [
+                h(Types.Text, null, null, 'header')
+            ])
+        ]);
+        const dom = createElement(vNode);
+        document.body.appendChild(dom);
+    })
 })
 
 function log(info) {
