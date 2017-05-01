@@ -16,6 +16,8 @@ export function createElement(vNode, parentDom, mountedQueue) {
             return createHtmlElement(vNode, parentDom, mountedQueue);
         case Types.Text:
             return createTextElement(vNode, parentDom);
+        case Types.ComponentClass:
+            return createComponentClass(vNode, parentDom, mountedQueue);
         default:
             throw new Error('Unknown vnode type');
     }
@@ -54,6 +56,30 @@ export function createTextElement(vNode, parentDom) {
     return dom;
 }
 
+export function createComponentClass(vNode, parentDom, mountedQueue) {
+    const props = vNode.props;
+    const instance = new vNode.tag(props); 
+    const dom = instance.init(vNode);
+    const ref = props.ref;
+
+    vNode.dom = dom;
+    vNode.children = instance;
+    
+    if (parentDom) {
+        parentDom.appendChild(dom);
+    }
+
+    if (typeof instance.mount === 'function') {
+        mountedQueue.push(() => instance.mount(vNode));
+    }
+
+    if (typeof ref === 'function') {
+        ref(instance);
+    }
+
+    return dom;
+}
+
 export function createElements(vNodes, parentDom, mountedQueue) {
     if (vNodes == null) return;
     for (let i = 0; i < vNodes.length; i++) {
@@ -73,18 +99,40 @@ export function removeElement(vNode, parentDom) {
         case Types.Element:
         case Types.Text:
             return removeHtmlElement(vNode, parentDom); 
+        case Types.ComponentClass:
+            return removeComponentClass(vNode, parentDom);
     }
 }
 
 export function removeHtmlElement(vNode, parentDom) {
+    const ref = vNode.ref;
     if (parentDom) {
         parentDom.removeChild(vNode.dom);
     }
+    if (ref) {
+        ref(null);
+    }
+}
+
+export function removeComponentClass(vNode, parentDom) {
+    const instance = vNode.children;
+
+    if (typeof instance.destroy === 'function') {
+        instance.destroy(vNode);
+    }
+
+    removeHtmlElement(vNode, parentDom);
+    removeElements(vNode.props.children, null);
 }
 
 export function removeAllChildren(dom, vNodes) {
     dom.textContent = ''
     removeElements(vNodes);
+}
+
+export function replaceChild(parentDom, nextDom, lastDom) {
+    if (!parentDom) parentDom = lastDom.parentNode;
+    parentDom.replaceChild(nextDom, lastDom);
 }
 
 export function createRef(dom, ref, mountedQueue) {

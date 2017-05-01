@@ -29,6 +29,35 @@ describe('vnode', () => {
         console.log(newVNode1);
         console.log(patch(newVNode, newVNode1).cloneNode(true));
     })
+    
+    it('create component', () => {
+        const Component = function(props) {
+            this.props = props;
+        };
+        Component.prototype.init = function() {
+            this.dom = createElement(h(Types.HtmlElement, 'div', {
+                className: this.props.className
+            }, this.props.children));
+            return this.dom;
+        };
+        Component.prototype.mount = function() {
+            console.log(this.dom);
+        }
+        var vNode = h(Types.HtmlElement, 'div', {className: 'container'}, [
+            h(Types.Component, Component, {
+                className: 'header',
+                children: [
+                    h(Types.Text, null, null, 'header')
+                ]
+            }),
+            h(Types.HtmlElement, 'article', {className: 'body'}, [
+                h(Types.Text, null, null, 'body')
+            ])
+        ]);
+        console.log('create component', vNode);
+        console.log(createElement(vNode));
+    })
+
     it('createVNode benchmark', () => {
         const start = performance.now();
         const list = [];
@@ -84,7 +113,7 @@ describe('vnode', () => {
     })
 
     it('handle ref', () => {
-         var vNode = h(Types.HtmlElement, 'div', {
+        var vNode = h(Types.HtmlElement, 'div', {
             className: 'container',
             ref: (dom) => window.__test = dom
         }, [

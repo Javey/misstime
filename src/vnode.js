@@ -4,9 +4,11 @@ export const Types = {
     Text: 1,
     HtmlElement: 1 << 1,
 
-    Component: 1 << 2
+    ComponentClass: 1 << 2,
+    ComponentFunction: 1 << 3
 }
 Types.Element = Types.HtmlElement;
+Types.Component = Types.ComponentClass | Types.ComponentFunction;
 
 export function VNode(type, tag, props, children) {
     this.type = type;
@@ -18,7 +20,7 @@ export function VNode(type, tag, props, children) {
 } 
 
 export function createVNode(type, tag, props, children) {
-    if (!type) type = detectType(type);
+    if (!type || type & Types.Component) type = detectType(tag);
     props || (props = {});
     return new VNode(
         type, tag, props, 
@@ -26,14 +28,18 @@ export function createVNode(type, tag, props, children) {
     );
 }
 
-export function detectType(type, tag) {
+export function detectType(tag) {
     switch (typeof tag) {
         case 'function':
-            return Types.Component;
+            if (tag.prototype.init) {
+                return Types.ComponentClass;
+            } else {
+                return Types.ComponentFunction;
+            }
         case 'string':
             return Types.Element;
         default:
-            throw new Error('Unknown vNode type');
+            throw new Error(`unknown vNode type: ${tag}`);
     }
 }
 
@@ -49,7 +55,7 @@ function addChild(vNodes, children, index) {
         let vNode = vNodes[i];
         if (isArray(vNode)) {
             addChild(vNode, children, index);
-        } else if (vNode.type & (Types.Element | Types.Text)){
+        } else if (vNode.type & (Types.Element | Types.Text | Types.Component)){
             if (vNode.key == null) {
                 vNode.key = `.$${index}`;
             }

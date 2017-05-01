@@ -23,4 +23,55 @@ describe('vpath', () => {
         dom = patch(vNode, vNode1);
         console.log(dom.cloneNode(true));
     });
+
+    it('patch component', () => {
+        const Component = function(props) {
+            this.props = props;
+        };
+        Component.prototype.init = function() {
+            return this.dom = createElement(h(Types.HtmlElement, 'div', {
+                className: this.props.className
+            }, this.props.children));
+        };
+        Component.prototype.mount = function(vNode) {
+            console.log(vNode.dom);
+        }
+        var vNode = h(Types.HtmlElement, 'div', {className: 'container'}, [
+            h(Types.Component, Component, {
+                className: 'header',
+                children: [
+                    h(Types.Text, null, null, 'header')
+                ]
+            }),
+            h(Types.HtmlElement, 'article', {className: 'body'}, [
+                h(Types.Text, null, null, 'body')
+            ])
+        ]);
+        console.log('patch component', vNode);
+        console.log(createElement(vNode));
+        const NewComponent = function(props) {
+            this.props = props;
+        }
+        NewComponent.prototype.init = function() {
+            return this.dom = createElement(h(Types.HtmlElement, 'div', {
+                className: this.props.className
+            }, [this.props.children, h(Types.Text, null, null, 'Hello')]));
+        };
+        NewComponent.prototype.mount = function(vNode) {
+            console.log(vNode, this.dom);
+        }
+        var newVNode = h(Types.HtmlElement, 'div', {className: 'container'}, [
+            h(Types.Component, NewComponent, {
+                className: 'header',
+                children: [
+                    h(Types.Text, null, null, 'header'),
+                    h(Types.Text, null, null, 'new header')
+                ]
+            }),
+            h(Types.HtmlElement, 'article', {className: 'body'}, [
+                h(Types.Text, null, null, 'body')
+            ])
+        ]);
+        patch(vNode, newVNode);
+    })
 })
