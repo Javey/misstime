@@ -14,6 +14,7 @@ export function VNode(type, tag, props, children) {
     this.props = props;
     this.children = children;
     this.key = props.key;
+    this.ref = props.ref;
 } 
 
 export function createVNode(type, tag, props, children) {

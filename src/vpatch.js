@@ -3,58 +3,71 @@ import {
     createElements, 
     removeElements, 
     removeElement,
-    removeAllChildren
+    removeAllChildren,
+    createRef
 } from './vdom';
-import {isObject} from './utils';
+import {isObject, skipProps, MountedQueue} from './utils';
 import {handleEvent} from './event';
 
 export function patch(lastVNode, nextVNode, parentDom) {
+    const mountedQueue = new MountedQueue();
+    const dom = patchVNode(lastVNode, nextVNode, parentDom, mountedQueue);
+    mountedQueue.trigger();
+    return dom;
+}
+
+export function patchVNode(lastVNode, nextVNode, parentDom, mountedQueue) {
     if (lastVNode !== nextVNode) {
         const nextType = nextVNode.type;
         const lastType = lastVNode.type;
 
         if (nextType & Types.Element) {
             if (lastType & Types.Element) {
-                patchElement(lastVNode, nextVNode);
+                patchElement(lastVNode, nextVNode, mountedQueue);
             } else {
-                replaceElement(lastVNode, nextVNode, parentDom);
+                replaceElement(lastVNode, nextVNode, parentDom, mountedQueue);
             }
         } else if (nextType & Types.Text) {
             if (lastType & Types.Text) {
                 patchText(lastVNode, nextVNode);
             } else {
-                replaceElement(lastVNode, nextVNode, parentDom);
+                replaceElement(lastVNode, nextVNode, parentDom, mountedQueue);
             }
         }
     }
     return nextVNode.dom;
 }
 
-function patchElement(lastVNode, nextVNode) {
+function patchElement(lastVNode, nextVNode, mountedQueue) {
     const dom = lastVNode.dom;
     const lastProps = lastVNode.props;
     const nextProps = nextVNode.props;
     const lastChildren = lastVNode.children;
     const nextChildren = nextVNode.children;
+    const nextRef = nextVNode.ref;
 
     nextVNode.dom = dom;
 
-    patchChildren(lastChildren, nextChildren, dom);
+    patchChildren(lastChildren, nextChildren, dom, mountedQueue);
 
     patchProps(lastVNode, nextVNode);
-}
 
-function patchChildren(lastChildren, nextChildren, parentDom) {
-    if (lastChildren == null) {
-        createElements(nextChildren, parentDom);
-    } else if (nextChildren == null) {
-        removeElements(lastChildren, parentDom); 
-    } else {
-        patchChildrenByKey(lastChildren, nextChildren, parentDom);
+    if (nextRef != null && lastVNode.ref !== nextRef) {
+        createRef(dom, nextRef, mountedQueue);
     }
 }
 
-function patchChildrenByKey(a, b, dom) {
+function patchChildren(lastChildren, nextChildren, parentDom, mountedQueue) {
+    if (lastChildren == null) {
+        createElements(nextChildren, parentDom, mountedQueue);
+    } else if (nextChildren == null) {
+        removeElements(lastChildren, parentDom); 
+    } else {
+        patchChildrenByKey(lastChildren, nextChildren, parentDom, mountedQueue);
+    }
+}
+
+function patchChildrenByKey(a, b, dom, mountedQueue) {
     let aLength = a.length;
     let bLength = b.length;
     let aEnd = aLength - 1;
@@ -75,7 +88,7 @@ function patchChildrenByKey(a, b, dom) {
 
     outer: while (true) {
         while (aStartNode.key === bStartNode.key) {
-            patch(aStartNode, bStartNode, dom);
+            patchVNode(aStartNode, bStartNode, dom, mountedQueue);
             ++aStart;
             ++bStart;
             if (aStart > aEnd || bStart > bEnd) {
@@ -85,7 +98,7 @@ function patchChildrenByKey(a, b, dom) {
             bStartNode = b[bStart];
         }
         while (aEndNode.key === bEndNode.key) {
-            patch(aEndNode, bEndNode, dom);
+            patchVNode(aEndNode, bEndNode, dom, mountedQueue);
             --aEnd;
             --bEnd;
             if (aEnd < aStart || bEnd < bStart) {
@@ -96,7 +109,7 @@ function patchChildrenByKey(a, b, dom) {
         }
 
         if (aEndNode.key === bStartNode.key) {
-            patch(aEndNode, bStartNode, dom);
+            patchVNode(aEndNode, bStartNode, dom, mountedQueue);
             dom.insertBefore(bStartNode.dom, aStartNode.dom);
             --aEnd;
             ++bStart;
@@ -106,7 +119,7 @@ function patchChildrenByKey(a, b, dom) {
         }
 
         if (aStartNode.key === bEndNode.key) {
-            patch(aStartNode, bEndNode, dom); 
+            patchVNode(aStartNode, bEndNode, dom, mountedQueue); 
             insertOrAppend(bEnd, bLength, bEndNode, a, dom);
             ++aStart;
             --bEnd;
@@ -151,7 +164,7 @@ function patchChildrenByKey(a, b, dom) {
                             } else {
                                 pos = j;
                             }
-                            patch(aNode, bNode, dom);
+                            patchVNode(aNode, bNode, dom, mountedQueue);
                             ++patched;
                             a[i] = null;
                             break;
@@ -176,7 +189,7 @@ function patchChildrenByKey(a, b, dom) {
                         } else {
                             pos = j;
                         }
-                        patch(aNode, bNode, dom);
+                        patchVNode(aNode, bNode, dom, mountedQueue);
                         ++patched;
                         a[i] = null;
                     }
@@ -309,6 +322,8 @@ export function patchProps(lastVNode, nextVNode) {
     const nextProps = nextVNode.props;
     const dom = nextVNode.dom;
     for (let propName in nextProps) {
+        if (skipProps[propName]) continue;
+
         let propValue = nextProps[propName];
         if (propValue === undefined) {
             removeProp(propName, dom, lastProps);

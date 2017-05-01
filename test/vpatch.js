@@ -1,6 +1,6 @@
 import should from 'should';
 import {createVNode as h, Types} from '../src/vnode';
-import {createElement} from '../src/vdom';
+import {render as createElement} from '../src/vdom';
 import {patch} from '../src/vpatch';
 
 describe('vpath', () => {

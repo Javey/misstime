@@ -1,11 +1,19 @@
 import {Types} from './vnode';
 import {patchProps} from './vpatch';
+import {MountedQueue} from './utils';
 
-export function createElement(vNode, parentDom) {
+export function render(vNode, parentDom) {
+    const mountedQueue = new MountedQueue();
+    const dom = createElement(vNode, parentDom, mountedQueue); 
+    mountedQueue.trigger();
+    return dom;
+}
+
+export function createElement(vNode, parentDom, mountedQueue) {
     const type = vNode.type;
     switch (type) {
         case Types.HtmlElement:
-            return createHtmlElement(vNode, parentDom);
+            return createHtmlElement(vNode, parentDom, mountedQueue);
         case Types.Text:
             return createTextElement(vNode, parentDom);
         default:
@@ -13,15 +21,20 @@ export function createElement(vNode, parentDom) {
     }
 }
 
-export function createHtmlElement(vNode, parentDom) {
+export function createHtmlElement(vNode, parentDom, mountedQueue) {
     const dom = document.createElement(vNode.tag);
     const children = vNode.children;
+    const ref = vNode.ref;
 
     vNode.dom = dom;
 
-    createElements(children, dom);
+    createElements(children, dom, mountedQueue);
 
     patchProps(null, vNode);
+
+    if (ref != null) {
+        createRef(dom, ref, mountedQueue);
+    }
 
     if (parentDom) {
         parentDom.appendChild(dom);
@@ -41,10 +54,10 @@ export function createTextElement(vNode, parentDom) {
     return dom;
 }
 
-export function createElements(vNodes, parentDom) {
+export function createElements(vNodes, parentDom, mountedQueue) {
     if (vNodes == null) return;
     for (let i = 0; i < vNodes.length; i++) {
-        createElement(vNodes[i], parentDom);
+        createElement(vNodes[i], parentDom, mountedQueue);
     }
 }
 
@@ -72,4 +85,12 @@ export function removeHtmlElement(vNode, parentDom) {
 export function removeAllChildren(dom, vNodes) {
     dom.textContent = ''
     removeElements(vNodes);
+}
+
+export function createRef(dom, ref, mountedQueue) {
+    if (typeof ref === 'function') {
+        mountedQueue.push(() => ref(dom));
+    } else {
+        throw new Error(`ref must be a function, but got "${JSON.stringify(ref)}"`);
+    }
 }

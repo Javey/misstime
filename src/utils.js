@@ -59,3 +59,23 @@ export const SimpleMap = typeof Map === 'function' ? Map : (function() {
     return SimpleMap;
 })();
 
+
+export const skipProps = {
+    key: true,
+    ref: true,
+    children: true
+};
+
+export function MountedQueue() {
+    this.queue = [];
+};
+MountedQueue.prototype.push = function(fn) {
+    this.queue.push(fn)
+}
+MountedQueue.prototype.trigger = function() {
+    const queue = this.queue;
+    let callback;
+    while (callback = queue.shift()) {
+        callback();
+    }
+}

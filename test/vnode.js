@@ -1,6 +1,6 @@
 import should from 'should';
 import {createVNode as h, Types} from '../src/vnode';
-import {createElement} from '../src/vdom';
+import {render as createElement} from '../src/vdom';
 import {patch} from '../src/vpatch';
 import util from 'util';
 
@@ -55,6 +55,45 @@ describe('vnode', () => {
         ]);
         const dom = createElement(vNode);
         document.body.appendChild(dom);
+    });
+
+    it('patch event', () => {
+        var vNode = h(Types.HtmlElement, 'div', {
+            className: 'container',
+            'ev-click': function(e) {
+                console.log('click', e);
+            }
+        }, [
+            h(Types.HtmlElement, 'header', {className: 'header'}, [
+                h(Types.Text, null, null, 'header')
+            ])
+        ]);
+        const dom = createElement(vNode);
+        document.body.appendChild(dom);
+        var newVNode = h(Types.HtmlElement, 'div', {
+            className: 'container',
+            'ev-click': function(e) {
+                console.log('new click', e);
+            }
+        }, [
+            h(Types.HtmlElement, 'header', {className: 'header'}, [
+                h(Types.Text, null, null, 'header')
+            ])
+        ]);
+        patch(vNode, newVNode);
+    })
+
+    it('handle ref', () => {
+         var vNode = h(Types.HtmlElement, 'div', {
+            className: 'container',
+            ref: (dom) => window.__test = dom
+        }, [
+            h(Types.HtmlElement, 'header', {className: 'header'}, [
+                h(Types.Text, null, null, 'header')
+            ])
+        ]);
+        const dom = createElement(vNode);
+        console.log('ref', window.__test); 
     })
 })
 
