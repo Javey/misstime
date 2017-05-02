@@ -411,12 +411,15 @@ function patchPropByObject(propName, propValue, dom, lastProps) {
         case 'style':
             return patchStyle(lastPropValue, propValue, dom);
         default:
-            return patchObject(lastPropValue, propValue, dom);
+            return patchObject(propName, lastPropValue, propValue, dom);
     }
 }
 
-function patchObject(lastValue, nextValue, dom) {
-    const domProps = dom[propName];
+function patchObject(propName, lastValue, nextValue, dom) {
+    let domProps = dom[propName];
+    if (domProps == null) {
+        domProps = dom[propName] = {};
+    }
     let key;
     let value;
     for (key in nextValue) {

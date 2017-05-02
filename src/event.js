@@ -95,7 +95,7 @@ function dispatchEvent(event, target, items, count, isClick) {
         count--;
         event.currentTarget = target;
         eventToTrigger(event);
-        if (event.cancelBubble) {
+        if (event._rawEvent.cancelBubble) {
             return;
         }
     }

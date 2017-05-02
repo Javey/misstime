@@ -1,8 +1,11 @@
+const webpack = require('webpack');
+
 module.exports = function(config) {
     config.set({
         logLevel: config.LOG_INFO,
         files: [
             // 'src/__benchmark__/**/*.js'
+            'node_modules/sinon/pkg/sinon.js',
             'test/**/*.js',
         ],
         preprocessors: {

@@ -3,6 +3,7 @@ import {patchProps} from './vpatch';
 import {MountedQueue, isArray, isStringOrNumber} from './utils';
 
 export function render(vNode, parentDom) {
+    if (vNode == null) return;
     const mountedQueue = new MountedQueue();
     const dom = createElement(vNode, parentDom, mountedQueue); 
     mountedQueue.trigger();
@@ -21,7 +22,7 @@ export function createElement(vNode, parentDom, mountedQueue) {
         case Types.ComponentFunction:
             return createComponentFunction(vNode, parentDom, mountedQueue);
         default:
-            throw new Error('Unknown vnode type');
+            throw new Error('unknown vnode type');
     }
 }
 

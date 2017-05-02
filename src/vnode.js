@@ -1,4 +1,4 @@
-import {isArray} from './utils';
+import {isArray, isStringOrNumber} from './utils';
 
 export const Types = {
     Text: 1,
@@ -10,6 +10,11 @@ export const Types = {
 Types.Element = Types.HtmlElement;
 Types.Component = Types.ComponentClass | Types.ComponentFunction;
 
+export const EMPTY_OBJ = {};
+if (process.env.NODE_ENV !== 'production') {
+    Object.freeze(EMPTY_OBJ);
+}
+
 export function VNode(type, tag, props, children) {
     this.type = type;
     this.tag = tag;
@@ -19,52 +24,57 @@ export function VNode(type, tag, props, children) {
     this.ref = props.ref;
 } 
 
-export function createVNode(type, tag, props, children) {
-    if (!type || type & Types.Component) type = detectType(tag);
-    props || (props = {});
-    return new VNode(
-        type, tag, props, 
-        normalizeChildren(children, type)
-    );
-}
-
-export function createTextVNode(text) {
-    return new VNode(Types.Text, null, {}, text);
-}
-
-export function detectType(tag) {
+export function createVNode(tag, props, children) {
+    let type;
+    props || (props = EMPTY_OBJ);
     switch (typeof tag) {
+        case 'string':
+            type = Types.HtmlElement;
+            break;
         case 'function':
             if (tag.prototype.init) {
-                return Types.ComponentClass;
+                type = Types.ComponentClass;
             } else {
-                return Types.ComponentFunction;
+                type = Types.ComponentFunction;
             }
             break;
-        case 'string':
-            return Types.Element;
         default:
             throw new Error(`unknown vNode type: ${tag}`);
     }
+
+    return new VNode(type, tag, props, normalizeChildren(children));
 }
 
-function normalizeChildren(vNodes, type) {
-    if (!vNodes || (type & Types.Text)) return vNodes;
+export function createTextVNode(text) {
+    return new VNode(Types.Text, null, EMPTY_OBJ, text);
+}
+
+export function createVoidVNode() {
+    return new VNode(Types.VoidElement, null, EMPTY_OBJ);
+}
+
+function normalizeChildren(vNodes) {
+    if (vNodes == null) return vNodes;
     const childNodes = [];
     addChild(vNodes, childNodes, 0);
     return childNodes;
 }
 
 function addChild(vNodes, children, index) {
-    for (let i = 0; i < vNodes.length; i++) {
-        let vNode = vNodes[i];
-        if (isArray(vNode)) {
-            addChild(vNode, children, index);
-        } else if (vNode.type & (Types.Element | Types.Text | Types.Component)){
-            if (vNode.key == null) {
-                vNode.key = `.$${index}`;
-            }
-            children.push(vNode);
+    if (vNodes == null) {
+        vNodes = createTextVNode('');
+    } else if (isArray(vNodes)) {
+        for (let i = 0; i < vNodes.length; i++) {
+            addChild(vNodes[i], children, index);
         }
+        return;
+    } else if (isStringOrNumber(vNodes)) {
+        vNodes = createTextVNode(vNodes);
+    } else if (!vNodes.type){
+        throw new Error(`expect a vNode, but got ${vNodes}`);
     }
+    if (vNodes.key == null) {
+        vNodes.key = `.$${index}`;
+    }
+    children.push(vNodes);
 }

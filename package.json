@@ -29,7 +29,7 @@
     "mocha": "^3.3.0",
     "rollup": "^0.41.6",
     "rollup-plugin-babel": "^2.7.1",
-    "should": "^11.2.1",
+    "sinon": "^1.17.7",
     "webpack": "^2.4.1"
   }
 }
