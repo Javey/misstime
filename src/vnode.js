@@ -6,7 +6,7 @@ export const Types = {
 
     ComponentClass: 1 << 2,
     ComponentFunction: 1 << 3
-}
+};
 Types.Element = Types.HtmlElement;
 Types.Component = Types.ComponentClass | Types.ComponentFunction;
 
@@ -28,6 +28,10 @@ export function createVNode(type, tag, props, children) {
     );
 }
 
+export function createTextVNode(text) {
+    return new VNode(Types.Text, null, {}, text);
+}
+
 export function detectType(tag) {
     switch (typeof tag) {
         case 'function':
@@ -36,6 +40,7 @@ export function detectType(tag) {
             } else {
                 return Types.ComponentFunction;
             }
+            break;
         case 'string':
             return Types.Element;
         default:

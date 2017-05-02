@@ -4,16 +4,16 @@ const ALL_PROPS = [
     "altKey", "bubbles", "cancelable", "ctrlKey",
     "eventPhase", "metaKey", "relatedTarget", "shiftKey",
     "target", "timeStamp", "type", "view", "which"
-]
-const KEY_PROPS = ["char", "charCode", "key", "keyCode"]
+];
+const KEY_PROPS = ["char", "charCode", "key", "keyCode"];
 const MOUSE_PROPS = [
     "button", "buttons", "clientX", "clientY", "layerX",
     "layerY", "offsetX", "offsetY", "pageX", "pageY",
     "screenX", "screenY", "toElement"
-]
+];
 
-const rkeyEvent = /^key|input/
-const rmouseEvent = /^(?:mouse|pointer|contextmenu)|click/
+const rkeyEvent = /^key|input/;
+const rmouseEvent = /^(?:mouse|pointer|contextmenu)|click/;
 
 class Event {
     constructor(e) {
@@ -40,8 +40,8 @@ class MouseEvent extends Event {
     constructor(e) {
         super(e);
         for (let j = 0; j < MOUSE_PROPS.length; j++) {
-            let mousePropKey = MOUSE_PROPS[j]
-            this[mousePropKey] = e[mousePropKey]
+            let mousePropKey = MOUSE_PROPS[j];
+            this[mousePropKey] = e[mousePropKey];
         }
     }
 }
@@ -50,8 +50,8 @@ class KeyEvent extends Event {
     constructor(e) {
         super(e);
         for (let j = 0; j < KEY_PROPS.length; j++) {
-            let keyPropKey = KEY_PROPS[j]
-            this[keyPropKey] = e[keyPropKey]
+            let keyPropKey = KEY_PROPS[j];
+            this[keyPropKey] = e[keyPropKey];
         }
     }
 }

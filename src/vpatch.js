@@ -6,6 +6,8 @@ import {
     removeComponentClass,
     removeAllChildren,
     createComponentClass,
+    createComponentFunction,
+    createComponentFunctionVNode,
     createRef,
     replaceChild
 } from './vdom';
@@ -38,7 +40,13 @@ export function patchVNode(lastVNode, nextVNode, parentDom, mountedQueue) {
             }
         } else if (nextType & Types.ComponentClass) {
             if (lastType & Types.ComponentClass) {
-                patchComponent(lastVNode, nextVNode, parentDom, mountedQueue);
+                patchComponentClass(lastVNode, nextVNode, parentDom, mountedQueue);
+            } else {
+                replaceElement(lastVNode, nextVNode, parentDom, mountedQueue);
+            }
+        } else if (nextType & Types.ComponentFunction) {
+            if (lastType & Types.ComponentFunction) {
+                patchComponentFunction(lastVNode, nextVNode, parentDom, mountedQueue);
             }
         }
     }
@@ -64,17 +72,17 @@ function patchElement(lastVNode, nextVNode, mountedQueue) {
     }
 }
 
-function patchComponent(lastVNode, nextVNode, parentDom, mountedQueue) {
+function patchComponentClass(lastVNode, nextVNode, parentDom, mountedQueue) {
     const lastTag = lastVNode.tag;
     const nextTag = nextVNode.tag;
     const dom = lastVNode.dom;
 
     let instance;
     let newDom;
-    
+
     if (lastTag !== nextTag || lastVNode.key !== nextVNode.key) {
-        newDom = createComponentClass(nextVNode, null, mountedQueue);
-        removeComponentClass(lastVNode, null);
+        newDom = createComponentClass(nextVNode, null, mountedQueue, lastVNode);
+        removeComponentClass(lastVNode, null, nextVNode);
     } else {
         instance = lastVNode.children;
         newDom = instance.update(lastVNode, nextVNode);
@@ -83,6 +91,19 @@ function patchComponent(lastVNode, nextVNode, parentDom, mountedQueue) {
 
     if (dom !== newDom) {
         replaceChild(parentDom, newDom, dom);
+    }
+}
+
+function patchComponentFunction(lastVNode, nextVNode, parentDom, mountedQueue) {
+    const lastTag = lastVNode.tag;
+    const nextTag = nextVNode.tag;
+
+    if (lastVNode.key !== nextVNode.key) {
+        removeElement(lastVNode.children, parentDom);
+        createComponentFunction(nextVNode, parentDom, mountedQueue);
+    } else {
+        createComponentFunctionVNode(nextVNode);
+        patchVNode(lastVNode.children, nextVNode.children, parentDom, mountedQueue);
     }
 }
 
@@ -375,7 +396,7 @@ function removeProp(propName, dom, lastProps) {
                 dom.removeAttribute('style');
             }
         } else if (typeof lastProps[propName] === 'string') {
-            dom[propName] = ''
+            dom[propName] = '';
         } else {
             dom[propName] = null;
         }

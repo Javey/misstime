@@ -123,8 +123,25 @@ describe('vnode', () => {
         ]);
         const dom = createElement(vNode);
         console.log('ref', window.__test); 
-    })
-})
+    });
+
+    it('handle component function', () => {
+        function Component(props) {
+            return h(Types.HtmlElement, 'header', {
+                className: props.className
+            }, props.children);
+        }
+        var vNode = h(Types.HtmlElement, 'div', {className: 'container'}, [
+            h(Types.Component, Component, {
+                className: 'header',
+                children: [
+                    h(Types.Text, null, null, 'header')
+                ]
+            })
+        ]);
+        console.log('Component Function', createElement(vNode));
+    });
+});
 
 function log(info) {
     console.log(util.inspect(info, {

@@ -33,7 +33,7 @@ describe('vpath', () => {
                 className: this.props.className
             }, this.props.children));
         };
-        Component.prototype.mount = function(vNode) {
+        Component.prototype.mount = function(lastVNode, vNode) {
             console.log(vNode.dom);
         }
         var vNode = h(Types.HtmlElement, 'div', {className: 'container'}, [
@@ -73,5 +73,38 @@ describe('vpath', () => {
             ])
         ]);
         patch(vNode, newVNode);
-    })
+    });
+
+    it('patch component function', () => {
+        function Component(props) {
+            return h(Types.HtmlElement, 'header', {
+                className: props.className
+            }, props.children);
+        }
+        function NewComponent(props) {
+            return h(Types.HtmlElement, 'header', {
+                className: props.className,
+                id: 'test'
+            }, props.children);
+        }
+        var vNode = h(Types.HtmlElement, 'div', {className: 'container'}, [
+            h(Types.Component, Component, {
+                className: 'header',
+                children: [
+                    h(Types.Text, null, null, 'header')
+                ]
+            })
+        ]);
+        createElement(vNode);
+
+        var newVNode = h(Types.HtmlElement, 'div', {className: 'container'}, [
+            h(Types.Component, NewComponent, {
+                className: 'new header',
+                children: [
+                    h(Types.Text, null, null, 'header')
+                ]
+            })
+        ]);
+        console.log('patch component function', patch(vNode, newVNode));
+    });
 })
