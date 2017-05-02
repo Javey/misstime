@@ -1,4 +1,4 @@
-import {h, render} from '../src/index';
+import {h, render} from '../src';
 import assert from 'assert';
 
 describe('Render', () => {
@@ -38,7 +38,7 @@ describe('Render', () => {
     });
 
     it('render invalid node should throw an error', () => {
-        assert.throws(function() {eql(h('div', null, true))});
+        assert.throws(function() {eql(h('div', null, true));});
     });
 
     it('render properties', () => {
