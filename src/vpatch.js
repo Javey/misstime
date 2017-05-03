@@ -12,7 +12,7 @@ import {
     createRef,
     replaceChild
 } from './vdom';
-import {isObject, isNullOrUndefined, skipProps, MountedQueue} from './utils';
+import {isObject, isNullOrUndefined, skipProps, MountedQueue, isEventProp} from './utils';
 import {handleEvent} from './event';
 
 export function patch(lastVNode, nextVNode, parentDom) {
@@ -361,9 +361,9 @@ function insertOrAppend(pos, length, newDom, nodes, dom) {
 
 function replaceElement(lastVNode, nextVNode, parentDom, mountedQueue) {
     if (!parentDom) parentDom = lastVNode.dom.parentNode;
-    removeElement(lastVNode, parentDom);
-    createElement(nextVNode, parentDom, mountedQueue);
-    parentDom.replaceChild(nextVNode.dom, nextVNode.dom);
+    removeElement(lastVNode, null);
+    createElement(nextVNode, null, mountedQueue);
+    parentDom.replaceChild(nextVNode.dom, lastVNode.dom);
 }
 
 function patchText(lastVNode, nextVNode, parentDom) {
@@ -525,8 +525,4 @@ function patchEvent(propName, nextValue, dom, lastProps) {
     if (lastValue !== nextValue) {
         handleEvent(propName.substr(3), lastValue, nextValue, dom);
     }
-}
-
-function isEventProp(propName) {
-    return propName.substr(0, 3) === 'ev-';
 }

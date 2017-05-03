@@ -17,6 +17,10 @@ export function isNullOrUndefined(o) {
     return o === null || o === undefined;
 }
 
+export function isEventProp(propName) {
+    return propName.substr(0, 3) === 'ev-';
+}
+
 export const indexOf = (function() {
     if (Array.prototype.indexOf) {
         return function(arr, value) {

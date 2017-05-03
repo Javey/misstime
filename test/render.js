@@ -1,6 +1,21 @@
 import {h, render} from '../src';
 import assert from 'assert';
 
+class ClassComponent {
+    constructor(props) {
+        this.props = props;
+    }
+    init() {
+        return render(h('span', this.props, this.props.children));
+    }
+}
+
+function FunctionComponent(props) {
+    return h('p', {
+        className: props.className
+    }, props.children);
+}
+
 describe('Render', () => {
     let container;
 
@@ -165,6 +180,30 @@ describe('Render', () => {
         );
     });
 
+    it('render class component in function component', () => {
+        eql(
+            h('div', null, h(FunctionComponent, {
+                children: [
+                    h(ClassComponent),
+                    h('i')
+                ]
+            })),
+            '<div><p><span></span><i></i></p></div>'
+        );
+    });
+
+    it('render function component in class component', () => {
+        eql(
+            h('div', null, h(ClassComponent, {
+                children: [
+                    h(FunctionComponent),
+                    h('i')
+                ]
+            })),
+            '<div><span><p></p><i></i></span></div>'
+        );
+    });
+
     it('render div with ref', () => {
         const o = {};
         eql(
@@ -210,6 +249,29 @@ describe('Render', () => {
             '<span class="test">text</span>'
         );
         assert.strictEqual(o.instance, o._instance);
+    });
+
+    it('render ref with nested component', () => {
+        const o = {};
+        eql(
+            h(ClassComponent, {
+                children: [
+                    h(FunctionComponent, {ref: (i) => o.i = i})
+                ]
+            }),
+            '<span><p></p></span>'
+        );
+        assert.strictEqual(o.i, container.firstChild.firstChild);
+
+        eql(
+            h(FunctionComponent, {
+                children: [
+                    h(ClassComponent, {ref: (i) => o.j = i})
+                ]
+            }),
+            '<p><span></span></p>'
+        );
+        assert.strictEqual(o.j instanceof ClassComponent, true);
     });
 
     describe('Event', () => {

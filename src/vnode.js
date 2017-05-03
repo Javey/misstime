@@ -42,6 +42,10 @@ export function createVNode(tag, props, children) {
             throw new Error(`unknown vNode type: ${tag}`);
     }
 
+    if (props.children) {
+        props.children = normalizeChildren(props.children);
+    }
+
     return new VNode(type, tag, props, normalizeChildren(children));
 }
 

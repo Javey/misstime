@@ -2,16 +2,19 @@ import {h, render, patch} from '../src';
 import assert from 'assert';
 
 class ClassComponent {
+    constructor(props) {
+        this.props = props;
+    }
     init() { 
-        return this.dom = render(h('span'));
+        return this.dom = render(h('span', this.props, this.props.children));
     }
     update() {
         return this.dom;
     }
 } 
 
-function FunctionComponent() {
-    return h('p');
+function FunctionComponent(props) {
+    return h('p', props, props.children);
 }
 
 
@@ -302,6 +305,36 @@ describe('Patch', () => {
             h('div', null, h(ClassComponent)),
             '<div><span></span></div>'
         );
+    });
+
+    it('remove function component', () => {
+        const o = {};
+        eql(
+            h('div', null, h(FunctionComponent, {
+                children: [
+                    h('b'),
+                    h(ClassComponent, {ref: (i) => o.i = i})
+                ]
+            })),
+            h('div'),
+            '<div></div>'
+        );
+        sEql(o.i, null);
+    });
+
+    it('remove class component', () => {
+        const o = {};
+        eql(
+            h('div', null, h(ClassComponent, {
+                children: [
+                    h('b'),
+                    h(FunctionComponent, {ref: (i) => o.i = i})
+                ]
+            })),
+            h('div'),
+            '<div></div>'
+        );
+        sEql(o.i, null);
     });
 
     describe('Event', () => {

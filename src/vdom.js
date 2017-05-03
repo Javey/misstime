@@ -1,6 +1,6 @@
 import {Types, createTextVNode} from './vnode';
 import {patchProps} from './vpatch';
-import {MountedQueue, isArray, isStringOrNumber, isNullOrUndefined} from './utils';
+import {MountedQueue, isArray, isStringOrNumber, isNullOrUndefined, isEventProp} from './utils';
 
 export function render(vNode, parentDom) {
     if (isNullOrUndefined(vNode)) return;
@@ -87,10 +87,9 @@ export function createComponentFunction(vNode, parentDom, mountedQueue) {
     const props = vNode.props;
     const ref = vNode.ref;
 
-
     createComponentFunctionVNode(vNode);
 
-    const dom = createElement(vNode.children, parentDom, mountedQueue);
+    const dom = createElement(vNode.children, null, mountedQueue);
     vNode.dom = dom;
 
     if (parentDom) {
@@ -136,6 +135,8 @@ export function removeElement(vNode, parentDom) {
         case Types.Element:
         case Types.Text:
             return removeHtmlElement(vNode, parentDom); 
+        case Types.ComponentFunction:
+            return removeComponentFunction(vNode, parentDom); 
         case Types.ComponentClass:
             return removeComponentClass(vNode, parentDom);
     }
@@ -143,23 +144,53 @@ export function removeElement(vNode, parentDom) {
 
 export function removeHtmlElement(vNode, parentDom) {
     const ref = vNode.ref;
-    if (parentDom) {
-        parentDom.removeChild(vNode.dom);
-    }
+    const props = vNode.props;
+    const dom = vNode.dom;
+
     if (ref) {
         ref(null);
     }
+
+    removeElements(vNode.children, null);
+
+    // remove event
+    for (let name in props) {
+        const prop = props[name];
+        if (!isNullOrUndefined(prop) && isEventProp(name)) {
+            handleEvent(name.substr(0, 3), prop, null, dom);
+        }
+    }
+
+    if (parentDom) {
+        parentDom.removeChild(dom);
+    }
+}
+
+export function removeComponentFunction(vNode, parentDom) {
+    const ref = vNode.ref;
+    if (ref) {
+        ref(null);
+    }
+    removeElement(vNode.children, parentDom);
 }
 
 export function removeComponentClass(vNode, parentDom, nextVNode) {
     const instance = vNode.children;
+    const ref = vNode.ref;
 
     if (typeof instance.destroy === 'function') {
         instance.destroy(vNode, nextVNode);
     }
 
-    removeHtmlElement(vNode, parentDom);
+    if (ref) {
+        ref(null);
+    }
+
     removeElements(vNode.props.children, null);
+
+    if (parentDom) {
+        parentDom.removeChild(vNode.dom);
+    }
 }
 
 export function removeAllChildren(dom, vNodes) {
