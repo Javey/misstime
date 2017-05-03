@@ -13,6 +13,10 @@ export function isStringOrNumber(o) {
     return type === 'string' || type === 'number';
 }
 
+export function isNullOrUndefined(o) {
+    return o === null || o === undefined;
+}
+
 export const indexOf = (function() {
     if (Array.prototype.indexOf) {
         return function(arr, value) {

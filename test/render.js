@@ -17,7 +17,7 @@ describe('Render', () => {
         container.innerHTML = '';
     }
     function eqlHtml(html) {
-        assert.equal(container.innerHTML, html);
+        assert.strictEqual(container.innerHTML, html);
     }
     function r(vNode) {
         reset();
@@ -34,7 +34,7 @@ describe('Render', () => {
 
     it('render div', () => {
         eql(h('div'), '<div></div>');
-        assert.equal(container.children.length, 1);
+        assert.strictEqual(container.children.length, 1);
     });
 
     it('render invalid node should throw an error', () => {
@@ -44,7 +44,7 @@ describe('Render', () => {
     it('render properties', () => {
         const div = h('div', {className: 'test', id: 'test'});
         eql(div, '<div class="test" id="test"></div>');
-        assert.equal(container.children.length, 1);
+        assert.strictEqual(container.children.length, 1);
     });
 
     it('render style', () => {
@@ -77,7 +77,7 @@ describe('Render', () => {
             h('div', {a: {b: 1}}),
             '<div></div>'
         );
-        assert.equal(container.firstChild.a.b, 1);
+        assert.strictEqual(container.firstChild.a.b, 1);
     });
 
     it('render children', () => {
@@ -171,7 +171,7 @@ describe('Render', () => {
             h('div', {ref: (dom) => o.dom = dom, className: 'test'}),
             '<div class="test"></div>'
         );
-        assert.equal(o.dom, container.firstChild);
+        assert.strictEqual(o.dom, container.firstChild);
     });
 
     it('render function component with ref', () => {
@@ -187,7 +187,7 @@ describe('Render', () => {
             }),
             '<span class="test">text</span>'
         );
-        assert.equal(o.dom, container.firstChild);
+        assert.strictEqual(o.dom, container.firstChild);
     });
 
     it('render class component with ref', () => {
@@ -209,7 +209,7 @@ describe('Render', () => {
             }),
             '<span class="test">text</span>'
         );
-        assert.equal(o.instance, o._instance);
+        assert.strictEqual(o.instance, o._instance);
     });
 
     describe('Event', () => {
@@ -217,20 +217,23 @@ describe('Render', () => {
             const fn = sinon.spy();
             r(h('div', {'ev-click': fn}));
             container.firstChild.click();
-            assert.equal(fn.callCount, 1);
-            assert.equal(fn.args[0].length, 1);
-            assert.equal(fn.args[0][0].type, 'click');
-            assert.equal(fn.args[0][0].target, container.firstChild);
-            assert.equal(fn.args[0][0].currentTarget, container.firstChild);
+            assert.strictEqual(fn.callCount, 1);
+            assert.strictEqual(fn.args[0].length, 1);
+            assert.strictEqual(fn.args[0][0].type, 'click');
+            assert.strictEqual(fn.args[0][0].target, container.firstChild);
+            assert.strictEqual(fn.args[0][0].currentTarget, container.firstChild);
+
+            container.firstChild.click();
+            assert.strictEqual(fn.callCount, 2);
         });
 
         it('trigger event on child node', () => {
             const fn = sinon.spy();
             r(h('div', {'ev-click': fn}, h('div')));
             container.firstChild.firstChild.click();
-            assert.equal(fn.callCount, 1);
-            assert.equal(fn.args[0][0].target, container.firstChild.firstChild);
-            assert.equal(fn.args[0][0].currentTarget, container.firstChild);
+            assert.strictEqual(fn.callCount, 1);
+            assert.strictEqual(fn.args[0][0].target, container.firstChild.firstChild);
+            assert.strictEqual(fn.args[0][0].currentTarget, container.firstChild);
         });
 
         it('event bubble', () => {
@@ -239,13 +242,13 @@ describe('Render', () => {
             const fn2 = sinon.spy((e) => currentTargets.push(e.currentTarget));
             r(h('p', {'ev-click': fn2}, h('span', {'ev-click': fn1})));
             container.firstChild.firstChild.click();
-            assert.equal(fn1.callCount, 1);
-            assert.equal(fn2.callCount, 1);
-            assert.equal(fn2.calledAfter(fn1), true);
-            assert.equal(fn1.args[0][0].target, container.firstChild.firstChild);
-            assert.equal(currentTargets[0], container.firstChild.firstChild);
-            assert.equal(fn2.args[0][0].target, container.firstChild.firstChild);
-            assert.equal(currentTargets[1], container.firstChild);
+            assert.strictEqual(fn1.callCount, 1);
+            assert.strictEqual(fn2.callCount, 1);
+            assert.strictEqual(fn2.calledAfter(fn1), true);
+            assert.strictEqual(fn1.args[0][0].target, container.firstChild.firstChild);
+            assert.strictEqual(currentTargets[0], container.firstChild.firstChild);
+            assert.strictEqual(fn2.args[0][0].target, container.firstChild.firstChild);
+            assert.strictEqual(currentTargets[1], container.firstChild);
         });
 
         it('stop event bubble', () => {
@@ -253,8 +256,8 @@ describe('Render', () => {
             const fn2 = sinon.spy();
             r(h('p', {'ev-click': fn2}, h('span', {'ev-click': fn1})));
             container.firstChild.firstChild.click();
-            assert.equal(fn1.callCount, 1);
-            assert.equal(fn2.callCount, 0);
+            assert.strictEqual(fn1.callCount, 1);
+            assert.strictEqual(fn2.callCount, 0);
         });
 
         it('prevent default', () => {
@@ -262,7 +265,7 @@ describe('Render', () => {
             const fn = sinon.spy((e) => e.preventDefault());
             r(h('a', {'ev-click': fn, href: "https://www.baidu.com"}));
             container.firstChild.click();
-            assert.equal(location.href, url);
+            assert.strictEqual(location.href, url);
         });
     });
 
@@ -276,7 +279,7 @@ describe('Render', () => {
                 return render(h('div', vNode.props, vNode.props.children));
             });
             mount = sinon.spy((lastVNode, vNode) => {
-                assert.equal(container.firstChild, vNode.dom);
+                assert.strictEqual(container.firstChild, vNode.dom);
             });
             C = function(props) {
                 this.props = props;
@@ -288,11 +291,11 @@ describe('Render', () => {
         it('init and mount', () => {
             const vNode = h(C, {className: 'test', children: 'text'});
             r(vNode);
-            assert.equal(init.callCount, 1);
-            assert.equal(init.calledWith(undefined, vNode), true);
-            assert.equal(mount.callCount, 1);
-            assert.equal(mount.calledWith(undefined, vNode), true);
-            assert.equal(mount.calledAfter(init), true);
+            assert.strictEqual(init.callCount, 1);
+            assert.strictEqual(init.calledWith(undefined, vNode), true);
+            assert.strictEqual(mount.callCount, 1);
+            assert.strictEqual(mount.calledWith(undefined, vNode), true);
+            assert.strictEqual(mount.calledAfter(init), true);
         }); 
     });
 });

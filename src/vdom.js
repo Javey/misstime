@@ -1,9 +1,9 @@
 import {Types, createTextVNode} from './vnode';
 import {patchProps} from './vpatch';
-import {MountedQueue, isArray, isStringOrNumber} from './utils';
+import {MountedQueue, isArray, isStringOrNumber, isNullOrUndefined} from './utils';
 
 export function render(vNode, parentDom) {
-    if (vNode == null) return;
+    if (isNullOrUndefined(vNode)) return;
     const mountedQueue = new MountedQueue();
     const dom = createElement(vNode, parentDom, mountedQueue); 
     mountedQueue.trigger();
@@ -37,7 +37,7 @@ export function createHtmlElement(vNode, parentDom, mountedQueue) {
 
     patchProps(null, vNode);
 
-    if (ref != null) {
+    if (!isNullOrUndefined(ref)) {
         createRef(dom, ref, mountedQueue);
     }
 
@@ -118,14 +118,14 @@ export function createComponentFunctionVNode(vNode) {
 }
 
 export function createElements(vNodes, parentDom, mountedQueue) {
-    if (vNodes == null) return;
+    if (isNullOrUndefined(vNodes)) return;
     for (let i = 0; i < vNodes.length; i++) {
         createElement(vNodes[i], parentDom, mountedQueue);
     }
 }
 
 export function removeElements(vNodes, parentDom) {
-    if (vNodes == null) return;
+    if (isNullOrUndefined(vNodes)) return;
     for (let i = 0; i < vNodes.length; i++) {
         removeElement(vNodes[i], parentDom);
     }

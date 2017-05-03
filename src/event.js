@@ -1,4 +1,4 @@
-import {SimpleMap} from './utils';
+import {SimpleMap, isNullOrUndefined} from './utils';
 
 const ALL_PROPS = [
     "altKey", "bubbles", "cancelable", "ctrlKey",
@@ -101,7 +101,7 @@ function dispatchEvent(event, target, items, count, isClick) {
     }
     if (count > 0) {
         const parentDom = target.parentNode;
-        if (parentDom === null || (isClick && parentDom.nodeType === 1 && parentDom.disabled)) {
+        if (isNullOrUndefined(parentDom) || (isClick && parentDom.nodeType === 1 && parentDom.disabled)) {
             return;
         }
         dispatchEvent(event, parentDom, items, count, isClick);

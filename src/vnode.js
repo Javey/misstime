@@ -1,4 +1,4 @@
-import {isArray, isStringOrNumber} from './utils';
+import {isArray, isStringOrNumber, isNullOrUndefined} from './utils';
 
 export const Types = {
     Text: 1,
@@ -54,18 +54,21 @@ export function createVoidVNode() {
 }
 
 function normalizeChildren(vNodes) {
-    if (vNodes == null) return vNodes;
+    if (isNullOrUndefined(vNodes)) return vNodes;
     const childNodes = [];
     addChild(vNodes, childNodes, 0);
     return childNodes;
 }
 
 function addChild(vNodes, children, index) {
-    if (vNodes == null) {
+    let hasKeyed = true;
+    if (isNullOrUndefined(vNodes)) {
         vNodes = createTextVNode('');
     } else if (isArray(vNodes)) {
         for (let i = 0; i < vNodes.length; i++) {
-            addChild(vNodes[i], children, index);
+            if (addChild(vNodes[i], children, index + i)) {
+                --index;
+            }
         }
         return;
     } else if (isStringOrNumber(vNodes)) {
@@ -73,8 +76,10 @@ function addChild(vNodes, children, index) {
     } else if (!vNodes.type){
         throw new Error(`expect a vNode, but got ${vNodes}`);
     }
-    if (vNodes.key == null) {
+    if (isNullOrUndefined(vNodes.key)) {
         vNodes.key = `.$${index}`;
+        hasKeyed = false;
     }
     children.push(vNodes);
+    return hasKeyed;
 }
