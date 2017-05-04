@@ -38,6 +38,21 @@ export const indexOf = (function() {
     }
 })();
 
+const nativeObject = Object.create;
+export const createObject = (function() {
+    if (nativeObject) {
+        return function(obj) {
+            return nativeObject(obj);
+        };
+    } else {
+        return function(obj) {
+            function fn() {}
+            fn.prototype = obj;
+            return new fn();
+        };
+    }
+})();
+
 export const SimpleMap = typeof Map === 'function' ? Map : (function() {
     function SimpleMap() {
         this._keys = [];

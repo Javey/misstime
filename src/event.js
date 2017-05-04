@@ -1,4 +1,4 @@
-import {SimpleMap, isNullOrUndefined} from './utils';
+import {SimpleMap, isNullOrUndefined, createObject} from './utils';
 
 const ALL_PROPS = [
     "altKey", "bubbles", "cancelable", "ctrlKey",
@@ -15,46 +15,42 @@ const MOUSE_PROPS = [
 const rkeyEvent = /^key|input/;
 const rmouseEvent = /^(?:mouse|pointer|contextmenu)|click/;
 
-class Event {
-    constructor(e) {
-        for (let i = 0; i < ALL_PROPS.length; i++) {
-            let propKey = ALL_PROPS[i];
-            this[propKey] = e[propKey];
-        }
-
-        this._rawEvent = e;
+function Event(e) {
+    for (let i = 0; i < ALL_PROPS.length; i++) {
+        let propKey = ALL_PROPS[i];
+        this[propKey] = e[propKey];
     }
 
-    preventDefault() {
-        this._rawEvent.preventDefault();
-    }
+    this._rawEvent = e;
+}
+Event.prototype.preventDefault = function() {
+    this._rawEvent.preventDefault();
+};
+Event.prototype.stopPropagation = function() {
+    const e = this._rawEvent;    
+    e.cancelBubble = true;
+    e.stopImmediatePropagation();
+};
 
-    stopPropagation() {
-        const e = this._rawEvent;    
-        e.cancelBubble = true;
-        e.stopImmediatePropagation();
+function MouseEvent(e) {
+    Event.call(this, e);
+    for (let j = 0; j < MOUSE_PROPS.length; j++) {
+        let mousePropKey = MOUSE_PROPS[j];
+        this[mousePropKey] = e[mousePropKey];
     }
 }
+MouseEvent.prototype = createObject(Event.prototype);
+MouseEvent.prototype.constructor = MouseEvent;
 
-class MouseEvent extends Event {
-    constructor(e) {
-        super(e);
-        for (let j = 0; j < MOUSE_PROPS.length; j++) {
-            let mousePropKey = MOUSE_PROPS[j];
-            this[mousePropKey] = e[mousePropKey];
-        }
+function KeyEvent(e) {
+    Event.call(this, e);
+    for (let j = 0; j < KEY_PROPS.length; j++) {
+        let keyPropKey = KEY_PROPS[j];
+        this[keyPropKey] = e[keyPropKey];
     }
 }
-
-class KeyEvent extends Event {
-    constructor(e) {
-        super(e);
-        for (let j = 0; j < KEY_PROPS.length; j++) {
-            let keyPropKey = KEY_PROPS[j];
-            this[keyPropKey] = e[keyPropKey];
-        }
-    }
-}
+KeyEvent.prototype = createObject(Event.prototype);
+KeyEvent.prototype.constructor = KeyEvent;
 
 function proxyEvent(e) {
     if (rkeyEvent.test(e.type)) {

@@ -1,8 +1,8 @@
 const babel = require('rollup-plugin-babel');
 
 module.exports = {
-    entry: 'src/vnode.js',
-    dest: 'dist/vnode.js',
+    entry: 'src/index.js',
+    dest: 'dist/index.js',
     format: 'cjs',
     plugins: [
         babel({
@@ -17,4 +17,4 @@ module.exports = {
             babelrc: false
         })
     ]
-}
+};
