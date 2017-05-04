@@ -8,82 +8,6 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
   return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj;
 };
 
-
-
-
-
-
-
-
-
-
-
-var classCallCheck = function (instance, Constructor) {
-  if (!(instance instanceof Constructor)) {
-    throw new TypeError("Cannot call a class as a function");
-  }
-};
-
-var createClass = function () {
-  function defineProperties(target, props) {
-    for (var i = 0; i < props.length; i++) {
-      var descriptor = props[i];
-      descriptor.enumerable = descriptor.enumerable || false;
-      descriptor.configurable = true;
-      if ("value" in descriptor) descriptor.writable = true;
-      Object.defineProperty(target, descriptor.key, descriptor);
-    }
-  }
-
-  return function (Constructor, protoProps, staticProps) {
-    if (protoProps) defineProperties(Constructor.prototype, protoProps);
-    if (staticProps) defineProperties(Constructor, staticProps);
-    return Constructor;
-  };
-}();
-
-
-
-
-
-
-
-
-
-var inherits = function (subClass, superClass) {
-  if (typeof superClass !== "function" && superClass !== null) {
-    throw new TypeError("Super expression must either be null or a function, not " + typeof superClass);
-  }
-
-  subClass.prototype = Object.create(superClass && superClass.prototype, {
-    constructor: {
-      value: subClass,
-      enumerable: false,
-      writable: true,
-      configurable: true
-    }
-  });
-  if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass;
-};
-
-
-
-
-
-
-
-
-
-
-
-var possibleConstructorReturn = function (self, call) {
-  if (!self) {
-    throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
-  }
-
-  return call && (typeof call === "object" || typeof call === "function") ? call : self;
-};
-
 var toString = Object.prototype.toString;
 
 var isArray = Array.isArray || function (arr) {
@@ -120,6 +44,21 @@ var indexOf = function () {
                 }
             }
             return -1;
+        };
+    }
+}();
+
+var nativeObject = Object.create;
+var createObject = function () {
+    if (nativeObject) {
+        return function (obj) {
+            return nativeObject(obj);
+        };
+    } else {
+        return function (obj) {
+            function Fn() {}
+            Fn.prototype = obj;
+            return new Fn();
         };
     }
 }();
@@ -490,69 +429,42 @@ var MOUSE_PROPS = ["button", "buttons", "clientX", "clientY", "layerX", "layerY"
 var rkeyEvent = /^key|input/;
 var rmouseEvent = /^(?:mouse|pointer|contextmenu)|click/;
 
-var Event = function () {
-    function Event(e) {
-        classCallCheck(this, Event);
-
-        for (var i = 0; i < ALL_PROPS.length; i++) {
-            var propKey = ALL_PROPS[i];
-            this[propKey] = e[propKey];
-        }
-
-        this._rawEvent = e;
+function Event(e) {
+    for (var i = 0; i < ALL_PROPS.length; i++) {
+        var propKey = ALL_PROPS[i];
+        this[propKey] = e[propKey];
     }
 
-    createClass(Event, [{
-        key: "preventDefault",
-        value: function preventDefault() {
-            this._rawEvent.preventDefault();
-        }
-    }, {
-        key: "stopPropagation",
-        value: function stopPropagation() {
-            var e = this._rawEvent;
-            e.cancelBubble = true;
-            e.stopImmediatePropagation();
-        }
-    }]);
-    return Event;
-}();
+    this._rawEvent = e;
+}
+Event.prototype.preventDefault = function () {
+    this._rawEvent.preventDefault();
+};
+Event.prototype.stopPropagation = function () {
+    var e = this._rawEvent;
+    e.cancelBubble = true;
+    e.stopImmediatePropagation();
+};
 
-var MouseEvent = function (_Event) {
-    inherits(MouseEvent, _Event);
-
-    function MouseEvent(e) {
-        classCallCheck(this, MouseEvent);
-
-        var _this = possibleConstructorReturn(this, (MouseEvent.__proto__ || Object.getPrototypeOf(MouseEvent)).call(this, e));
-
-        for (var j = 0; j < MOUSE_PROPS.length; j++) {
-            var mousePropKey = MOUSE_PROPS[j];
-            _this[mousePropKey] = e[mousePropKey];
-        }
-        return _this;
+function MouseEvent(e) {
+    Event.call(this, e);
+    for (var j = 0; j < MOUSE_PROPS.length; j++) {
+        var mousePropKey = MOUSE_PROPS[j];
+        this[mousePropKey] = e[mousePropKey];
     }
+}
+MouseEvent.prototype = createObject(Event.prototype);
+MouseEvent.prototype.constructor = MouseEvent;
 
-    return MouseEvent;
-}(Event);
-
-var KeyEvent = function (_Event2) {
-    inherits(KeyEvent, _Event2);
-
-    function KeyEvent(e) {
-        classCallCheck(this, KeyEvent);
-
-        var _this2 = possibleConstructorReturn(this, (KeyEvent.__proto__ || Object.getPrototypeOf(KeyEvent)).call(this, e));
-
-        for (var j = 0; j < KEY_PROPS.length; j++) {
-            var keyPropKey = KEY_PROPS[j];
-            _this2[keyPropKey] = e[keyPropKey];
-        }
-        return _this2;
+function KeyEvent(e) {
+    Event.call(this, e);
+    for (var j = 0; j < KEY_PROPS.length; j++) {
+        var keyPropKey = KEY_PROPS[j];
+        this[keyPropKey] = e[keyPropKey];
     }
-
-    return KeyEvent;
-}(Event);
+}
+KeyEvent.prototype = createObject(Event.prototype);
+KeyEvent.prototype.constructor = KeyEvent;
 
 function proxyEvent(e) {
     if (rkeyEvent.test(e.type)) {

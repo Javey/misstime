@@ -1,4 +1,4 @@
-import {h, render} from '../src';
+import {h, hc, render} from '../src';
 import assert from 'assert';
 
 class ClassComponent {
@@ -50,6 +50,10 @@ describe('Render', () => {
     it('render div', () => {
         eql(h('div'), '<div></div>');
         assert.strictEqual(container.children.length, 1);
+    });
+
+    it('render comment', () => {
+        eql(hc('comment'), '<!--comment-->');
     });
 
     it('render invalid node should throw an error', () => {

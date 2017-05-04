@@ -21,6 +21,8 @@ export function createElement(vNode, parentDom, mountedQueue) {
             return createComponentClass(vNode, parentDom, mountedQueue);
         case Types.ComponentFunction:
             return createComponentFunction(vNode, parentDom, mountedQueue);
+        case Types.HtmlComment:
+            return createCommentElement(vNode, parentDom);
         default:
             throw new Error('unknown vnode type');
     }
@@ -103,6 +105,17 @@ export function createComponentFunction(vNode, parentDom, mountedQueue) {
     return dom;
 }
 
+export function createCommentElement(vNode, parentDom) {
+    const dom = document.createComment(vNode.children); 
+    vNode.dom = dom;
+
+    if (parentDom) {
+        parentDom.appendChild(dom);
+    }
+
+    return dom;
+}
+
 export function createComponentFunctionVNode(vNode) {
     let result = vNode.tag(vNode.props);
     if (isArray(result)) {
@@ -135,6 +148,7 @@ export function removeElement(vNode, parentDom) {
         case Types.Element:
             return removeHtmlElement(vNode, parentDom); 
         case Types.Text:
+        case Types.HtmlComment:
             return removeText(vNode, parentDom);
         case Types.ComponentFunction:
             return removeComponentFunction(vNode, parentDom); 

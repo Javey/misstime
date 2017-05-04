@@ -5,10 +5,13 @@ export const Types = {
     HtmlElement: 1 << 1,
 
     ComponentClass: 1 << 2,
-    ComponentFunction: 1 << 3
+    ComponentFunction: 1 << 3,
+
+    HtmlComment: 1 << 4
 };
 Types.Element = Types.HtmlElement;
 Types.Component = Types.ComponentClass | Types.ComponentFunction;
+Types.TextElement = Types.Text | Types.HtmlComment;
 
 export const EMPTY_OBJ = {};
 if (process.env.NODE_ENV !== 'production') {
@@ -47,6 +50,10 @@ export function createVNode(tag, props, children) {
     }
 
     return new VNode(type, tag, props, normalizeChildren(children));
+}
+
+export function createCommentVNode(children) {
+    return new VNode(Types.HtmlComment, null, EMPTY_OBJ, children);
 }
 
 export function createTextVNode(text) {

@@ -46,9 +46,9 @@ export const createObject = (function() {
         };
     } else {
         return function(obj) {
-            function fn() {}
-            fn.prototype = obj;
-            return new fn();
+            function Fn() {}
+            Fn.prototype = obj;
+            return new Fn();
         };
     }
 })();

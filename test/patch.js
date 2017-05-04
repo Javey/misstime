@@ -1,4 +1,4 @@
-import {h, render, patch} from '../src';
+import {h, hc, render, patch} from '../src';
 import assert from 'assert';
 
 class ClassComponent {
@@ -77,6 +77,14 @@ describe('Patch', () => {
             h('div', null, h('span')),
             h('div', null, h('div')),
             '<div><div></div></div>'
+        );
+    });
+
+    it('patch comment', () => {
+        eql(
+            hc('div'),
+            hc('span'),
+            '<!--span-->'
         );
     });
 

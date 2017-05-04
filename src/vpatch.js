@@ -33,8 +33,8 @@ export function patchVNode(lastVNode, nextVNode, parentDom, mountedQueue) {
             } else {
                 replaceElement(lastVNode, nextVNode, parentDom, mountedQueue);
             }
-        } else if (nextType & Types.Text) {
-            if (lastType & Types.Text) {
+        } else if (nextType & Types.TextElement) {
+            if (lastType & Types.TextElement) {
                 patchText(lastVNode, nextVNode);
             } else {
                 replaceElement(lastVNode, nextVNode, parentDom, mountedQueue);
