@@ -13,6 +13,9 @@
   },
   "author": "",
   "license": "ISC",
+  "dependencies": {
+    "min-document": "git://github.com/Javey/min-document#master"
+  },
   "devDependencies": {
     "babel-core": "^6.24.1",
     "babel-loader": "^7.0.0",

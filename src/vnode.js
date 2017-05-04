@@ -68,7 +68,7 @@ function normalizeChildren(vNodes) {
     if (isNullOrUndefined(vNodes)) return vNodes;
     const childNodes = [];
     addChild(vNodes, childNodes, 0);
-    return childNodes;
+    return childNodes.length ? childNodes : null;
 }
 
 function addChild(vNodes, children, index) {

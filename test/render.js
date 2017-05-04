@@ -118,6 +118,13 @@ describe('Render', () => {
         );
     });
 
+    it('render empty array children', () => {
+        eql(
+            h('div', null, []),
+            '<div></div>'
+        );
+    });
+
     it('render nested children', () => {
         eql(
             h('div', null, [['text', [h('div')]]]),

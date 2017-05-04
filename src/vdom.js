@@ -1,6 +1,10 @@
 import {Types, createTextVNode} from './vnode';
 import {patchProps} from './vpatch';
-import {MountedQueue, isArray, isStringOrNumber, isNullOrUndefined, isEventProp} from './utils';
+import {handleEvent} from './event';
+import {
+    MountedQueue, isArray, isStringOrNumber, 
+    isNullOrUndefined, isEventProp, doc as document
+} from './utils';
 
 export function render(vNode, parentDom) {
     if (isNullOrUndefined(vNode)) return;

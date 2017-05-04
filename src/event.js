@@ -1,4 +1,4 @@
-import {SimpleMap, isNullOrUndefined, createObject} from './utils';
+import {SimpleMap, isNullOrUndefined, createObject, doc as document} from './utils';
 
 const ALL_PROPS = [
     "altKey", "bubbles", "cancelable", "ctrlKey",

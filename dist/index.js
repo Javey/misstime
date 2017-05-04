@@ -2,6 +2,10 @@
 
 Object.defineProperty(exports, '__esModule', { value: true });
 
+function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
+
+var minDocument = _interopDefault(require('min-document'));
+
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) {
   return typeof obj;
 } : function (obj) {
@@ -9,6 +13,8 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 };
 
 var toString = Object.prototype.toString;
+
+var doc = typeof document === 'undefined' ? minDocument : document;
 
 var isArray = Array.isArray || function (arr) {
     return toString.call(arr) === '[object array]';
@@ -121,10 +127,13 @@ var Types = {
     HtmlElement: 2,
 
     ComponentClass: 4,
-    ComponentFunction: 8
+    ComponentFunction: 8,
+
+    HtmlComment: 16
 };
 Types.Element = Types.HtmlElement;
 Types.Component = Types.ComponentClass | Types.ComponentFunction;
+Types.TextElement = Types.Text | Types.HtmlComment;
 
 var EMPTY_OBJ = {};
 if (process.env.NODE_ENV !== 'production') {
@@ -165,6 +174,10 @@ function createVNode(tag, props, children) {
     return new VNode(type, tag, props, normalizeChildren(children));
 }
 
+function createCommentVNode(children) {
+    return new VNode(Types.HtmlComment, null, EMPTY_OBJ, children);
+}
+
 function createTextVNode(text) {
     return new VNode(Types.Text, null, EMPTY_OBJ, text);
 }
@@ -175,7 +188,7 @@ function normalizeChildren(vNodes) {
     if (isNullOrUndefined(vNodes)) return vNodes;
     var childNodes = [];
     addChild(vNodes, childNodes, 0);
-    return childNodes;
+    return childNodes.length ? childNodes : null;
 }
 
 function addChild(vNodes, children, index) {
@@ -202,6 +215,113 @@ function addChild(vNodes, children, index) {
     return hasKeyed;
 }
 
+var ALL_PROPS = ["altKey", "bubbles", "cancelable", "ctrlKey", "eventPhase", "metaKey", "relatedTarget", "shiftKey", "target", "timeStamp", "type", "view", "which"];
+var KEY_PROPS = ["char", "charCode", "key", "keyCode"];
+var MOUSE_PROPS = ["button", "buttons", "clientX", "clientY", "layerX", "layerY", "offsetX", "offsetY", "pageX", "pageY", "screenX", "screenY", "toElement"];
+
+var rkeyEvent = /^key|input/;
+var rmouseEvent = /^(?:mouse|pointer|contextmenu)|click/;
+
+function Event(e) {
+    for (var i = 0; i < ALL_PROPS.length; i++) {
+        var propKey = ALL_PROPS[i];
+        this[propKey] = e[propKey];
+    }
+
+    this._rawEvent = e;
+}
+Event.prototype.preventDefault = function () {
+    this._rawEvent.preventDefault();
+};
+Event.prototype.stopPropagation = function () {
+    var e = this._rawEvent;
+    e.cancelBubble = true;
+    e.stopImmediatePropagation();
+};
+
+function MouseEvent(e) {
+    Event.call(this, e);
+    for (var j = 0; j < MOUSE_PROPS.length; j++) {
+        var mousePropKey = MOUSE_PROPS[j];
+        this[mousePropKey] = e[mousePropKey];
+    }
+}
+MouseEvent.prototype = createObject(Event.prototype);
+MouseEvent.prototype.constructor = MouseEvent;
+
+function KeyEvent(e) {
+    Event.call(this, e);
+    for (var j = 0; j < KEY_PROPS.length; j++) {
+        var keyPropKey = KEY_PROPS[j];
+        this[keyPropKey] = e[keyPropKey];
+    }
+}
+KeyEvent.prototype = createObject(Event.prototype);
+KeyEvent.prototype.constructor = KeyEvent;
+
+function proxyEvent(e) {
+    if (rkeyEvent.test(e.type)) {
+        return new KeyEvent(e);
+    } else if (rmouseEvent.test(e.type)) {
+        return new MouseEvent(e);
+    } else {
+        return new Event(e);
+    }
+}
+
+var delegatedEvents = {};
+
+function handleEvent(name, lastEvent, nextEvent, dom) {
+    var delegatedRoots = delegatedEvents[name];
+
+    if (nextEvent) {
+        if (!delegatedRoots) {
+            delegatedRoots = { items: new SimpleMap(), docEvent: null };
+            delegatedRoots.docEvent = attachEventToDocument(name, delegatedRoots);
+            delegatedEvents[name] = delegatedRoots;
+        }
+        delegatedRoots.items.set(dom, nextEvent);
+    } else if (delegatedRoots) {
+        var items = delegatedRoots.items;
+        if (items.delete(dom)) {
+            if (items.size === 0) {
+                doc.removeEventListener(name, delegatedRoots.docEvent);
+                delete delegatedRoots[name];
+            }
+        }
+    }
+}
+
+function dispatchEvent(event, target, items, count, isClick) {
+    var eventToTrigger = items.get(target);
+    if (eventToTrigger) {
+        count--;
+        event.currentTarget = target;
+        eventToTrigger(event);
+        if (event._rawEvent.cancelBubble) {
+            return;
+        }
+    }
+    if (count > 0) {
+        var parentDom = target.parentNode;
+        if (isNullOrUndefined(parentDom) || isClick && parentDom.nodeType === 1 && parentDom.disabled) {
+            return;
+        }
+        dispatchEvent(event, parentDom, items, count, isClick);
+    }
+}
+
+function attachEventToDocument(name, delegatedRoots) {
+    var docEvent = function docEvent(event) {
+        var count = delegatedRoots.items.size;
+        if (count > 0) {
+            dispatchEvent(proxyEvent(event), event.target, delegatedRoots.items, count, event.type === 'click');
+        }
+    };
+    doc.addEventListener(name, docEvent);
+    return docEvent;
+}
+
 function render(vNode, parentDom) {
     if (isNullOrUndefined(vNode)) return;
     var mountedQueue = new MountedQueue();
@@ -221,13 +341,15 @@ function createElement(vNode, parentDom, mountedQueue) {
             return createComponentClass(vNode, parentDom, mountedQueue);
         case Types.ComponentFunction:
             return createComponentFunction(vNode, parentDom, mountedQueue);
+        case Types.HtmlComment:
+            return createCommentElement(vNode, parentDom);
         default:
             throw new Error('unknown vnode type');
     }
 }
 
 function createHtmlElement(vNode, parentDom, mountedQueue) {
-    var dom = document.createElement(vNode.tag);
+    var dom = doc.createElement(vNode.tag);
     var children = vNode.children;
     var ref = vNode.ref;
 
@@ -249,7 +371,7 @@ function createHtmlElement(vNode, parentDom, mountedQueue) {
 }
 
 function createTextElement(vNode, parentDom) {
-    var dom = document.createTextNode(vNode.children);
+    var dom = doc.createTextNode(vNode.children);
     vNode.dom = dom;
 
     if (parentDom) {
@@ -305,6 +427,17 @@ function createComponentFunction(vNode, parentDom, mountedQueue) {
     return dom;
 }
 
+function createCommentElement(vNode, parentDom) {
+    var dom = doc.createComment(vNode.children);
+    vNode.dom = dom;
+
+    if (parentDom) {
+        parentDom.appendChild(dom);
+    }
+
+    return dom;
+}
+
 function createComponentFunctionVNode(vNode) {
     var result = vNode.tag(vNode.props);
     if (isArray(result)) {
@@ -337,6 +470,7 @@ function removeElement(vNode, parentDom) {
         case Types.Element:
             return removeHtmlElement(vNode, parentDom);
         case Types.Text:
+        case Types.HtmlComment:
             return removeText(vNode, parentDom);
         case Types.ComponentFunction:
             return removeComponentFunction(vNode, parentDom);
@@ -422,113 +556,6 @@ function createRef(dom, ref, mountedQueue) {
     }
 }
 
-var ALL_PROPS = ["altKey", "bubbles", "cancelable", "ctrlKey", "eventPhase", "metaKey", "relatedTarget", "shiftKey", "target", "timeStamp", "type", "view", "which"];
-var KEY_PROPS = ["char", "charCode", "key", "keyCode"];
-var MOUSE_PROPS = ["button", "buttons", "clientX", "clientY", "layerX", "layerY", "offsetX", "offsetY", "pageX", "pageY", "screenX", "screenY", "toElement"];
-
-var rkeyEvent = /^key|input/;
-var rmouseEvent = /^(?:mouse|pointer|contextmenu)|click/;
-
-function Event(e) {
-    for (var i = 0; i < ALL_PROPS.length; i++) {
-        var propKey = ALL_PROPS[i];
-        this[propKey] = e[propKey];
-    }
-
-    this._rawEvent = e;
-}
-Event.prototype.preventDefault = function () {
-    this._rawEvent.preventDefault();
-};
-Event.prototype.stopPropagation = function () {
-    var e = this._rawEvent;
-    e.cancelBubble = true;
-    e.stopImmediatePropagation();
-};
-
-function MouseEvent(e) {
-    Event.call(this, e);
-    for (var j = 0; j < MOUSE_PROPS.length; j++) {
-        var mousePropKey = MOUSE_PROPS[j];
-        this[mousePropKey] = e[mousePropKey];
-    }
-}
-MouseEvent.prototype = createObject(Event.prototype);
-MouseEvent.prototype.constructor = MouseEvent;
-
-function KeyEvent(e) {
-    Event.call(this, e);
-    for (var j = 0; j < KEY_PROPS.length; j++) {
-        var keyPropKey = KEY_PROPS[j];
-        this[keyPropKey] = e[keyPropKey];
-    }
-}
-KeyEvent.prototype = createObject(Event.prototype);
-KeyEvent.prototype.constructor = KeyEvent;
-
-function proxyEvent(e) {
-    if (rkeyEvent.test(e.type)) {
-        return new KeyEvent(e);
-    } else if (rmouseEvent.test(e.type)) {
-        return new MouseEvent(e);
-    } else {
-        return new Event(e);
-    }
-}
-
-var delegatedEvents = {};
-
-function handleEvent$1(name, lastEvent, nextEvent, dom) {
-    var delegatedRoots = delegatedEvents[name];
-
-    if (nextEvent) {
-        if (!delegatedRoots) {
-            delegatedRoots = { items: new SimpleMap(), docEvent: null };
-            delegatedRoots.docEvent = attachEventToDocument(name, delegatedRoots);
-            delegatedEvents[name] = delegatedRoots;
-        }
-        delegatedRoots.items.set(dom, nextEvent);
-    } else if (delegatedRoots) {
-        var items = delegatedRoots.items;
-        if (items.delete(dom)) {
-            if (items.size === 0) {
-                document.removeEventListener(name, delegatedRoots.docEvent);
-                delete delegatedRoots[name];
-            }
-        }
-    }
-}
-
-function dispatchEvent(event, target, items, count, isClick) {
-    var eventToTrigger = items.get(target);
-    if (eventToTrigger) {
-        count--;
-        event.currentTarget = target;
-        eventToTrigger(event);
-        if (event._rawEvent.cancelBubble) {
-            return;
-        }
-    }
-    if (count > 0) {
-        var parentDom = target.parentNode;
-        if (isNullOrUndefined(parentDom) || isClick && parentDom.nodeType === 1 && parentDom.disabled) {
-            return;
-        }
-        dispatchEvent(event, parentDom, items, count, isClick);
-    }
-}
-
-function attachEventToDocument(name, delegatedRoots) {
-    var docEvent = function docEvent(event) {
-        var count = delegatedRoots.items.size;
-        if (count > 0) {
-            dispatchEvent(proxyEvent(event), event.target, delegatedRoots.items, count, event.type === 'click');
-        }
-    };
-    document.addEventListener(name, docEvent);
-    return docEvent;
-}
-
 function patch(lastVNode, nextVNode, parentDom) {
     var mountedQueue = new MountedQueue();
     var dom = patchVNode(lastVNode, nextVNode, parentDom, mountedQueue);
@@ -547,8 +574,8 @@ function patchVNode(lastVNode, nextVNode, parentDom, mountedQueue) {
             } else {
                 replaceElement(lastVNode, nextVNode, parentDom, mountedQueue);
             }
-        } else if (nextType & Types.Text) {
-            if (lastType & Types.Text) {
+        } else if (nextType & Types.TextElement) {
+            if (lastType & Types.TextElement) {
                 patchText(lastVNode, nextVNode);
             } else {
                 replaceElement(lastVNode, nextVNode, parentDom, mountedQueue);
@@ -925,7 +952,7 @@ function removeProp(propName, dom, lastProps) {
         } else if (propName === 'style') {
             dom.style.cssText = '';
         } else if (isEventProp(propName)) {
-            handleEvent$1(propName.substr(3), lastValue, null, dom);
+            handleEvent(propName.substr(3), lastValue, null, dom);
         } else if (typeof lastValue === 'string' || typeof domProp === 'string') {
             dom[propName] = '';
         } else if ((typeof lastValue === 'undefined' ? 'undefined' : _typeof(lastValue)) === 'object') {
@@ -1030,10 +1057,11 @@ function patchStyle(lastValue, nextValue, dom) {
 function patchEvent(propName, nextValue, dom, lastProps) {
     var lastValue = lastProps && lastProps[propName] || null;
     if (lastValue !== nextValue) {
-        handleEvent$1(propName.substr(3), lastValue, nextValue, dom);
+        handleEvent(propName.substr(3), lastValue, nextValue, dom);
     }
 }
 
 exports.h = createVNode;
 exports.patch = patch;
 exports.render = render;
+exports.hc = createCommentVNode;

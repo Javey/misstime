@@ -80,6 +80,32 @@ describe('Patch', () => {
         );
     });
 
+    it('patch empty children', () => {
+        eql(
+            h('div', null, [undefined]),
+            h('div', null, [null]),
+            '<div></div>'
+        );
+
+        eql(
+            h('div', null, []),
+            h('div', null, []),
+            '<div></div>'
+        );
+
+        eql(
+            h('div', null, [null]),
+            h('div', null, []),
+            '<div></div>'
+        );
+
+        eql(
+            h('div', null, []),
+            h('div', null, [undefined]),
+            '<div></div>'
+        );
+    });
+
     it('patch comment', () => {
         eql(
             hc('div'),
@@ -418,6 +444,14 @@ describe('Patch', () => {
             container.firstChild.firstChild.click();
             sEql(fn.callCount, 0);
             sEql(newFn.callCount, 1);
+        });
+
+        it('remove element should remove child node event', () => {
+            const fn = sinon.spy();
+            p(
+                h('div', null, h('div', null, h('div', {'ev-click': fn}))),
+                h('div')
+            );
         });
     });
 
