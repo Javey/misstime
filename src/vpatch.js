@@ -178,11 +178,11 @@ function patchChildrenByKey(a, b, dom, mountedQueue) {
 
         if (aStartNode.key === bEndNode.key) {
             patchVNode(aStartNode, bEndNode, dom, mountedQueue); 
-            insertOrAppend(bEnd, bLength, bEndNode, a, dom);
+            insertOrAppend(bEnd, bLength, bEndNode.dom, b, dom);
             ++aStart;
             --bEnd;
             aStartNode = a[aStart];
-            bEndNode = b[eEnd];
+            bEndNode = b[bEnd];
             continue;
         }
         break;
@@ -190,7 +190,11 @@ function patchChildrenByKey(a, b, dom, mountedQueue) {
 
     if (aStart > aEnd) {
         while (bStart <= bEnd) {
-            insertOrAppend(bEnd, bLength, createElement(b[bStart]), a, dom);
+            insertOrAppend(
+                bEnd, bLength, 
+                createElement(b[bStart], null, mountedQueue),
+                b, dom
+            );
             ++bStart;
         }
     } else if (bStart > bEnd) {
@@ -257,15 +261,17 @@ function patchChildrenByKey(a, b, dom, mountedQueue) {
         if (aLength === a.length && patched === 0) {
             removeAllChildren(dom, a);
             while (bStart < bLength) {
-                dom.appendChild(createElement(b[bStart]));
+                createElement(b[bStart], dom, mountedQueue);
                 ++bStart;
             }
         } else {
             i = aLength - patched;
             while (i > 0) {
                 aNode = a[aStart++];
-                removeElement(aNode, dom);
-                --i;
+                if (aNode !== null) {
+                    removeElement(aNode, dom);
+                    --i;
+                }
             }
             if (moved) {
                 const seq = lisAlgorithm(sources);
@@ -275,7 +281,7 @@ function patchChildrenByKey(a, b, dom, mountedQueue) {
                         pos = i + bStart;
                         insertOrAppend(
                             pos, b.length, 
-                            createElement(b[pos], dom), 
+                            createElement(b[pos], null, mountedQueue), 
                             b, dom
                         );
                     } else {
@@ -293,7 +299,7 @@ function patchChildrenByKey(a, b, dom, mountedQueue) {
                         pos = i + bStart;
                         insertOrAppend(
                             pos, b.length,
-                            createElement(b[pos], dom),
+                            createElement(b[pos], null, mountedQueue),
                             b, dom
                         );
                     }

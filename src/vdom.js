@@ -133,8 +133,9 @@ export function removeElements(vNodes, parentDom) {
 export function removeElement(vNode, parentDom) {
     switch (vNode.type) {
         case Types.Element:
-        case Types.Text:
             return removeHtmlElement(vNode, parentDom); 
+        case Types.Text:
+            return removeText(vNode, parentDom);
         case Types.ComponentFunction:
             return removeComponentFunction(vNode, parentDom); 
         case Types.ComponentClass:
@@ -165,6 +166,12 @@ export function removeHtmlElement(vNode, parentDom) {
         parentDom.removeChild(dom);
     }
 }
+
+export function removeText(vNode, parentDom) {
+    if (parentDom) {
+        parentDom.removeChild(vNode.dom);
+    }
+} 
 
 export function removeComponentFunction(vNode, parentDom) {
     const ref = vNode.ref;

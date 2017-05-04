@@ -13,8 +13,22 @@ class ClassComponent {
     }
 } 
 
+class NewComponent {
+    constructor(props) {
+        this.props = props;
+    }
+    init() {
+        return this.dom = render(h('section', this.props, this.props.children));
+    }
+}
+
+
 function FunctionComponent(props) {
     return h('p', props, props.children);
+}
+
+function NewFunctionComponent(props) {
+    return h('article', props, props.children);
 }
 
 
@@ -307,6 +321,22 @@ describe('Patch', () => {
         );
     });
 
+    it('patch class component with class component', () => {
+        eql(
+            h('div', null, h(ClassComponent)),
+            h('div', null, h(NewComponent)),
+            '<div><section></section></div>'
+        );
+    });
+
+    it('patch function component with function component', () => {
+        eql(
+            h('div', null, h(FunctionComponent)),
+            h('div', null, h(NewFunctionComponent)),
+            '<div><article></article></div>'
+        );
+    });
+
     it('remove function component', () => {
         const o = {};
         eql(
@@ -385,7 +415,7 @@ describe('Patch', () => {
 
     describe('Key', () => {
         function createVNodeFromArray(arr) {
-            return h('div', null, arr.map(value => h('span', {key: value})));
+            return h('div', null, arr.map(value => h('span', {key: value}, value)));
         }
         function saveChildren() {
             return Array.prototype.slice.call(container.firstChild.children, 0);
@@ -466,7 +496,7 @@ describe('Patch', () => {
             run(FunctionComponent);
         });
 
-        it('key in class component with element', () => {
+        it('key in both component and element', () => {
             const vNode = h('div', null, [
                 h('div', {key: 1}),
                 h(ClassComponent, {key: 2}),
@@ -483,6 +513,198 @@ describe('Patch', () => {
             [2, 0, 1].forEach((order, index) => {
                 sEql(container.firstChild.children[index], childNodes[order]);
             });
+        });
+
+        describe('Delete & Insert', () => {
+            let children;
+            let childNodes;
+
+            function create(lastKeys, nextKeys) {
+                const vNode = createVNodeFromArray(lastKeys);
+                r(vNode);
+                childNodes = saveChildren();
+                patch(vNode, createVNodeFromArray(nextKeys));
+                children = container.firstChild.children;
+            }
+
+            it('delete key at the start', () => {
+                create([1, 2, 3], [2, 3]);
+                sEql(children.length, 2);
+                sEql(children[0], childNodes[1]);
+                sEql(children[1], childNodes[2]);
+            });
+
+            it('delete key at the center', () => {
+                create([1, 2, 3], [1, 3]);
+                sEql(children.length, 2);
+                sEql(children[0], childNodes[0]);
+                sEql(children[1], childNodes[2]);
+            });
+
+            it('delete key at the end', () => {
+                create([1, 2, 3], [1, 2]);
+                sEql(children.length, 2);
+                sEql(children[0], childNodes[0]);
+                sEql(children[1], childNodes[1]);
+            });
+
+            it('insert key to the start', () => {
+                create([2, 3], [1, 2, 3]);
+                sEql(children.length, 3);
+                sEql(children[1], childNodes[0]);
+                sEql(children[2], childNodes[1]);
+            });
+
+            it('insert key to the center', () => {
+                create([1, 3], [1, 2, 3]);
+                sEql(children.length, 3);
+                sEql(children[0], childNodes[0]);
+                sEql(children[2], childNodes[1]);
+            });
+
+            it('insert key to the end', () => {
+                create([1, 2], [1, 2, 3]);
+                sEql(children.length, 3);
+                sEql(children[0], childNodes[0]);
+                sEql(children[1], childNodes[1]);
+            });
+
+            it('insert to start and delete from center', () => {
+                create([2, 3, 4], [1, 2, 4]);
+                sEql(children.length, 3);
+                sEql(children[1], childNodes[0]);
+                sEql(children[2], childNodes[2]);
+            });
+
+            it('insert to end and delete from center', () => {
+                create([1, 2, 3], [1, 3, 4]);
+                sEql(children.length, 3);
+                sEql(children[0], childNodes[0]);
+                sEql(children[1], childNodes[2]);
+            });
+
+            it('insert multiple keys and delete multiple keys', () => {
+                create([1, 2, 3, 4, 5, 6, 7, 8], [11, 3, 5, 4, 9, 10, 1]);
+                sEql(children.length, 7);
+                [[1, 2], [2, 4], [3, 3], [6, 0]].forEach(([order, index]) => {
+                    sEql(children[order], childNodes[index]);
+                });
+            });
+
+            it('replace all keys', () => {
+                create([1, 2, 3], [4, 5, 6, 7]);
+                sEql(children.length, 4);
+                for (let i = 0; i < 4; i++) {
+                    sEql(children[i] === childNodes[i], false);
+                }
+            });
+        });
+    });
+
+    describe('Component', () => {
+        let Component;
+        let NewComponent;
+        let _p;
+        let _np;
+
+        beforeEach(() => {
+            function createComponent() {
+                function Component(props) {
+                    this.props = props;
+                }
+                Component.prototype.init = sinon.spy(function() {
+                    return this.dom = render(h('span', this.props, this.props.children));
+                });
+                Component.prototype.mount = sinon.spy();
+                Component.prototype.update = sinon.spy(function() {
+                    return render(h('div', this.props, this.props.children));
+                });
+                Component.prototype.destroy = sinon.spy();
+
+                return Component;
+            }
+
+            Component = createComponent();
+            _p = Component.prototype;
+            NewComponent = createComponent();
+            _np = NewComponent.prototype;
+        });
+
+        it('call init and mount method once and don\'t call update and destroy method when render', () => {
+            r(h(Component));
+
+            sEql(_p.init.callCount, 1);
+            sEql(_p.mount.callCount, 1);
+            sEql(_p.update.callCount, 0);
+            sEql(_p.destroy.callCount, 0);
+            sEql(_p.mount.calledAfter(_p.init), true);
+        });
+
+        it('only call update method once when update', () => {
+            eql(h(Component), h(Component), '<div></div>');
+
+            sEql(_p.init.callCount, 1);
+            sEql(_p.mount.callCount, 1);
+            sEql(_p.update.callCount, 1);
+            sEql(_p.destroy.callCount, 0);
+            sEql(_p.update.calledAfter(_p.mount), true);
+        });
+
+        it('only call destroy method once when destroy', () => {
+            p(h(Component), h(NewComponent));
+
+            sEql(_p.init.callCount, 1);
+            sEql(_p.mount.callCount, 1);
+            sEql(_p.update.callCount, 0);
+            sEql(_p.destroy.callCount, 1);
+            sEql(_p.destroy.calledAfter(_p.mount), true);
+
+            sEql(_np.init.callCount, 1);
+            sEql(_np.mount.callCount, 1);
+            sEql(_np.update.callCount, 0);
+            sEql(_np.destroy.callCount, 0);
+        });
+
+        it('this should pointer to the instance of component', () => {
+            p(h(Component), h(NewComponent));
+
+            sEql(_p.init.thisValues[0] instanceof Component, true);
+            sEql(_p.mount.thisValues[0] instanceof Component, true);
+            sEql(_p.destroy.thisValues[0] instanceof Component, true);
+            sEql(_np.init.thisValues[0] instanceof NewComponent, true);
+            sEql(_np.mount.thisValues[0] instanceof NewComponent, true);
+        });
+
+        it('don\'t replace when return the same dom between different components', () => {
+            _np.init = function(lastVNode, vNode) {
+                return this.dom = lastVNode.dom;
+            };
+
+            const vNode = h(Component);
+            r(vNode);
+            const dom = container.firstChild;
+            patch(vNode, h(NewComponent));
+            sEql(dom, container.firstChild);
+        });
+
+        it('check the args for method when update', () => {
+            const lastVNode = h(Component);
+            const nextVNode = h(Component);
+            p(lastVNode, nextVNode);
+
+            sEql(_p.init.calledWithExactly(undefined, lastVNode), true); 
+            sEql(_p.mount.calledWithExactly(undefined, lastVNode), true);
+            sEql(_p.update.calledWithExactly(lastVNode, nextVNode), true);
+        });
+
+        it('check the args for method when destroy', () => {
+            const lastVNode = h(Component);
+            const nextVNode = h(NewComponent);
+            p(lastVNode, nextVNode);
+
+            sEql(_p.init.calledWithExactly(undefined, lastVNode), true); 
+            sEql(_p.mount.calledWithExactly(undefined, lastVNode), true);
+            sEql(_p.destroy.calledWithExactly(lastVNode, nextVNode), true);
         });
     });
 });

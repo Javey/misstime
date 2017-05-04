@@ -36,7 +36,6 @@ export const indexOf = (function() {
             return -1;
         };
     }
-    
 })();
 
 export const SimpleMap = typeof Map === 'function' ? Map : (function() {
