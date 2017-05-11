@@ -134,9 +134,14 @@ export function createComponentFunctionVNode(vNode) {
 }
 
 export function createElements(vNodes, parentDom, mountedQueue) {
-    if (isNullOrUndefined(vNodes)) return;
-    for (let i = 0; i < vNodes.length; i++) {
-        createElement(vNodes[i], parentDom, mountedQueue);
+    if (isNullOrUndefined(vNodes)) {
+        return;
+    } else if (isArray(vNodes)) {
+        for (let i = 0; i < vNodes.length; i++) {
+            createElement(vNodes[i], parentDom, mountedQueue);
+        }
+    } else {
+        createElement(vNodes, parentDom, mountedQueue);
     }
 }
 

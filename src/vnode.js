@@ -66,31 +66,45 @@ export function createVoidVNode() {
 
 function normalizeChildren(vNodes) {
     if (isNullOrUndefined(vNodes)) return vNodes;
-    const childNodes = [];
-    addChild(vNodes, childNodes, 0);
-    return childNodes.length ? childNodes : null;
+    if (isStringOrNumber(vNodes)) return createTextVNode(vNodes);
+    if (isArray(vNodes)) {
+        const childNodes = addChild(vNodes, {index: 0});
+        return childNodes.length ? childNodes : null;
+    }
+    return vNodes;
 }
 
-function addChild(vNodes, children, index) {
-    let hasKeyed = true;
-    if (isNullOrUndefined(vNodes)) {
-        vNodes = createTextVNode('');
-    } else if (isArray(vNodes)) {
-        for (let i = 0; i < vNodes.length; i++) {
-            if (addChild(vNodes[i], children, index + i)) {
-                --index;
+function applyKey(vNode, reference) {
+    if (isNullOrUndefined(vNode.key)) {
+        vNode.key = `.$${reference.index++}`;
+    }
+    return vNode;
+}
+
+function addChild(vNodes, reference) {
+    let newVNodes;
+    for (let i = 0; i < vNodes.length; i++) {
+        const n = vNodes[i];
+        if (isNullOrUndefined(n)) {
+            if (!newVNodes) {
+                newVNodes = vNodes.slice(0, i);
             }
+        } else if (isArray(n)) {
+            if (!newVNodes) {
+                newVNodes = vNodes.slice(0, i);
+            }
+            newVNodes = newVNodes.concat(addChild(n, reference));
+        } else if (isStringOrNumber(n)) {
+            if (!newVNodes) {
+                newVNodes = vNodes.slice(0, i);
+            }
+            newVNodes.push(applyKey(createTextVNode(n), reference));
+        } else if (n.type) {
+            if (!newVNodes) {
+                newVNodes = vNodes.slice(0, i);
+            }
+            newVNodes.push(applyKey(n, reference));
         }
-        return;
-    } else if (isStringOrNumber(vNodes)) {
-        vNodes = createTextVNode(vNodes);
-    } else if (!vNodes.type){
-        throw new Error(`expect a vNode, but got ${vNodes}`);
     }
-    if (isNullOrUndefined(vNodes.key)) {
-        vNodes.key = `.$${index}`;
-        hasKeyed = false;
-    }
-    children.push(vNodes);
-    return hasKeyed;
+    return newVNodes || vNodes;
 }

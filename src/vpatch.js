@@ -405,11 +405,11 @@ export function patchProps(lastVNode, nextVNode) {
         }
     }
     if (!isNullOrUndefined(lastProps)) {
-        for (propName in lastProps) {
-            if (!(propName in nextProps)) {
-                removeProp(propName, dom, lastProps);
-            } 
-        }
+        // for (propName in lastProps) {
+            // if (!(propName in nextProps)) {
+                // removeProp(propName, dom, lastProps);
+            // } 
+        // }
     }
 }
 

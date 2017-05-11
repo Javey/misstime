@@ -919,138 +919,25 @@ function patchProps(lastVNode, nextVNode) {
 
         var propValue = nextProps[propName];
         if (isNullOrUndefined(propValue)) {
-            removeProp(propName, dom, lastProps);
+            // removeProp(propName, dom, lastProps);
         } else if (isEventProp(propName)) {
             patchEvent(propName, propValue, dom, lastProps);
         } else if (isObject(propValue)) {
-            patchPropByObject(propName, propValue, dom, lastProps);
+            // patchPropByObject(propName, propValue, dom, lastProps);
         } else if (propName === 'style') {
-            dom.style.cssText = propValue;
+            // dom.style.cssText = propValue;
         } else {
-            try {
-                dom[propName] = propValue;
-            } catch (e) {}
+            // try {
+            dom[propName] = propValue;
+            // } catch (e) {}
         }
     }
     if (!isNullOrUndefined(lastProps)) {
-        for (propName in lastProps) {
-            if (!(propName in nextProps)) {
-                removeProp(propName, dom, lastProps);
-            }
-        }
-    }
-}
-
-function removeProp(propName, dom, lastProps) {
-    if (!isNullOrUndefined(lastProps)) {
-        var lastValue = lastProps[propName];
-        var domProp = dom[propName];
-        if (propName === 'attributes') {
-            for (var key in lastValue) {
-                dom.removeAttribute(key);
-            }
-        } else if (propName === 'style') {
-            dom.style.cssText = '';
-        } else if (isEventProp(propName)) {
-            handleEvent(propName.substr(3), lastValue, null, dom);
-        } else if (typeof lastValue === 'string' || typeof domProp === 'string') {
-            dom[propName] = '';
-        } else if ((typeof lastValue === 'undefined' ? 'undefined' : _typeof(lastValue)) === 'object') {
-            try {
-                dom[propName] = undefined;
-                delete dom[propName];
-            } catch (e) {
-                for (var _key in lastValue) {
-                    delete domProp[_key];
-                }
-            }
-        } else {
-            delete dom[propName];
-        }
-    }
-}
-
-function patchPropByObject(propName, propValue, dom, lastProps) {
-    var lastPropValue = void 0;
-    if (lastProps) {
-        lastPropValue = lastProps[propName];
-        if (!isObject(lastPropValue) && !isNullOrUndefined(lastPropValue)) {
-            removeProp(propName, dom, lastProps);
-            lastPropValue = null;
-        }
-    }
-    switch (propName) {
-        case 'attributes':
-            return patchAttributes(lastPropValue, propValue, dom);
-        case 'style':
-            return patchStyle(lastPropValue, propValue, dom);
-        default:
-            return patchObject(propName, lastPropValue, propValue, dom);
-    }
-}
-
-function patchObject(propName, lastValue, nextValue, dom) {
-    var domProps = dom[propName];
-    if (isNullOrUndefined(domProps)) {
-        domProps = dom[propName] = {};
-    }
-    var key = void 0;
-    var value = void 0;
-    for (key in nextValue) {
-        domProps[key] = nextValue[key];
-    }
-    if (!isNullOrUndefined(lastValue)) {
-        for (key in lastValue) {
-            if (isNullOrUndefined(nextValue[key])) {
-                // domProps[key] = undefined;
-                delete domProps[key];
-            }
-        }
-    }
-}
-
-function patchAttributes(lastValue, nextValue, dom) {
-    var hasRemoved = {};
-    var key = void 0;
-    var value = void 0;
-    for (key in nextValue) {
-        value = nextValue[key];
-        if (isNullOrUndefined(value)) {
-            dom.removeAttribute(key);
-            hasRemoved[key] = true;
-        } else {
-            dom.setAttribute(key, value);
-        }
-    }
-    if (!isNullOrUndefined(lastValue)) {
-        for (key in lastValue) {
-            if (isNullOrUndefined(nextValue[key]) && !hasRemoved[key]) {
-                dom.removeAttribute(key);
-            }
-        }
-    }
-}
-
-function patchStyle(lastValue, nextValue, dom) {
-    var domStyle = dom.style;
-    var hasRemoved = {};
-    var key = void 0;
-    var value = void 0;
-    for (key in nextValue) {
-        value = nextValue[key];
-        if (isNullOrUndefined(value)) {
-            domStyle[key] = '';
-            hasRemoved[key] = true;
-        } else {
-            domStyle[key] = value;
-        }
-    }
-    if (!isNullOrUndefined(lastValue)) {
-        for (key in lastValue) {
-            if (isNullOrUndefined(nextValue[key]) && !hasRemoved[key]) {
-                domStyle[key] = '';
-            }
-        }
+        // for (propName in lastProps) {
+        // if (!(propName in nextProps)) {
+        // removeProp(propName, dom, lastProps);
+        // } 
+        // }
     }
 }
 
