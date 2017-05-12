@@ -9,7 +9,8 @@
   "scripts": {
     "test": "mocha --compilers js:babel-core/register test/vnode.js",
     "build": "rollup --config rollup.config.js",
-    "karma": "karma start"
+    "karma:benchmark": "karma start karma.benchmark.conf.js",
+    "karma:test": "karma start karma.mocha.conf.js"
   },
   "author": "",
   "license": "ISC",

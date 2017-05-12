@@ -12,7 +12,7 @@ import {
     createRef,
     replaceChild
 } from './vdom';
-import {isObject, isNullOrUndefined, skipProps, MountedQueue, isEventProp} from './utils';
+import {isObject, isArray, isNullOrUndefined, skipProps, MountedQueue, isEventProp} from './utils';
 import {handleEvent} from './event';
 
 export function patch(lastVNode, nextVNode, parentDom) {
@@ -120,8 +120,18 @@ function patchChildren(lastChildren, nextChildren, parentDom, mountedQueue) {
         createElements(nextChildren, parentDom, mountedQueue);
     } else if (isNullOrUndefined(nextChildren)) {
         removeElements(lastChildren, parentDom); 
+    } else if (isArray(lastChildren)) {
+        if (isArray(nextChildren)) {
+            patchChildrenByKey(lastChildren, nextChildren, parentDom, mountedQueue);
+        } else {
+            removeElements(lastChildren, parentDom);
+            createElement(nextChildren, parentDom, mountedQueue);
+        }
+    } else if (isArray(nextChildren)) {
+        removeElement(lastChildren, parentDom);
+        createElements(nextChildren, parentDom, mountedQueue);
     } else {
-        patchChildrenByKey(lastChildren, nextChildren, parentDom, mountedQueue);
+        patchVNode(lastChildren, nextChildren, parentDom, mountedQueue);
     }
 }
 
@@ -405,11 +415,11 @@ export function patchProps(lastVNode, nextVNode) {
         }
     }
     if (!isNullOrUndefined(lastProps)) {
-        // for (propName in lastProps) {
-            // if (!(propName in nextProps)) {
-                // removeProp(propName, dom, lastProps);
-            // } 
-        // }
+        for (propName in lastProps) {
+            if (!(propName in nextProps)) {
+                removeProp(propName, dom, lastProps);
+            } 
+        }
     }
 }
 
