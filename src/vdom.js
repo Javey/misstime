@@ -41,7 +41,7 @@ export function createHtmlElement(vNode, parentDom, mountedQueue) {
 
     createElements(children, dom, mountedQueue);
 
-    patchProps(null, vNode);
+    // patchProps(null, vNode);
 
     if (!isNullOrUndefined(ref)) {
         createRef(dom, ref, mountedQueue);
@@ -140,6 +140,9 @@ export function createElements(vNodes, parentDom, mountedQueue) {
         for (let i = 0; i < vNodes.length; i++) {
             createElement(vNodes[i], parentDom, mountedQueue);
         }
+    } else if (vNodes.type & Types.Text) {
+        // if children is a text node, set it directlty
+        parentDom.textContent = vNodes.children;  
     } else {
         createElement(vNodes, parentDom, mountedQueue);
     }

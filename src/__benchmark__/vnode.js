@@ -1,12 +1,12 @@
 import {Store} from './store.es6';
 import {createVNode} from 'inferno';
-import {createVNode as h} from '../vnode';
+import {mount} from 'inferno/dist/DOM/mounting';
+import {h} from '../index';
+import {createElement as r} from '../vdom';
 
 const store = new Store();
 store.runLots();
-
-process.env.NODE_ENV = 'production';
-
+process.env.NODE_ENV = 'production'; 
 suite('test', () => {
     function createRows() {
         var rows = [];
@@ -64,12 +64,22 @@ suite('test', () => {
         return h('tbody', null, rows);
     }
 
-    benchmark('inferno', () => { 
-        createRows();
+    // benchmark('inferno', () => { 
+        // createRows();
+    // });
+
+    // benchmark('miss', () => {
+        // var a = createRowsByMiss();
+    // });
+
+    benchmark('inferno render', () => {
+        const vNodes = createRows();
+        mount(vNodes, document.createElement('div'));
     });
 
-    benchmark('miss', () => {
-        var a = createRowsByMiss();
+    benchmark('miss render', () => {
+        const vNodes1 = createRowsByMiss();
+        r(vNodes1, document.createElement('div'));
     });
 
     // benchmark('push', () => {

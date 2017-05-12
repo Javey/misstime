@@ -186,33 +186,47 @@ function createTextVNode(text) {
 
 function normalizeChildren(vNodes) {
     if (isNullOrUndefined(vNodes)) return vNodes;
-    var childNodes = [];
-    addChild(vNodes, childNodes, 0);
-    return childNodes.length ? childNodes : null;
+    if (isStringOrNumber(vNodes)) return createTextVNode(vNodes);
+    if (isArray(vNodes)) {
+        var childNodes = addChild(vNodes, { index: 0 });
+        return childNodes.length ? childNodes : null;
+    }
+    return vNodes;
 }
 
-function addChild(vNodes, children, index) {
-    var hasKeyed = true;
-    if (isNullOrUndefined(vNodes)) {
-        vNodes = createTextVNode('');
-    } else if (isArray(vNodes)) {
-        for (var i = 0; i < vNodes.length; i++) {
-            if (addChild(vNodes[i], children, index + i)) {
-                --index;
+function applyKey(vNode, reference) {
+    if (isNullOrUndefined(vNode.key)) {
+        vNode.key = '.$' + reference.index++;
+    }
+    return vNode;
+}
+
+function addChild(vNodes, reference) {
+    var newVNodes = void 0;
+    for (var i = 0; i < vNodes.length; i++) {
+        var n = vNodes[i];
+        if (isNullOrUndefined(n)) {
+            if (!newVNodes) {
+                newVNodes = vNodes.slice(0, i);
             }
+        } else if (isArray(n)) {
+            if (!newVNodes) {
+                newVNodes = vNodes.slice(0, i);
+            }
+            newVNodes = newVNodes.concat(addChild(n, reference));
+        } else if (isStringOrNumber(n)) {
+            if (!newVNodes) {
+                newVNodes = vNodes.slice(0, i);
+            }
+            newVNodes.push(applyKey(createTextVNode(n), reference));
+        } else if (n.type) {
+            if (!newVNodes) {
+                newVNodes = vNodes.slice(0, i);
+            }
+            newVNodes.push(applyKey(n, reference));
         }
-        return;
-    } else if (isStringOrNumber(vNodes)) {
-        vNodes = createTextVNode(vNodes);
-    } else if (!vNodes.type) {
-        throw new Error('expect a vNode, but got ' + vNodes);
     }
-    if (isNullOrUndefined(vNodes.key)) {
-        vNodes.key = '.$' + index;
-        hasKeyed = false;
-    }
-    children.push(vNodes);
-    return hasKeyed;
+    return newVNodes || vNodes;
 }
 
 var ALL_PROPS = ["altKey", "bubbles", "cancelable", "ctrlKey", "eventPhase", "metaKey", "relatedTarget", "shiftKey", "target", "timeStamp", "type", "view", "which"];
@@ -452,16 +466,26 @@ function createComponentFunctionVNode(vNode) {
 }
 
 function createElements(vNodes, parentDom, mountedQueue) {
-    if (isNullOrUndefined(vNodes)) return;
-    for (var i = 0; i < vNodes.length; i++) {
-        createElement(vNodes[i], parentDom, mountedQueue);
+    if (isNullOrUndefined(vNodes)) {
+        return;
+    } else if (isArray(vNodes)) {
+        for (var i = 0; i < vNodes.length; i++) {
+            createElement(vNodes[i], parentDom, mountedQueue);
+        }
+    } else {
+        createElement(vNodes, parentDom, mountedQueue);
     }
 }
 
 function removeElements(vNodes, parentDom) {
-    if (isNullOrUndefined(vNodes)) return;
-    for (var i = 0; i < vNodes.length; i++) {
-        removeElement(vNodes[i], parentDom);
+    if (isNullOrUndefined(vNodes)) {
+        return;
+    } else if (isArray(vNodes)) {
+        for (var i = 0; i < vNodes.length; i++) {
+            removeElement(vNodes[i], parentDom);
+        }
+    } else {
+        removeElement(vNodes, parentDom);
     }
 }
 
@@ -661,8 +685,18 @@ function patchChildren(lastChildren, nextChildren, parentDom, mountedQueue) {
         createElements(nextChildren, parentDom, mountedQueue);
     } else if (isNullOrUndefined(nextChildren)) {
         removeElements(lastChildren, parentDom);
+    } else if (isArray(lastChildren)) {
+        if (isArray(nextChildren)) {
+            patchChildrenByKey(lastChildren, nextChildren, parentDom, mountedQueue);
+        } else {
+            removeElements(lastChildren, parentDom);
+            createElement(nextChildren, parentDom, mountedQueue);
+        }
+    } else if (isArray(nextChildren)) {
+        removeElement(lastChildren, parentDom);
+        createElements(nextChildren, parentDom, mountedQueue);
     } else {
-        patchChildrenByKey(lastChildren, nextChildren, parentDom, mountedQueue);
+        patchVNode(lastChildren, nextChildren, parentDom, mountedQueue);
     }
 }
 
@@ -919,25 +953,138 @@ function patchProps(lastVNode, nextVNode) {
 
         var propValue = nextProps[propName];
         if (isNullOrUndefined(propValue)) {
-            // removeProp(propName, dom, lastProps);
+            removeProp(propName, dom, lastProps);
         } else if (isEventProp(propName)) {
             patchEvent(propName, propValue, dom, lastProps);
         } else if (isObject(propValue)) {
-            // patchPropByObject(propName, propValue, dom, lastProps);
+            patchPropByObject(propName, propValue, dom, lastProps);
         } else if (propName === 'style') {
-            // dom.style.cssText = propValue;
+            dom.style.cssText = propValue;
         } else {
-            // try {
-            dom[propName] = propValue;
-            // } catch (e) {}
+            try {
+                dom[propName] = propValue;
+            } catch (e) {}
         }
     }
     if (!isNullOrUndefined(lastProps)) {
-        // for (propName in lastProps) {
-        // if (!(propName in nextProps)) {
-        // removeProp(propName, dom, lastProps);
-        // } 
-        // }
+        for (propName in lastProps) {
+            if (!(propName in nextProps)) {
+                removeProp(propName, dom, lastProps);
+            }
+        }
+    }
+}
+
+function removeProp(propName, dom, lastProps) {
+    if (!isNullOrUndefined(lastProps)) {
+        var lastValue = lastProps[propName];
+        var domProp = dom[propName];
+        if (propName === 'attributes') {
+            for (var key in lastValue) {
+                dom.removeAttribute(key);
+            }
+        } else if (propName === 'style') {
+            dom.style.cssText = '';
+        } else if (isEventProp(propName)) {
+            handleEvent(propName.substr(3), lastValue, null, dom);
+        } else if (typeof lastValue === 'string' || typeof domProp === 'string') {
+            dom[propName] = '';
+        } else if ((typeof lastValue === 'undefined' ? 'undefined' : _typeof(lastValue)) === 'object') {
+            try {
+                dom[propName] = undefined;
+                delete dom[propName];
+            } catch (e) {
+                for (var _key in lastValue) {
+                    delete domProp[_key];
+                }
+            }
+        } else {
+            delete dom[propName];
+        }
+    }
+}
+
+function patchPropByObject(propName, propValue, dom, lastProps) {
+    var lastPropValue = void 0;
+    if (lastProps) {
+        lastPropValue = lastProps[propName];
+        if (!isObject(lastPropValue) && !isNullOrUndefined(lastPropValue)) {
+            removeProp(propName, dom, lastProps);
+            lastPropValue = null;
+        }
+    }
+    switch (propName) {
+        case 'attributes':
+            return patchAttributes(lastPropValue, propValue, dom);
+        case 'style':
+            return patchStyle(lastPropValue, propValue, dom);
+        default:
+            return patchObject(propName, lastPropValue, propValue, dom);
+    }
+}
+
+function patchObject(propName, lastValue, nextValue, dom) {
+    var domProps = dom[propName];
+    if (isNullOrUndefined(domProps)) {
+        domProps = dom[propName] = {};
+    }
+    var key = void 0;
+    var value = void 0;
+    for (key in nextValue) {
+        domProps[key] = nextValue[key];
+    }
+    if (!isNullOrUndefined(lastValue)) {
+        for (key in lastValue) {
+            if (isNullOrUndefined(nextValue[key])) {
+                // domProps[key] = undefined;
+                delete domProps[key];
+            }
+        }
+    }
+}
+
+function patchAttributes(lastValue, nextValue, dom) {
+    var hasRemoved = {};
+    var key = void 0;
+    var value = void 0;
+    for (key in nextValue) {
+        value = nextValue[key];
+        if (isNullOrUndefined(value)) {
+            dom.removeAttribute(key);
+            hasRemoved[key] = true;
+        } else {
+            dom.setAttribute(key, value);
+        }
+    }
+    if (!isNullOrUndefined(lastValue)) {
+        for (key in lastValue) {
+            if (isNullOrUndefined(nextValue[key]) && !hasRemoved[key]) {
+                dom.removeAttribute(key);
+            }
+        }
+    }
+}
+
+function patchStyle(lastValue, nextValue, dom) {
+    var domStyle = dom.style;
+    var hasRemoved = {};
+    var key = void 0;
+    var value = void 0;
+    for (key in nextValue) {
+        value = nextValue[key];
+        if (isNullOrUndefined(value)) {
+            domStyle[key] = '';
+            hasRemoved[key] = true;
+        } else {
+            domStyle[key] = value;
+        }
+    }
+    if (!isNullOrUndefined(lastValue)) {
+        for (key in lastValue) {
+            if (isNullOrUndefined(nextValue[key]) && !hasRemoved[key]) {
+                domStyle[key] = '';
+            }
+        }
     }
 }
 
