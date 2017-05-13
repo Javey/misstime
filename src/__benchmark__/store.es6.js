@@ -33,8 +33,8 @@ export class Store {
         this.data = this.buildData();
         this.selected = undefined;
     }
-    add() {
-        this.data = this.data.concat(this.buildData(1000));
+    add(count = 1000) {
+        this.data = this.data.concat(this.buildData(count));
     }
     update() {
         this.updateData();

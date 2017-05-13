@@ -5,7 +5,7 @@ import {h} from '../index';
 import {createElement as r} from '../vdom';
 
 const store = new Store();
-store.runLots();
+store.add();
 process.env.NODE_ENV = 'production'; 
 suite('test', () => {
     function createRows() {
@@ -44,21 +44,22 @@ suite('test', () => {
             var id = d.id;
 
             rows.push(
-                h('tr', {className: id === selected ? 'danger' : ''}, [
-                    h('td', {className: 'col-md-1'}, id + ''), 
-                    h('td', {className: 'col-md-4'}, 
+                h('tr', null, [
+                    h('td', null, id + '', 'col-md-1'), 
+                    h('td', null, 
                         h('a', null, d.label)
-                    ), 
-                    h('td', {className: 'col-md-1'}, 
+                    , 'col-md-4'), 
+                    h('td', null, 
                         h('a', null,  
-                            h('span', { 
-                                className: 'glyphicon glyphicon-remove',
-                                'aria-hidden': 'true'
-                            })
+                            h('span', 
+                                { 
+                                    'aria-hidden': 'true'
+                                }, null, 'glyphicon glyphicon-remove'
+                            )
                         )
-                    ),
-                    h('td', {className: 'col-md-6'})
-                ])
+                    , 'col-md-1'),
+                    h('td', null, null, 'col-md-6')
+                ], id === selected ? 'danger' : '')
             );
         }
         return h('tbody', null, rows);

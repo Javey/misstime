@@ -142,7 +142,7 @@ describe('Patch', () => {
         eql(
             h('div', {className: 'a'}),
             h('div'),
-            '<div class=""></div>'
+            '<div></div>'
         );
 
         eql(
@@ -154,7 +154,7 @@ describe('Patch', () => {
         eql(
             h('div'),
             h('div', {className: undefined}),
-            '<div class=""></div>'
+            '<div></div>'
         );
     });
     

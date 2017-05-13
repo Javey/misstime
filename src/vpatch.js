@@ -1,4 +1,4 @@
-import {Types} from './vnode';
+import {Types, EMPTY_OBJ} from './vnode';
 import {
     createElement,
     createElements, 
@@ -117,7 +117,9 @@ function patchComponentFunction(lastVNode, nextVNode, parentDom, mountedQueue) {
 
 function patchChildren(lastChildren, nextChildren, parentDom, mountedQueue) {
     if (isNullOrUndefined(lastChildren)) {
-        createElements(nextChildren, parentDom, mountedQueue);
+        if (!isNullOrUndefined(nextChildren)) {
+            createElements(nextChildren, parentDom, mountedQueue);
+        }
     } else if (isNullOrUndefined(nextChildren)) {
         removeElements(lastChildren, parentDom); 
     } else if (isArray(lastChildren)) {
@@ -392,89 +394,125 @@ function patchText(lastVNode, nextVNode, parentDom) {
 }
 
 export function patchProps(lastVNode, nextVNode) {
-    const lastProps = lastVNode && lastVNode.props || null;
+    const lastProps = lastVNode.props;
     const nextProps = nextVNode.props;
     const dom = nextVNode.dom;
-    let propName;
-    for (propName in nextProps) {
-        if (skipProps[propName]) continue;
-
-        let propValue = nextProps[propName];
-        if (isNullOrUndefined(propValue)) {
-            removeProp(propName, dom, lastProps);
-        } else if (isEventProp(propName)) {
-            patchEvent(propName, propValue, dom, lastProps);
-        } else if (isObject(propValue)) {
-            patchPropByObject(propName, propValue, dom, lastProps);
-        } else if (propName === 'style') {
-            dom.style.cssText = propValue;
-        } else {
-            try {
-                dom[propName] = propValue; 
-            } catch (e) {}
+    let prop;
+    if (nextProps !== EMPTY_OBJ) {
+        for (prop in nextProps) {
+            patchProp(prop, lastProps[prop], nextProps[prop], dom);
         }
     }
-    if (!isNullOrUndefined(lastProps)) {
-        for (propName in lastProps) {
-            if (!(propName in nextProps)) {
-                removeProp(propName, dom, lastProps);
+    if (lastProps !== EMPTY_OBJ) {
+        for (prop in lastProps) {
+            if (!(prop in nextProps)) {
+                removeProp(prop, lastProps[prop], dom);
             } 
         }
     }
 }
 
-function removeProp(propName, dom, lastProps) {
-    if (!isNullOrUndefined(lastProps)) {
-        const lastValue = lastProps[propName];
-        const domProp = dom[propName];
-        if (propName === 'attributes') {
-            for (let key in lastValue) {
-                dom.removeAttribute(key);
-            }
-        } else if (propName === 'style') {
-            dom.style.cssText = '';
-        } else if (isEventProp(propName)) {
-            handleEvent(propName.substr(3), lastValue, null, dom);
-        } else if (typeof lastValue === 'string' || typeof domProp === 'string') {
-            dom[propName] = '';
-        } else if (typeof lastValue === 'object') {
-            try {
-                dom[propName] = undefined;
-                delete dom[propName];
-            } catch (e) {
-                for (let key in lastValue) {
-                    delete domProp[key];
-                }
-            }
+export function patchProp(prop, lastValue, nextValue, dom) {
+    if (lastValue !== nextValue) {
+        if (skipProps[prop]) {
+            return;
+        } else if (isEventProp(prop)) {
+            patchEvent(prop, lastValue, nextValue, dom);
+        } else if (isNullOrUndefined(nextValue)) {
+            dom.removeAttribute('prop');
+        } else if (prop === 'style') {
+            patchStyle(lastValue, nextValue, dom);
+        } else if (prop === 'innerHTML') {
+            dom.innerHTML = nextValue;
         } else {
-            delete dom[propName];
+            dom.setAttribute(prop, nextValue);
         }
     }
 }
 
-function patchPropByObject(propName, propValue, dom, lastProps) {
-    let lastPropValue;
-    if (lastProps) {
-        lastPropValue = lastProps[propName];
-        if (!isObject(lastPropValue) && !isNullOrUndefined(lastPropValue)) {
-            removeProp(propName, dom, lastProps);
-            lastPropValue = null;
-        } 
-    }
-    switch (propName) {
-        case 'attributes':
-            return patchAttributes(lastPropValue, propValue, dom);
-        case 'style':
-            return patchStyle(lastPropValue, propValue, dom);
-        default:
-            return patchObject(propName, lastPropValue, propValue, dom);
+export function _patchProp(prop, lastValue, nextValue, dom) {
+    if (lastValue !== nextValue) {
+        if (skipProps[prop]) {
+            return;
+        } else if (isNullOrUndefined(nextValue)) {
+            removeProp(prop, lastValue, dom);
+        } else if (prop === 'className') {
+            dom.className = nextValue; 
+        } else if (isEventProp(prop)) {
+            patchEvent(prop, lastValue, nextValue, dom);
+        } else if (isObject(nextValue)) {
+            patchPropByObject(prop, lastValue, nextValue, dom);
+        } else if (prop === 'innerHTML') {
+            dom.innerHTML = nextValue;
+        } else {
+            dom.setAttribute(prop, nextValue);
+        }
     }
 }
 
-function patchObject(propName, lastValue, nextValue, dom) {
-    let domProps = dom[propName];
+function removeProp(prop, lastValue, dom) {
+    if (!isNullOrUndefined(lastValue)) {
+        let handled = false;
+        switch (prop) {
+            case 'className':
+                dom.removeAttribute('class');
+                handled = true;
+                break;
+            case 'value':
+                dom.value = '';
+                handled = true;
+                break;
+            case 'style':
+                dom.removeAttribute('style');
+                handled = true;
+                break;
+            case 'attributes':
+                for (let key in lastValue) {
+                    dom.removeAttribute(key);
+                }
+                handled = true;
+                break;
+            default:
+                break;
+        }
+        if (!handled) {
+            if (isEventProp(prop)) {
+                handleEvent(prop.substr(3), lastValue, null, dom);
+            } else if (isObject(lastValue)){
+                const domProp = dom[prop];
+                try {
+                    dom[prop] = undefined;
+                    delete dom[prop];
+                } catch (e) {
+                    for (let key in lastValue) {
+                        delete domProp[key];
+                    }
+                }
+            } else {
+                dom.removeAttribute(prop);
+            }
+        }
+    }
+}
+
+function patchPropByObject(prop, lastValue, nextValue, dom) {
+    if (lastValue && !isObject(lastValue) && !isNullOrUndefined(lastValue)) {
+        removeProp(prop, lastValue, dom);
+    }
+    switch (prop) {
+        case 'attributes':
+            return patchAttributes(lastValue, nextValue, dom);
+        case 'style':
+            return patchStyle(lastValue, nextValue, dom);
+        default:
+            return patchObject(prop, lastValue, nextValue, dom);
+    }
+}
+
+function patchObject(prop, lastValue, nextValue, dom) {
+    let domProps = dom[prop];
     if (isNullOrUndefined(domProps)) {
-        domProps = dom[propName] = {};
+        domProps = dom[prop] = {};
     }
     let key;
     let value;
@@ -484,7 +522,6 @@ function patchObject(propName, lastValue, nextValue, dom) {
     if (!isNullOrUndefined(lastValue)) {
         for (key in lastValue) {
             if (isNullOrUndefined(nextValue[key])) {
-                // domProps[key] = undefined;
                 delete domProps[key];
             }
         }
@@ -536,9 +573,8 @@ function patchStyle(lastValue, nextValue, dom) {
     }
 }
 
-function patchEvent(propName, nextValue, dom, lastProps) {
-    const lastValue  = lastProps && lastProps[propName] || null;
+function patchEvent(prop, lastValue, nextValue, dom) {
     if (lastValue !== nextValue) {
-        handleEvent(propName.substr(3), lastValue, nextValue, dom);
+        handleEvent(prop.substr(3), lastValue, nextValue, dom);
     }
 }

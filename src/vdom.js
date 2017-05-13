@@ -1,5 +1,5 @@
-import {Types, createTextVNode} from './vnode';
-import {patchProps} from './vpatch';
+import {Types, createTextVNode, EMPTY_OBJ} from './vnode';
+import {patchProp} from './vpatch';
 import {handleEvent} from './event';
 import {
     MountedQueue, isArray, isStringOrNumber, 
@@ -16,19 +16,18 @@ export function render(vNode, parentDom) {
 
 export function createElement(vNode, parentDom, mountedQueue) {
     const type = vNode.type;
-    switch (type) {
-        case Types.HtmlElement:
-            return createHtmlElement(vNode, parentDom, mountedQueue);
-        case Types.Text:
-            return createTextElement(vNode, parentDom);
-        case Types.ComponentClass:
-            return createComponentClass(vNode, parentDom, mountedQueue);
-        case Types.ComponentFunction:
-            return createComponentFunction(vNode, parentDom, mountedQueue);
-        case Types.HtmlComment:
-            return createCommentElement(vNode, parentDom);
-        default:
-            throw new Error('unknown vnode type');
+    if (type & Types.HtmlElement) {
+        return createHtmlElement(vNode, parentDom, mountedQueue);
+    } else if (type & Types.Text) {
+        return createTextElement(vNode, parentDom);
+    } else if (type & Types.ComponentClass) {
+        return createComponentClass(vNode, parentDom, mountedQueue);
+    } else if (type & Types.ComponentFunction) {
+        return createComponentFunction(vNode, parentDom, mountedQueue);
+    } else if (type & Types.HtmlComment) {
+        return createCommentElement(vNode, parentDom);
+    } else {
+        throw new Error('unknown vnode type');
     }
 }
 
@@ -36,12 +35,24 @@ export function createHtmlElement(vNode, parentDom, mountedQueue) {
     const dom = document.createElement(vNode.tag);
     const children = vNode.children;
     const ref = vNode.ref;
+    const props = vNode.props;
+    const className = vNode.className;
 
     vNode.dom = dom;
 
-    createElements(children, dom, mountedQueue);
+    if (!isNullOrUndefined(children)) {
+        createElements(children, dom, mountedQueue);
+    }
 
-    // patchProps(null, vNode);
+    if (!isNullOrUndefined(className)) {
+        dom.className = className;
+    }
+
+    if (props !== EMPTY_OBJ) {
+        for (let prop in props) {
+            patchProp(prop, null, props[prop], dom);
+        }
+    }
 
     if (!isNullOrUndefined(ref)) {
         createRef(dom, ref, mountedQueue);
@@ -134,15 +145,12 @@ export function createComponentFunctionVNode(vNode) {
 }
 
 export function createElements(vNodes, parentDom, mountedQueue) {
-    if (isNullOrUndefined(vNodes)) {
-        return;
+    if (isStringOrNumber(vNodes)) {
+        parentDom.textContent = vNodes;
     } else if (isArray(vNodes)) {
         for (let i = 0; i < vNodes.length; i++) {
             createElement(vNodes[i], parentDom, mountedQueue);
         }
-    } else if (vNodes.type & Types.Text) {
-        // if children is a text node, set it directlty
-        parentDom.textContent = vNodes.children;  
     } else {
         createElement(vNodes, parentDom, mountedQueue);
     }
@@ -161,16 +169,15 @@ export function removeElements(vNodes, parentDom) {
 }
 
 export function removeElement(vNode, parentDom) {
-    switch (vNode.type) {
-        case Types.Element:
-            return removeHtmlElement(vNode, parentDom); 
-        case Types.Text:
-        case Types.HtmlComment:
-            return removeText(vNode, parentDom);
-        case Types.ComponentFunction:
-            return removeComponentFunction(vNode, parentDom); 
-        case Types.ComponentClass:
-            return removeComponentClass(vNode, parentDom);
+    const type = vNode.type;
+    if (type & Types.Element) {
+        return removeHtmlElement(vNode, parentDom); 
+    } else if (type & Types.TextElement) {
+        return removeText(vNode, parentDom);
+    } else if (type & Types.ComponentClass) {
+        return removeComponentClass(vNode, parentDom);
+    } else if (type & Types.ComponentFunction) {
+        return removeComponentFunction(vNode, parentDom); 
     }
 }
 

@@ -4,6 +4,7 @@ module.exports = function(config) {
     config.set({
         logLevel: config.LOG_INFO,
         files: [
+            'node_modules/sinon/pkg/sinon.js',
             'src/__benchmark__/vnode.js'
         ],
         preprocessors: {

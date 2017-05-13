@@ -18,16 +18,17 @@ if (process.env.NODE_ENV !== 'production') {
     Object.freeze(EMPTY_OBJ);
 }
 
-export function VNode(type, tag, props, children) {
+export function VNode(type, tag, props, children, className, key, ref) {
     this.type = type;
     this.tag = tag;
     this.props = props;
     this.children = children;
-    this.key = props.key;
-    this.ref = props.ref;
+    this.key = key;
+    this.ref = ref;
+    this.className = className;
 } 
 
-export function createVNode(tag, props, children) {
+export function createVNode(tag, props, children, className, key, ref) {
     let type;
     props || (props = EMPTY_OBJ);
     switch (typeof tag) {
@@ -49,7 +50,7 @@ export function createVNode(tag, props, children) {
         props.children = normalizeChildren(props.children);
     }
 
-    return new VNode(type, tag, props, normalizeChildren(children));
+    return new VNode(type, tag, props, normalizeChildren(children), className, key, ref);
 }
 
 export function createCommentVNode(children) {
@@ -65,8 +66,6 @@ export function createVoidVNode() {
 }
 
 function normalizeChildren(vNodes) {
-    if (isNullOrUndefined(vNodes)) return vNodes;
-    if (isStringOrNumber(vNodes)) return createTextVNode(vNodes);
     if (isArray(vNodes)) {
         const childNodes = addChild(vNodes, {index: 0});
         return childNodes.length ? childNodes : null;

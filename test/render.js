@@ -69,7 +69,7 @@ describe('Render', () => {
     it('render style', () => {
         eql(
             h('div', {style: 'color: red; font-size: 20px'}),
-            '<div style="color: red; font-size: 20px;"></div>'
+            '<div style="color: red; font-size: 20px"></div>'
         );
         eql(
             h('div', {style: {color: 'red', fontSize: '20px'}}),
