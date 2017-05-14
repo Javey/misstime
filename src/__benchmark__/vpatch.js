@@ -1,8 +1,10 @@
 import {Store} from './store.es6';
 import {createVNode} from 'inferno';
 import {mount} from 'inferno/dist/DOM/mounting';
+import {render} from 'inferno/dist/DOM/rendering';
 import {h} from '../index';
-import {createElement as r} from '../vdom';
+import {render as r} from '../vdom';
+import {patch as p} from '../vpatch';
 
 const store = new Store();
 // store.add(2);
@@ -98,15 +100,23 @@ function createRowsByMiss() {
 
 window.run = function() {
     console.time('a')
-    const vNodes = createRows();
-    mount(vNodes, document.createElement('div'));
+    const vNodes1 = createRows();
+    const dom = document.createElement('div');
+    render(vNodes1, dom);
+    store.select(1);
+    const vNodes2 = createRows();
+    render(vNodes2, dom);
     console.timeEnd('a')
 }
 
 window.runMiss = function() {
     console.time('b')
     const vNodes1 = createRowsByMiss();
-    r(vNodes1, document.createElement('div'));
+    const dom = document.createElement('div');
+    r(vNodes1, dom);
+    store.select(2);
+    const vNodes2 = createRowsByMiss();
+    p(vNodes1, vNodes2);
     console.timeEnd('b')
 }
 

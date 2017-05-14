@@ -63,6 +63,8 @@ function patchElement(lastVNode, nextVNode, parentDom, mountedQueue) {
     const lastChildren = lastVNode.children;
     const nextChildren = nextVNode.children;
     const nextRef = nextVNode.ref;
+    const lastClassName = lastVNode.className;
+    const nextClassName = nextVNode.className;
 
     nextVNode.dom = dom;
 
@@ -73,10 +75,19 @@ function patchElement(lastVNode, nextVNode, parentDom, mountedQueue) {
 
         patchProps(lastVNode, nextVNode);
 
+        if (lastClassName !== nextClassName) {
+            if (isNullOrUndefined(nextClassName)) {
+                dom.removeAttribute('class');
+            } else {
+                dom.className = nextClassName;
+            }
+        }
+
         if (!isNullOrUndefined(nextRef) && lastVNode.ref !== nextRef) {
             createRef(dom, nextRef, mountedQueue);
         }
     }
+
 }
 
 function patchComponentClass(lastVNode, nextVNode, parentDom, mountedQueue) {
@@ -412,32 +423,30 @@ export function patchProps(lastVNode, nextVNode) {
     }
 }
 
-export function patchProp(prop, lastValue, nextValue, dom) {
-    if (lastValue !== nextValue) {
-        if (skipProps[prop]) {
-            return;
-        } else if (isEventProp(prop)) {
-            patchEvent(prop, lastValue, nextValue, dom);
-        } else if (isNullOrUndefined(nextValue)) {
-            dom.removeAttribute('prop');
-        } else if (prop === 'style') {
-            patchStyle(lastValue, nextValue, dom);
-        } else if (prop === 'innerHTML') {
-            dom.innerHTML = nextValue;
-        } else {
-            dom.setAttribute(prop, nextValue);
-        }
-    }
-}
+// export function patchProp(prop, lastValue, nextValue, dom) {
+    // if (lastValue !== nextValue) {
+        // if (skipProps[prop]) {
+            // return;
+        // } else if (isEventProp(prop)) {
+            // patchEvent(prop, lastValue, nextValue, dom);
+        // } else if (isNullOrUndefined(nextValue)) {
+            // dom.removeAttribute('prop');
+        // } else if (prop === 'style') {
+            // patchStyle(lastValue, nextValue, dom);
+        // } else if (prop === 'innerHTML') {
+            // dom.innerHTML = nextValue;
+        // } else {
+            // dom.setAttribute(prop, nextValue);
+        // }
+    // }
+// }
 
-export function _patchProp(prop, lastValue, nextValue, dom) {
+export function patchProp(prop, lastValue, nextValue, dom) {
     if (lastValue !== nextValue) {
         if (skipProps[prop]) {
             return;
         } else if (isNullOrUndefined(nextValue)) {
             removeProp(prop, lastValue, dom);
-        } else if (prop === 'className') {
-            dom.className = nextValue; 
         } else if (isEventProp(prop)) {
             patchEvent(prop, lastValue, nextValue, dom);
         } else if (isObject(nextValue)) {
@@ -454,10 +463,10 @@ function removeProp(prop, lastValue, dom) {
     if (!isNullOrUndefined(lastValue)) {
         let handled = false;
         switch (prop) {
-            case 'className':
-                dom.removeAttribute('class');
-                handled = true;
-                break;
+            // case 'className':
+                // dom.removeAttribute('class');
+                // handled = true;
+                // break;
             case 'value':
                 dom.value = '';
                 handled = true;

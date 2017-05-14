@@ -23,9 +23,9 @@ export function VNode(type, tag, props, children, className, key, ref) {
     this.tag = tag;
     this.props = props;
     this.children = children;
-    this.key = key;
-    this.ref = ref;
-    this.className = className;
+    this.key = key || props.key;
+    this.ref = ref || props.ref;
+    this.className = className || props.className;
 } 
 
 export function createVNode(tag, props, children, className, key, ref) {

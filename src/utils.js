@@ -94,7 +94,8 @@ export const SimpleMap = typeof Map === 'function' ? Map : (function() {
 export const skipProps = {
     key: true,
     ref: true,
-    children: true
+    children: true,
+    className: true
 };
 
 export function MountedQueue() {

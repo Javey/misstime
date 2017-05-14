@@ -2021,7 +2021,8 @@ var SimpleMap = exports.SimpleMap = typeof Map === 'function' ? Map : function (
 var skipProps = exports.skipProps = {
     key: true,
     ref: true,
-    children: true
+    children: true,
+    className: true
 };
 
 function MountedQueue() {
@@ -2540,9 +2541,9 @@ function VNode(type, tag, props, children, className, key, ref) {
     this.tag = tag;
     this.props = props;
     this.children = children;
-    this.key = key;
-    this.ref = ref;
-    this.className = className;
+    this.key = key || props.key;
+    this.ref = ref || props.ref;
+    this.className = className || props.className;
 }
 
 function createVNode(tag, props, children, className, key, ref) {
@@ -3380,7 +3381,6 @@ exports.patch = patch;
 exports.patchVNode = patchVNode;
 exports.patchProps = patchProps;
 exports.patchProp = patchProp;
-exports._patchProp = _patchProp;
 
 var _vnode = __webpack_require__(13);
 
@@ -3438,6 +3438,8 @@ function patchElement(lastVNode, nextVNode, parentDom, mountedQueue) {
     var lastChildren = lastVNode.children;
     var nextChildren = nextVNode.children;
     var nextRef = nextVNode.ref;
+    var lastClassName = lastVNode.className;
+    var nextClassName = nextVNode.className;
 
     nextVNode.dom = dom;
 
@@ -3447,6 +3449,14 @@ function patchElement(lastVNode, nextVNode, parentDom, mountedQueue) {
         patchChildren(lastChildren, nextChildren, dom, mountedQueue);
 
         patchProps(lastVNode, nextVNode);
+
+        if (lastClassName !== nextClassName) {
+            if ((0, _utils.isNullOrUndefined)(nextClassName)) {
+                dom.removeAttribute('class');
+            } else {
+                dom.className = nextClassName;
+            }
+        }
 
         if (!(0, _utils.isNullOrUndefined)(nextRef) && lastVNode.ref !== nextRef) {
             (0, _vdom.createRef)(dom, nextRef, mountedQueue);
@@ -3774,32 +3784,30 @@ function patchProps(lastVNode, nextVNode) {
     }
 }
 
-function patchProp(prop, lastValue, nextValue, dom) {
-    if (lastValue !== nextValue) {
-        if (_utils.skipProps[prop]) {
-            return;
-        } else if ((0, _utils.isEventProp)(prop)) {
-            patchEvent(prop, lastValue, nextValue, dom);
-        } else if ((0, _utils.isNullOrUndefined)(nextValue)) {
-            dom.removeAttribute('prop');
-        } else if (prop === 'style') {
-            patchStyle(lastValue, nextValue, dom);
-        } else if (prop === 'innerHTML') {
-            dom.innerHTML = nextValue;
-        } else {
-            dom.setAttribute(prop, nextValue);
-        }
-    }
-}
+// export function patchProp(prop, lastValue, nextValue, dom) {
+// if (lastValue !== nextValue) {
+// if (skipProps[prop]) {
+// return;
+// } else if (isEventProp(prop)) {
+// patchEvent(prop, lastValue, nextValue, dom);
+// } else if (isNullOrUndefined(nextValue)) {
+// dom.removeAttribute('prop');
+// } else if (prop === 'style') {
+// patchStyle(lastValue, nextValue, dom);
+// } else if (prop === 'innerHTML') {
+// dom.innerHTML = nextValue;
+// } else {
+// dom.setAttribute(prop, nextValue);
+// }
+// }
+// }
 
-function _patchProp(prop, lastValue, nextValue, dom) {
+function patchProp(prop, lastValue, nextValue, dom) {
     if (lastValue !== nextValue) {
         if (_utils.skipProps[prop]) {
             return;
         } else if ((0, _utils.isNullOrUndefined)(nextValue)) {
             removeProp(prop, lastValue, dom);
-        } else if (prop === 'className') {
-            dom.className = nextValue;
         } else if ((0, _utils.isEventProp)(prop)) {
             patchEvent(prop, lastValue, nextValue, dom);
         } else if ((0, _utils.isObject)(nextValue)) {
@@ -3816,10 +3824,10 @@ function removeProp(prop, lastValue, dom) {
     if (!(0, _utils.isNullOrUndefined)(lastValue)) {
         var handled = false;
         switch (prop) {
-            case 'className':
-                dom.removeAttribute('class');
-                handled = true;
-                break;
+            // case 'className':
+            // dom.removeAttribute('class');
+            // handled = true;
+            // break;
             case 'value':
                 dom.value = '';
                 handled = true;
@@ -5243,9 +5251,13 @@ var _inferno = __webpack_require__(23);
 
 var _mounting = __webpack_require__(6);
 
+var _rendering = __webpack_require__(7);
+
 var _index = __webpack_require__(25);
 
 var _vdom = __webpack_require__(10);
+
+var _vpatch = __webpack_require__(22);
 
 var store = new _store.Store();
 // store.add(2);
@@ -5316,15 +5328,23 @@ function createRowsByMiss() {
 
 window.run = function () {
     console.time('a');
-    var vNodes = createRows();
-    (0, _mounting.mount)(vNodes, document.createElement('div'));
+    var vNodes1 = createRows();
+    var dom = document.createElement('div');
+    (0, _rendering.render)(vNodes1, dom);
+    store.select(1);
+    var vNodes2 = createRows();
+    (0, _rendering.render)(vNodes2, dom);
     console.timeEnd('a');
 };
 
 window.runMiss = function () {
     console.time('b');
     var vNodes1 = createRowsByMiss();
-    (0, _vdom.createElement)(vNodes1, document.createElement('div'));
+    var dom = document.createElement('div');
+    (0, _vdom.render)(vNodes1, dom);
+    store.select(2);
+    var vNodes2 = createRowsByMiss();
+    (0, _vpatch.patch)(vNodes1, vNodes2);
     console.timeEnd('b');
 };
 /* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(1)))
