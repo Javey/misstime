@@ -105,7 +105,8 @@ var SimpleMap = typeof Map === 'function' ? Map : function () {
 var skipProps = {
     key: true,
     ref: true,
-    children: true
+    children: true,
+    className: true
 };
 
 function MountedQueue() {
@@ -140,16 +141,17 @@ if (process.env.NODE_ENV !== 'production') {
     Object.freeze(EMPTY_OBJ);
 }
 
-function VNode(type, tag, props, children) {
+function VNode(type, tag, props, children, className, key, ref) {
     this.type = type;
     this.tag = tag;
     this.props = props;
     this.children = children;
-    this.key = props.key;
-    this.ref = props.ref;
+    this.key = key || props.key;
+    this.ref = ref || props.ref;
+    this.className = className || props.className;
 }
 
-function createVNode(tag, props, children) {
+function createVNode(tag, props, children, className, key, ref) {
     var type = void 0;
     props || (props = EMPTY_OBJ);
     switch (typeof tag === 'undefined' ? 'undefined' : _typeof(tag)) {
@@ -171,7 +173,7 @@ function createVNode(tag, props, children) {
         props.children = normalizeChildren(props.children);
     }
 
-    return new VNode(type, tag, props, normalizeChildren(children));
+    return new VNode(type, tag, props, normalizeChildren(children), className, key, ref);
 }
 
 function createCommentVNode(children) {
@@ -185,8 +187,6 @@ function createTextVNode(text) {
 
 
 function normalizeChildren(vNodes) {
-    if (isNullOrUndefined(vNodes)) return vNodes;
-    if (isStringOrNumber(vNodes)) return createTextVNode(vNodes);
     if (isArray(vNodes)) {
         var childNodes = addChild(vNodes, { index: 0 });
         return childNodes.length ? childNodes : null;
@@ -346,19 +346,18 @@ function render(vNode, parentDom) {
 
 function createElement(vNode, parentDom, mountedQueue) {
     var type = vNode.type;
-    switch (type) {
-        case Types.HtmlElement:
-            return createHtmlElement(vNode, parentDom, mountedQueue);
-        case Types.Text:
-            return createTextElement(vNode, parentDom);
-        case Types.ComponentClass:
-            return createComponentClass(vNode, parentDom, mountedQueue);
-        case Types.ComponentFunction:
-            return createComponentFunction(vNode, parentDom, mountedQueue);
-        case Types.HtmlComment:
-            return createCommentElement(vNode, parentDom);
-        default:
-            throw new Error('unknown vnode type');
+    if (type & Types.HtmlElement) {
+        return createHtmlElement(vNode, parentDom, mountedQueue);
+    } else if (type & Types.Text) {
+        return createTextElement(vNode, parentDom);
+    } else if (type & Types.ComponentClass) {
+        return createComponentClass(vNode, parentDom, mountedQueue);
+    } else if (type & Types.ComponentFunction) {
+        return createComponentFunction(vNode, parentDom, mountedQueue);
+    } else if (type & Types.HtmlComment) {
+        return createCommentElement(vNode, parentDom);
+    } else {
+        throw new Error('unknown vnode type');
     }
 }
 
@@ -366,12 +365,24 @@ function createHtmlElement(vNode, parentDom, mountedQueue) {
     var dom = doc.createElement(vNode.tag);
     var children = vNode.children;
     var ref = vNode.ref;
+    var props = vNode.props;
+    var className = vNode.className;
 
     vNode.dom = dom;
 
-    createElements(children, dom, mountedQueue);
+    if (!isNullOrUndefined(children)) {
+        createElements(children, dom, mountedQueue);
+    }
 
-    patchProps(null, vNode);
+    if (!isNullOrUndefined(className)) {
+        dom.className = className;
+    }
+
+    if (props !== EMPTY_OBJ) {
+        for (var prop in props) {
+            patchProp(prop, null, props[prop], dom);
+        }
+    }
 
     if (!isNullOrUndefined(ref)) {
         createRef(dom, ref, mountedQueue);
@@ -466,8 +477,8 @@ function createComponentFunctionVNode(vNode) {
 }
 
 function createElements(vNodes, parentDom, mountedQueue) {
-    if (isNullOrUndefined(vNodes)) {
-        return;
+    if (isStringOrNumber(vNodes)) {
+        parentDom.textContent = vNodes;
     } else if (isArray(vNodes)) {
         for (var i = 0; i < vNodes.length; i++) {
             createElement(vNodes[i], parentDom, mountedQueue);
@@ -490,16 +501,15 @@ function removeElements(vNodes, parentDom) {
 }
 
 function removeElement(vNode, parentDom) {
-    switch (vNode.type) {
-        case Types.Element:
-            return removeHtmlElement(vNode, parentDom);
-        case Types.Text:
-        case Types.HtmlComment:
-            return removeText(vNode, parentDom);
-        case Types.ComponentFunction:
-            return removeComponentFunction(vNode, parentDom);
-        case Types.ComponentClass:
-            return removeComponentClass(vNode, parentDom);
+    var type = vNode.type;
+    if (type & Types.Element) {
+        return removeHtmlElement(vNode, parentDom);
+    } else if (type & Types.TextElement) {
+        return removeText(vNode, parentDom);
+    } else if (type & Types.ComponentClass) {
+        return removeComponentClass(vNode, parentDom);
+    } else if (type & Types.ComponentFunction) {
+        return removeComponentFunction(vNode, parentDom);
     }
 }
 
@@ -628,6 +638,8 @@ function patchElement(lastVNode, nextVNode, parentDom, mountedQueue) {
     var lastChildren = lastVNode.children;
     var nextChildren = nextVNode.children;
     var nextRef = nextVNode.ref;
+    var lastClassName = lastVNode.className;
+    var nextClassName = nextVNode.className;
 
     nextVNode.dom = dom;
 
@@ -636,7 +648,17 @@ function patchElement(lastVNode, nextVNode, parentDom, mountedQueue) {
     } else {
         patchChildren(lastChildren, nextChildren, dom, mountedQueue);
 
-        patchProps(lastVNode, nextVNode);
+        if (lastProps !== nextProps) {
+            patchProps(lastVNode, nextVNode);
+        }
+
+        if (lastClassName !== nextClassName) {
+            if (isNullOrUndefined(nextClassName)) {
+                dom.removeAttribute('class');
+            } else {
+                dom.className = nextClassName;
+            }
+        }
 
         if (!isNullOrUndefined(nextRef) && lastVNode.ref !== nextRef) {
             createRef(dom, nextRef, mountedQueue);
@@ -682,7 +704,9 @@ function patchComponentFunction(lastVNode, nextVNode, parentDom, mountedQueue) {
 
 function patchChildren(lastChildren, nextChildren, parentDom, mountedQueue) {
     if (isNullOrUndefined(lastChildren)) {
-        createElements(nextChildren, parentDom, mountedQueue);
+        if (!isNullOrUndefined(nextChildren)) {
+            createElements(nextChildren, parentDom, mountedQueue);
+        }
     } else if (isNullOrUndefined(nextChildren)) {
         removeElements(lastChildren, parentDom);
     } else if (isArray(lastChildren)) {
@@ -944,89 +968,123 @@ function patchText(lastVNode, nextVNode, parentDom) {
 }
 
 function patchProps(lastVNode, nextVNode) {
-    var lastProps = lastVNode && lastVNode.props || null;
+    var lastProps = lastVNode.props;
     var nextProps = nextVNode.props;
     var dom = nextVNode.dom;
-    var propName = void 0;
-    for (propName in nextProps) {
-        if (skipProps[propName]) continue;
-
-        var propValue = nextProps[propName];
-        if (isNullOrUndefined(propValue)) {
-            removeProp(propName, dom, lastProps);
-        } else if (isEventProp(propName)) {
-            patchEvent(propName, propValue, dom, lastProps);
-        } else if (isObject(propValue)) {
-            patchPropByObject(propName, propValue, dom, lastProps);
-        } else if (propName === 'style') {
-            dom.style.cssText = propValue;
-        } else {
-            try {
-                dom[propName] = propValue;
-            } catch (e) {}
+    var prop = void 0;
+    if (nextProps !== EMPTY_OBJ) {
+        for (prop in nextProps) {
+            patchProp(prop, lastProps[prop], nextProps[prop], dom);
         }
     }
-    if (!isNullOrUndefined(lastProps)) {
-        for (propName in lastProps) {
-            if (!(propName in nextProps)) {
-                removeProp(propName, dom, lastProps);
+    if (lastProps !== EMPTY_OBJ) {
+        for (prop in lastProps) {
+            if (!(prop in nextProps)) {
+                removeProp(prop, lastProps[prop], dom);
             }
         }
     }
 }
 
-function removeProp(propName, dom, lastProps) {
-    if (!isNullOrUndefined(lastProps)) {
-        var lastValue = lastProps[propName];
-        var domProp = dom[propName];
-        if (propName === 'attributes') {
-            for (var key in lastValue) {
-                dom.removeAttribute(key);
-            }
-        } else if (propName === 'style') {
-            dom.style.cssText = '';
-        } else if (isEventProp(propName)) {
-            handleEvent(propName.substr(3), lastValue, null, dom);
-        } else if (typeof lastValue === 'string' || typeof domProp === 'string') {
-            dom[propName] = '';
-        } else if ((typeof lastValue === 'undefined' ? 'undefined' : _typeof(lastValue)) === 'object') {
-            try {
-                dom[propName] = undefined;
-                delete dom[propName];
-            } catch (e) {
-                for (var _key in lastValue) {
-                    delete domProp[_key];
+// export function patchProp(prop, lastValue, nextValue, dom) {
+// if (lastValue !== nextValue) {
+// if (skipProps[prop]) {
+// return;
+// } else if (isEventProp(prop)) {
+// patchEvent(prop, lastValue, nextValue, dom);
+// } else if (isNullOrUndefined(nextValue)) {
+// dom.removeAttribute('prop');
+// } else if (prop === 'style') {
+// patchStyle(lastValue, nextValue, dom);
+// } else if (prop === 'innerHTML') {
+// dom.innerHTML = nextValue;
+// } else {
+// dom.setAttribute(prop, nextValue);
+// }
+// }
+// }
+
+function patchProp(prop, lastValue, nextValue, dom) {
+    if (lastValue !== nextValue) {
+        if (skipProps[prop]) {
+            return;
+        } else if (isNullOrUndefined(nextValue)) {
+            removeProp(prop, lastValue, dom);
+        } else if (isEventProp(prop)) {
+            patchEvent(prop, lastValue, nextValue, dom);
+        } else if (isObject(nextValue)) {
+            patchPropByObject(prop, lastValue, nextValue, dom);
+        } else if (prop === 'innerHTML') {
+            dom.innerHTML = nextValue;
+        } else {
+            dom.setAttribute(prop, nextValue);
+        }
+    }
+}
+
+function removeProp(prop, lastValue, dom) {
+    if (!isNullOrUndefined(lastValue)) {
+        var handled = false;
+        switch (prop) {
+            // case 'className':
+            // dom.removeAttribute('class');
+            // handled = true;
+            // break;
+            case 'value':
+                dom.value = '';
+                handled = true;
+                break;
+            case 'style':
+                dom.removeAttribute('style');
+                handled = true;
+                break;
+            case 'attributes':
+                for (var key in lastValue) {
+                    dom.removeAttribute(key);
                 }
+                handled = true;
+                break;
+            default:
+                break;
+        }
+        if (!handled) {
+            if (isEventProp(prop)) {
+                handleEvent(prop.substr(3), lastValue, null, dom);
+            } else if (isObject(lastValue)) {
+                var domProp = dom[prop];
+                try {
+                    dom[prop] = undefined;
+                    delete dom[prop];
+                } catch (e) {
+                    for (var _key in lastValue) {
+                        delete domProp[_key];
+                    }
+                }
+            } else {
+                dom.removeAttribute(prop);
             }
-        } else {
-            delete dom[propName];
         }
     }
 }
 
-function patchPropByObject(propName, propValue, dom, lastProps) {
-    var lastPropValue = void 0;
-    if (lastProps) {
-        lastPropValue = lastProps[propName];
-        if (!isObject(lastPropValue) && !isNullOrUndefined(lastPropValue)) {
-            removeProp(propName, dom, lastProps);
-            lastPropValue = null;
-        }
+function patchPropByObject(prop, lastValue, nextValue, dom) {
+    if (lastValue && !isObject(lastValue) && !isNullOrUndefined(lastValue)) {
+        removeProp(prop, lastValue, dom);
     }
-    switch (propName) {
+    switch (prop) {
         case 'attributes':
-            return patchAttributes(lastPropValue, propValue, dom);
+            return patchAttributes(lastValue, nextValue, dom);
         case 'style':
-            return patchStyle(lastPropValue, propValue, dom);
+            return patchStyle(lastValue, nextValue, dom);
         default:
-            return patchObject(propName, lastPropValue, propValue, dom);
+            return patchObject(prop, lastValue, nextValue, dom);
     }
 }
 
-function patchObject(propName, lastValue, nextValue, dom) {
-    var domProps = dom[propName];
+function patchObject(prop, lastValue, nextValue, dom) {
+    var domProps = dom[prop];
     if (isNullOrUndefined(domProps)) {
-        domProps = dom[propName] = {};
+        domProps = dom[prop] = {};
     }
     var key = void 0;
     var value = void 0;
@@ -1036,7 +1094,6 @@ function patchObject(propName, lastValue, nextValue, dom) {
     if (!isNullOrUndefined(lastValue)) {
         for (key in lastValue) {
             if (isNullOrUndefined(nextValue[key])) {
-                // domProps[key] = undefined;
                 delete domProps[key];
             }
         }
@@ -1088,10 +1145,9 @@ function patchStyle(lastValue, nextValue, dom) {
     }
 }
 
-function patchEvent(propName, nextValue, dom, lastProps) {
-    var lastValue = lastProps && lastProps[propName] || null;
+function patchEvent(prop, lastValue, nextValue, dom) {
     if (lastValue !== nextValue) {
-        handleEvent(propName.substr(3), lastValue, nextValue, dom);
+        handleEvent(prop.substr(3), lastValue, nextValue, dom);
     }
 }
 

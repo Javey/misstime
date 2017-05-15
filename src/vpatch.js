@@ -71,9 +71,13 @@ function patchElement(lastVNode, nextVNode, parentDom, mountedQueue) {
     if (lastVNode.tag !== nextVNode.tag) {
         replaceElement(lastVNode, nextVNode, parentDom, mountedQueue);
     } else {
-        patchChildren(lastChildren, nextChildren, dom, mountedQueue);
+        if (lastChildren !== nextChildren) {
+            patchChildren(lastChildren, nextChildren, dom, mountedQueue);
+        }
 
-        patchProps(lastVNode, nextVNode);
+        if (lastProps !== nextProps) {
+            patchProps(lastVNode, nextVNode);
+        }
 
         if (lastClassName !== nextClassName) {
             if (isNullOrUndefined(nextClassName)) {
