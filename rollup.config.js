@@ -12,7 +12,8 @@ module.exports = {
             ],
             plugins: [
                 "external-helpers",
-                "minify-constant-folding"
+                "minify-constant-folding",
+                "transform-es3-property-literals"
             ],
             babelrc: false
         })

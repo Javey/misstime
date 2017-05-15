@@ -1,4 +1,4 @@
-import {SimpleMap, isNullOrUndefined, createObject, doc as document} from './utils';
+import {SimpleMap, isNullOrUndefined, createObject, doc as document, isIE8} from './utils';
 
 const ALL_PROPS = [
     "altKey", "bubbles", "cancelable", "ctrlKey",
@@ -20,16 +20,25 @@ function Event(e) {
         let propKey = ALL_PROPS[i];
         this[propKey] = e[propKey];
     }
+    
+    if (!e.target) {
+        this.target = e.srcElement;
+    }
 
     this._rawEvent = e;
 }
 Event.prototype.preventDefault = function() {
-    this._rawEvent.preventDefault();
+    const e = this._rawEvent;
+    if (e.preventDefault) {
+        e.preventDefault();
+    } else {
+        e.returnValue = false;
+    }
 };
 Event.prototype.stopPropagation = function() {
     const e = this._rawEvent;    
     e.cancelBubble = true;
-    e.stopImmediatePropagation();
+    e.stopImmediatePropagation && e.stopImmediatePropagation();
 };
 
 function MouseEvent(e) {
@@ -62,6 +71,26 @@ function proxyEvent(e) {
     }
 }
 
+let addEventListener;
+let removeEventListener;
+if ('addEventListener' in document) {
+    addEventListener = function(name, fn) {
+        document.addEventListener(name, fn, false);
+    };
+
+    removeEventListener = function(name, fn) {
+        document.removeEventListener(name, fn);
+    };
+} else {
+    addEventListener = function(name, fn) {
+        document.attachEvent(`on${name}`, fn);
+    };
+
+    removeEventListener = function(name, fn) {
+        document.detachEvent(`on${name}`, fn);
+    };
+}
+
 const delegatedEvents = {};
 
 export function handleEvent(name, lastEvent, nextEvent, dom) {
@@ -78,7 +107,7 @@ export function handleEvent(name, lastEvent, nextEvent, dom) {
         const items = delegatedRoots.items;
         if (items.delete(dom)) {
             if (items.size === 0) {
-                document.removeEventListener(name, delegatedRoots.docEvent);
+                removeEventListener(name, delegatedRoots.docEvent);
                 delete delegatedRoots[name];
             }
         }
@@ -107,10 +136,12 @@ function dispatchEvent(event, target, items, count, isClick) {
 function attachEventToDocument(name, delegatedRoots) {
     var docEvent = function(event) {
         const count = delegatedRoots.items.size;
+        event || (event = window.event);
         if (count > 0) {
-            dispatchEvent(proxyEvent(event), event.target, delegatedRoots.items, count, event.type === 'click'); 
+            event = proxyEvent(event);
+            dispatchEvent(event, event.target, delegatedRoots.items, count, event.type === 'click'); 
         }
     };
-    document.addEventListener(name, docEvent);
+    addEventListener(name, docEvent);
     return docEvent;
 }

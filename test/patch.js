@@ -1,5 +1,6 @@
 import {h, hc, render, patch} from '../src';
 import assert from 'assert';
+import {eqlHtml} from './utils';
 
 class ClassComponent {
     constructor(props) {
@@ -47,9 +48,6 @@ describe('Patch', () => {
     function reset() {
         container.innerHTML = '';
     }
-    function eqlHtml(html) {
-        assert.strictEqual(container.innerHTML, html);
-    }
     function r(vNode) {
         reset();
         render(vNode, container);
@@ -58,9 +56,9 @@ describe('Patch', () => {
         r(lastVNode);
         patch(lastVNode, nextVNode);
     }
-    function eql(lastVNode, nextVNode, html) {
+    function eql(lastVNode, nextVNode, html, ie8Html) {
         p(lastVNode, nextVNode);
-        eqlHtml(html);
+        eqlHtml(container, html, ie8Html);
     }
     function sEql(a, b) {
         assert.strictEqual(a, b);
@@ -76,7 +74,8 @@ describe('Patch', () => {
         eql(
             h('div', null, h('span')),
             h('div', null, h('div')),
-            '<div><div></div></div>'
+            '<div><div></div></div>',
+            '<div>\r\n<div></div></div>'
         );
     });
 
@@ -136,7 +135,8 @@ describe('Patch', () => {
                 h('div', {className: 'b'}),
                 h('span', {className: 'c'})
             ]),
-            '<div><div class="b"></div><span class="c"></span></div>'
+            '<div><div class="b"></div><span class="c"></span></div>',
+            '<div>\r\n<div class="b"></div><span class="c"></span></div>'
         );
 
         eql(
@@ -162,22 +162,26 @@ describe('Patch', () => {
         eql(
             h('div', {style: 'color: red; font-size: 20px'}),
             h('div', {style: 'color: red;'}),
-            '<div style="color: red;"></div>'
+            '<div style="color: red;"></div>',
+            '<div style="color: red"></div>'
         );
         eql(
             h('div', {style: {color: 'red', fontSize: '20px'}}),
             h('div', {style: {color: 'red'}}),
-            '<div style="color: red;"></div>'
+            '<div style="color: red;"></div>',
+            '<div style="color: red"></div>'
         );
         eql(
             h('div', {style: {color: 'red', fontSize: '20px'}}),
             h('div', {style: 'color: red;'}),
-            '<div style="color: red;"></div>'
+            '<div style="color: red;"></div>',
+            '<div style="color: red"></div>'
         );
         eql(
             h('div', {style: 'color: red; font-size: 20px'}),
             h('div', {style: {color: 'red'}}),
-            '<div style="color: red;"></div>'
+            '<div style="color: red;"></div>',
+            '<div style="color: red"></div>'
         );
     });
 

@@ -1,5 +1,6 @@
 import {h, hc, render} from '../src';
 import assert from 'assert';
+import {innerHTML, eqlHtml} from './utils';
 
 class ClassComponent {
     constructor(props) {
@@ -31,16 +32,13 @@ describe('Render', () => {
     function reset() {
         container.innerHTML = '';
     }
-    function eqlHtml(html) {
-        assert.strictEqual(container.innerHTML, html);
-    }
     function r(vNode) {
         reset();
         render(vNode, container);
     }
-    function eql(vNode, html) {
+    function eql(vNode, html, ie8Html) {
         r(vNode);
-        eqlHtml(html);
+        eqlHtml(container, html, ie8Html);
     }
 
     it('render null', () => {
@@ -61,8 +59,8 @@ describe('Render', () => {
     });
 
     it('render properties', () => {
-        const div = h('div', {className: 'test', id: 'test'});
-        eql(div, '<div class="test" id="test"></div>');
+        const div = h('div', {test: 'test', className: 'test'});
+        eql(div, '<div class="test" test="test"></div>');
         assert.strictEqual(container.children.length, 1);
     });
 
@@ -73,14 +71,15 @@ describe('Render', () => {
         );
         eql(
             h('div', {style: {color: 'red', fontSize: '20px'}}),
-            '<div style="color: red; font-size: 20px;"></div>'
+            '<div style="color: red; font-size: 20px;"></div>',
+            '<div style="color: red; font-size: 20px"></div>'
         );
     });
 
     it('render dataset', () => {
         eql(
-            h('div', {dataset: {a: 1, b: 'b'}}),
-            '<div data-a="1" data-b="b"></div>'
+            h('div', {dataset: {a: 1, b: 'b', aA: 'a'}}),
+            '<div data-a="1" data-b="b" data-a-a="a"></div>'
         );
     });
 
@@ -110,7 +109,8 @@ describe('Render', () => {
         );
         eql(
             h('div', null, ['text', h('div')]),
-            '<div>text<div></div></div>'
+            '<div>text<div></div></div>',
+            '<div>text\r\n<div></div></div>'
         );
         eql(
             h('div', {}, [undefined, 'text']),
@@ -128,7 +128,8 @@ describe('Render', () => {
     it('render nested children', () => {
         eql(
             h('div', null, [['text', [h('div')]]]),
-            '<div>text<div></div></div>'
+            '<div>text<div></div></div>',
+            '<div>text\r\n<div></div></div>'
         );
     });
 
@@ -199,7 +200,8 @@ describe('Render', () => {
                     h('i')
                 ]
             })),
-            '<div><p><span></span><i></i></p></div>'
+            '<div><p><span></span><i></i></p></div>',
+            '<div>\r\n<p><span></span><i></i></p></div>'
         );
     });
 
@@ -211,7 +213,8 @@ describe('Render', () => {
                     h('i')
                 ]
             })),
-            '<div><span><p></p><i></i></span></div>'
+            '<div><span><p></p><i></i></span></div>',
+            '<div><span>\r\n<p></p><i></i></span></div>'
         );
     });
 
@@ -270,7 +273,8 @@ describe('Render', () => {
                     h(FunctionComponent, {ref: (i) => o.i = i})
                 ]
             }),
-            '<span><p></p></span>'
+            '<span><p></p></span>',
+            '<span>\r\n<p></p></span>'
         );
         assert.strictEqual(o.i, container.firstChild.firstChild);
 
@@ -327,7 +331,7 @@ describe('Render', () => {
         it('stop event bubble', () => {
             const fn1 = sinon.spy((e) => e.stopPropagation());
             const fn2 = sinon.spy();
-            r(h('p', {'ev-click': fn2}, h('span', {'ev-click': fn1})));
+            r(h('p', {'ev-click': fn2}, h('span', {'ev-click': fn1}, 'span')));
             container.firstChild.firstChild.click();
             assert.strictEqual(fn1.callCount, 1);
             assert.strictEqual(fn2.callCount, 0);
@@ -336,7 +340,7 @@ describe('Render', () => {
         it('prevent default', () => {
             const url = location.href;
             const fn = sinon.spy((e) => e.preventDefault());
-            r(h('a', {'ev-click': fn, href: "https://www.baidu.com"}));
+            r(h('a', {'ev-click': fn, href: "https://www.baidu.com"}, 'test'));
             container.firstChild.click();
             assert.strictEqual(location.href, url);
         });
@@ -354,11 +358,12 @@ describe('Render', () => {
             mount = sinon.spy((lastVNode, vNode) => {
                 assert.strictEqual(container.firstChild, vNode.dom);
             });
-            C = function(props) {
+            function CC(props) {
                 this.props = props;
-            };
-            C.prototype.init = init;
-            C.prototype.mount = mount;
+            }
+            CC.prototype.init = init;
+            CC.prototype.mount = mount;
+            C = CC;
         });
 
         it('init and mount', () => {

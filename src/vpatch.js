@@ -14,7 +14,8 @@ import {
 } from './vdom';
 import {isObject, isArray, isNullOrUndefined, 
     skipProps, MountedQueue, isEventProp, 
-    booleanProps, strictProps
+    booleanProps, strictProps,
+    isIE8
 } from './utils';
 import {handleEvent} from './event';
 
@@ -509,9 +510,47 @@ function patchPropByObject(prop, lastValue, nextValue, dom) {
             return patchAttributes(lastValue, nextValue, dom);
         case 'style':
             return patchStyle(lastValue, nextValue, dom);
+        case 'dataset':
+            return patchDataset(prop, lastValue, nextValue, dom);
         default:
             return patchObject(prop, lastValue, nextValue, dom);
     }
+}
+
+const patchDataset = isIE8 ? 
+    function patchDataset(prop, lastValue, nextValue, dom) {
+        let hasRemoved = {};
+        let key;
+        let value;
+
+        for (key in nextValue) {
+            const dataKey = `data-${kebabCase(key)}`;
+            value = nextValue[key];
+            if (isNullOrUndefined(value)) {
+                dom.removeAttribute(dataKey); 
+                hasRemoved[key] = true;
+            } else {
+                dom.setAttribute(dataKey, value);
+            }
+        } 
+
+        if (!isNullOrUndefined(lastValue)) {
+            for (key in lastValue) {
+                if (isNullOrUndefined(nextValue[key]) && !hasRemoved[key]) {
+                    dom.removeAttribute(`data-${kebabCase(key)}`);
+                }
+            }
+        }
+    } : patchObject;
+
+const _cache = {};
+function kebabCase(word) {
+    if (!_cache[word]) {
+        _cache[word] = word.replace(/[A-Z]/g, (item) => {
+            return `-${item.toLowerCase()}`;
+        });
+    }
+    return _cache[word];
 }
 
 function patchObject(prop, lastValue, nextValue, dom) {

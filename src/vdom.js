@@ -3,7 +3,8 @@ import {patchProp} from './vpatch';
 import {handleEvent} from './event';
 import {
     MountedQueue, isArray, isStringOrNumber, 
-    isNullOrUndefined, isEventProp, doc as document
+    isNullOrUndefined, isEventProp, doc as document,
+    setTextContent
 } from './utils';
 
 export function render(vNode, parentDom) {
@@ -27,7 +28,7 @@ export function createElement(vNode, parentDom, mountedQueue) {
     } else if (type & Types.HtmlComment) {
         return createCommentElement(vNode, parentDom);
     } else {
-        throw new Error('unknown vnode type');
+        throw new Error(`unknown vnode type ${type}`);
     }
 }
 
@@ -146,7 +147,7 @@ export function createComponentFunctionVNode(vNode) {
 
 export function createElements(vNodes, parentDom, mountedQueue) {
     if (isStringOrNumber(vNodes)) {
-        parentDom.textContent = vNodes;
+        setTextContent(parentDom, vNodes);
     } else if (isArray(vNodes)) {
         for (let i = 0; i < vNodes.length; i++) {
             createElement(vNodes[i], parentDom, mountedQueue);
@@ -239,7 +240,7 @@ export function removeComponentClass(vNode, parentDom, nextVNode) {
 }
 
 export function removeAllChildren(dom, vNodes) {
-    dom.textContent = '';
+    setTextContent(dom, '');
     removeElements(vNodes);
 }
 

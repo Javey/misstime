@@ -5,7 +5,7 @@ const toString = Object.prototype.toString;
 export const doc = typeof document === 'undefined' ? minDocument : document;
 
 export const isArray = Array.isArray || function(arr) {
-    return toString.call(arr) === '[object array]';
+    return toString.call(arr) === '[object Array]';
 };
 
 export function isObject(o) {
@@ -137,4 +137,12 @@ MountedQueue.prototype.trigger = function() {
     while (callback = queue.shift()) {
         callback();
     }
+};
+
+export const isIE8 = typeof navigator !== 'undefined' && /ie 8.0/i.test(navigator.userAgent);
+
+export const setTextContent = isIE8 ? function(dom, text) {
+    dom.innerText = text;
+} : function(dom, text) {
+    dom.textContent = text;
 };

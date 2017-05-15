@@ -1,9 +1,12 @@
 const webpack = require('webpack');
 
+process.env.NODE_ENV = 'production';
+
 module.exports = function(config) {
     config.set({
         logLevel: config.LOG_INFO,
         files: [
+            // 'node_modules/babel-polyfill/dist/polyfill.js',
             'node_modules/sinon/pkg/sinon.js',
             'test/**/*.js',
             // 'test/render.js',
@@ -20,7 +23,14 @@ module.exports = function(config) {
                         exclude: /node-modules/
                     }
                 ]
-            }
+            },
+            plugins: [
+                new webpack.DefinePlugin({
+                    'process.env': {
+                        'NODE_ENV': JSON.stringify(process.env.NODE_ENV)
+                    }
+                }),
+            ]
         },
         frameworks: [
             'mocha',
