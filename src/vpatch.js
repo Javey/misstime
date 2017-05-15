@@ -12,7 +12,10 @@ import {
     createRef,
     replaceChild
 } from './vdom';
-import {isObject, isArray, isNullOrUndefined, skipProps, MountedQueue, isEventProp} from './utils';
+import {isObject, isArray, isNullOrUndefined, 
+    skipProps, MountedQueue, isEventProp, 
+    booleanProps, strictProps
+} from './utils';
 import {handleEvent} from './event';
 
 export function patch(lastVNode, nextVNode, parentDom) {
@@ -427,32 +430,21 @@ export function patchProps(lastVNode, nextVNode) {
     }
 }
 
-// export function patchProp(prop, lastValue, nextValue, dom) {
-    // if (lastValue !== nextValue) {
-        // if (skipProps[prop]) {
-            // return;
-        // } else if (isEventProp(prop)) {
-            // patchEvent(prop, lastValue, nextValue, dom);
-        // } else if (isNullOrUndefined(nextValue)) {
-            // dom.removeAttribute('prop');
-        // } else if (prop === 'style') {
-            // patchStyle(lastValue, nextValue, dom);
-        // } else if (prop === 'innerHTML') {
-            // dom.innerHTML = nextValue;
-        // } else {
-            // dom.setAttribute(prop, nextValue);
-        // }
-    // }
-// }
-
 export function patchProp(prop, lastValue, nextValue, dom) {
     if (lastValue !== nextValue) {
         if (skipProps[prop]) {
             return;
+        } else if (booleanProps[prop]) {
+            dom[prop] = !!nextValue;
+        } else if (strictProps[prop]) {
+            const value = isNullOrUndefined(nextValue) ? '' : nextValue;
+            if (dom[prop] !== value) {
+                dom[prop] = value;
+            }
         } else if (isNullOrUndefined(nextValue)) {
             removeProp(prop, lastValue, dom);
         } else if (isEventProp(prop)) {
-            patchEvent(prop, lastValue, nextValue, dom);
+            handleEvent(prop.substr(3), lastValue, nextValue, dom);
         } else if (isObject(nextValue)) {
             patchPropByObject(prop, lastValue, nextValue, dom);
         } else if (prop === 'innerHTML') {
@@ -583,11 +575,5 @@ function patchStyle(lastValue, nextValue, dom) {
                 domStyle[key] = '';
             }
         }
-    }
-}
-
-function patchEvent(prop, lastValue, nextValue, dom) {
-    if (lastValue !== nextValue) {
-        handleEvent(prop.substr(3), lastValue, nextValue, dom);
     }
 }

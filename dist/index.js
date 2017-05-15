@@ -109,6 +109,33 @@ var skipProps = {
     className: true
 };
 
+var booleanProps = {
+    muted: true,
+    scoped: true,
+    loop: true,
+    open: true,
+    checked: true,
+    default: true,
+    capture: true,
+    disabled: true,
+    readOnly: true,
+    required: true,
+    autoplay: true,
+    controls: true,
+    seamless: true,
+    reversed: true,
+    allowfullscreen: true,
+    novalidate: true,
+    hidden: true,
+    autoFocus: true,
+    selected: true
+};
+
+var strictProps = {
+    volume: true,
+    defaultChecked: true
+};
+
 function MountedQueue() {
     this.queue = [];
 }
@@ -646,7 +673,9 @@ function patchElement(lastVNode, nextVNode, parentDom, mountedQueue) {
     if (lastVNode.tag !== nextVNode.tag) {
         replaceElement(lastVNode, nextVNode, parentDom, mountedQueue);
     } else {
-        patchChildren(lastChildren, nextChildren, dom, mountedQueue);
+        if (lastChildren !== nextChildren) {
+            patchChildren(lastChildren, nextChildren, dom, mountedQueue);
+        }
 
         if (lastProps !== nextProps) {
             patchProps(lastVNode, nextVNode);
@@ -986,32 +1015,21 @@ function patchProps(lastVNode, nextVNode) {
     }
 }
 
-// export function patchProp(prop, lastValue, nextValue, dom) {
-// if (lastValue !== nextValue) {
-// if (skipProps[prop]) {
-// return;
-// } else if (isEventProp(prop)) {
-// patchEvent(prop, lastValue, nextValue, dom);
-// } else if (isNullOrUndefined(nextValue)) {
-// dom.removeAttribute('prop');
-// } else if (prop === 'style') {
-// patchStyle(lastValue, nextValue, dom);
-// } else if (prop === 'innerHTML') {
-// dom.innerHTML = nextValue;
-// } else {
-// dom.setAttribute(prop, nextValue);
-// }
-// }
-// }
-
 function patchProp(prop, lastValue, nextValue, dom) {
     if (lastValue !== nextValue) {
         if (skipProps[prop]) {
             return;
+        } else if (booleanProps[prop]) {
+            dom[prop] = !!nextValue;
+        } else if (strictProps[prop]) {
+            var value = isNullOrUndefined(nextValue) ? '' : nextValue;
+            if (dom[prop] !== value) {
+                dom[prop] = value;
+            }
         } else if (isNullOrUndefined(nextValue)) {
             removeProp(prop, lastValue, dom);
         } else if (isEventProp(prop)) {
-            patchEvent(prop, lastValue, nextValue, dom);
+            handleEvent(prop.substr(3), lastValue, nextValue, dom);
         } else if (isObject(nextValue)) {
             patchPropByObject(prop, lastValue, nextValue, dom);
         } else if (prop === 'innerHTML') {
@@ -1142,12 +1160,6 @@ function patchStyle(lastValue, nextValue, dom) {
                 domStyle[key] = '';
             }
         }
-    }
-}
-
-function patchEvent(prop, lastValue, nextValue, dom) {
-    if (lastValue !== nextValue) {
-        handleEvent(prop.substr(3), lastValue, nextValue, dom);
     }
 }
 

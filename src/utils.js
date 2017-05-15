@@ -98,6 +98,33 @@ export const skipProps = {
     className: true
 };
 
+export const booleanProps = {
+    muted: true,
+    scoped: true,
+    loop: true,
+    open: true,
+    checked: true,
+    default: true,
+    capture: true,
+    disabled: true,
+    readOnly: true,
+    required: true,
+    autoplay: true,
+    controls: true,
+    seamless: true,
+    reversed: true,
+    allowfullscreen: true,
+    novalidate: true,
+    hidden: true,
+    autoFocus: true,
+    selected: true
+};
+
+export const strictProps = {
+    volume: true,
+    defaultChecked: true
+};
+
 export function MountedQueue() {
     this.queue = [];
 }
