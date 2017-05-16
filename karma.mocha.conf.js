@@ -41,7 +41,13 @@ module.exports = function(config) {
             'karma-webpack',
         ],
         // browsers: ['Chrome', 'Safari', 'Firefox', 'Opera', 'IE', 'Phantomjs'],
-        browsers: ['Chrome'],
+        browsers: process.env.TRAVIS ? ['Chrome_travis_ci'] : ['Chrome'],
+        customLaunchers: {
+            Chrome_travis_ci: {
+                base: 'Chrome',
+                flags: ['--no-sandbox']
+            }
+        },
         client: {
             mocha: {
                 reporter: 'html'
