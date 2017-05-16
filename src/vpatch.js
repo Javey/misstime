@@ -15,7 +15,7 @@ import {
 import {isObject, isArray, isNullOrUndefined, 
     skipProps, MountedQueue, isEventProp, 
     booleanProps, strictProps,
-    isIE8
+    isIE8, setTextContent, isStringOrNumber
 } from './utils';
 import {handleEvent} from './event';
 
@@ -141,6 +141,13 @@ function patchChildren(lastChildren, nextChildren, parentDom, mountedQueue) {
         }
     } else if (isNullOrUndefined(nextChildren)) {
         removeElements(lastChildren, parentDom); 
+    } else if (isStringOrNumber(nextChildren)) {
+        if (isStringOrNumber(lastChildren)) {
+            parentDom.firstChild.nodeValue = nextChildren;
+        } else {
+            removeElements(lastChildren, parentDom);
+            setTextContent(parentDom, nextChildren);
+        }
     } else if (isArray(lastChildren)) {
         if (isArray(nextChildren)) {
             patchChildrenByKey(lastChildren, nextChildren, parentDom, mountedQueue);
@@ -151,6 +158,9 @@ function patchChildren(lastChildren, nextChildren, parentDom, mountedQueue) {
     } else if (isArray(nextChildren)) {
         removeElement(lastChildren, parentDom);
         createElements(nextChildren, parentDom, mountedQueue);
+    } else if (isStringOrNumber(lastChildren)) {
+        setTextContent(parentDom, '');
+        createElement(nextChildren, parentDom);
     } else {
         patchVNode(lastChildren, nextChildren, parentDom, mountedQueue);
     }
@@ -296,14 +306,8 @@ function patchChildrenByKey(a, b, dom, mountedQueue) {
                 ++bStart;
             }
         } else {
-            i = aLength - patched;
-            while (i > 0) {
-                aNode = a[aStart++];
-                if (aNode !== null) {
-                    removeElement(aNode, dom);
-                    --i;
-                }
-            }
+            // some browsers, e.g. ie, must insert before remove for some element,
+            // e.g. select/option, otherwise the selected property will be weird
             if (moved) {
                 const seq = lisAlgorithm(sources);
                 j = seq.length - 1;
@@ -334,6 +338,14 @@ function patchChildrenByKey(a, b, dom, mountedQueue) {
                             b, dom
                         );
                     }
+                }
+            }
+            i = aLength - patched;
+            while (i > 0) {
+                aNode = a[aStart++];
+                if (aNode !== null) {
+                    removeElement(aNode, dom);
+                    --i;
                 }
             }
         }
@@ -458,48 +470,57 @@ export function patchProp(prop, lastValue, nextValue, dom) {
 
 function removeProp(prop, lastValue, dom) {
     if (!isNullOrUndefined(lastValue)) {
-        let handled = false;
         switch (prop) {
-            // case 'className':
-                // dom.removeAttribute('class');
-                // handled = true;
-                // break;
             case 'value':
                 dom.value = '';
-                handled = true;
-                break;
+                return;
             case 'style':
                 dom.removeAttribute('style');
-                handled = true;
-                break;
+                return;
             case 'attributes':
                 for (let key in lastValue) {
                     dom.removeAttribute(key);
                 }
-                handled = true;
-                break;
+                return;
+            case 'dataset':
+                removeDataset(lastValue, dom);
+                return; 
             default:
                 break;
         }
-        if (!handled) {
-            if (isEventProp(prop)) {
-                handleEvent(prop.substr(3), lastValue, null, dom);
-            } else if (isObject(lastValue)){
-                const domProp = dom[prop];
-                try {
-                    dom[prop] = undefined;
-                    delete dom[prop];
-                } catch (e) {
-                    for (let key in lastValue) {
-                        delete domProp[key];
-                    }
+
+        if (booleanProps[prop]) {
+            dom[prop] = false;
+        } else if (isEventProp(prop)) {
+            handleEvent(prop.substr(3), lastValue, null, dom);
+        } else if (isObject(lastValue)){
+            const domProp = dom[prop];
+            try {
+                dom[prop] = undefined;
+                delete dom[prop];
+            } catch (e) {
+                for (let key in lastValue) {
+                    delete domProp[key];
                 }
-            } else {
-                dom.removeAttribute(prop);
             }
+        } else {
+            dom.removeAttribute(prop);
         }
     }
 }
+
+const removeDataset = isIE8 ? 
+    function(lastValue, dom) {
+        for (let key in lastValue) {
+            dom.removeAttribute(`data-${kebabCase(key)}`);
+        }
+    } :
+    function(lastValue, dom) {
+        const domProp = dom.dataset;
+        for (let key in lastValue) {
+            delete domProp[key];
+        }
+    };
 
 function patchPropByObject(prop, lastValue, nextValue, dom) {
     if (lastValue && !isObject(lastValue) && !isNullOrUndefined(lastValue)) {

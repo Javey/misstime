@@ -1,6 +1,6 @@
 import {h, hc, render, patch} from '../src';
 import assert from 'assert';
-import {eqlHtml} from './utils';
+import {eqlHtml, isIE8} from './utils';
 
 class ClassComponent {
     constructor(props) {
@@ -76,6 +76,15 @@ describe('Patch', () => {
             h('div', null, h('div')),
             '<div><div></div></div>',
             '<div>\r\n<div></div></div>'
+        );
+    });
+
+    it('patch text with vnode', () => {
+        eql(
+            h('div', null, 'test'),
+            h('div', null, h('span')),
+            '<div><span></span></div>',
+            '<div><span></span>&nbsp;</div>'
         );
     });
 
@@ -275,7 +284,8 @@ describe('Patch', () => {
                 h('option', null, '2'),
                 h('option', {selected: true}, '3'),
             ]),
-            '<select><option>1</option><option>2</option><option>3</option></select>'
+            '<select><option>1</option><option>2</option><option>3</option></select>',
+            '<select><option>1</option><option>2</option><option selected>3</option></select>'
         );
         assert.strictEqual(container.firstChild.children[1].selected, false);
         assert.strictEqual(container.firstChild.children[2].selected, true);
@@ -287,15 +297,33 @@ describe('Patch', () => {
                 h('option', {key: 3}, '3'),
             ]),
             h('select', null, [
-                h('option', {key: 4, selected: true}, '1'),
-                h('option', {key: 2}, '2'),
-                h('option', {key: 3}, '3'),
+                h('option', {key: 4, selected: true}, '11'),
+                h('option', {key: 2}, '22'),
+                h('option', {key: 3}, '33'),
             ]),
-            '<select><option>1</option><option>2</option><option>3</option></select>'
+            '<select><option>11</option><option>22</option><option>33</option></select>',
+            '<select><option selected>11</option><option>22</option><option>33</option></select>'
         );
-
         assert.strictEqual(container.firstChild.children[0].selected, true);
         assert.strictEqual(container.firstChild.children[1].selected, false);
+
+        eql(
+            h('select', null, [
+                h('option', {key: 2}, '2'),
+                h('option', {key: 1, selected: true}, '1'),
+                h('option', {key: 3}, '3'),
+            ]),
+            h('select', null, [
+                h('option', {key: 2}, '22'),
+                h('option', {key: 4, selected: true}, '11'),
+                h('option', {key: 3}, '33'),
+            ]),
+            '<select><option>22</option><option>11</option><option>33</option></select>',
+            '<select><option>22</option><option selected>11</option><option>33</option></select>'
+        );
+
+        assert.strictEqual(container.firstChild.children[0].selected, false);
+        assert.strictEqual(container.firstChild.children[1].selected, true);
     });
 
     it('patch children', () => {
@@ -341,7 +369,8 @@ describe('Patch', () => {
         eql(
             h('div', null, h('div')),
             h('div', null, h(FunctionComponent)),
-            '<div><p></p></div>'
+            '<div><p></p></div>',
+            '<div>\r\n<p></p></div>'
         );
     });
 
@@ -349,7 +378,8 @@ describe('Patch', () => {
         eql(
             h('div', null, h(ClassComponent)),
             h('div', null, h(FunctionComponent)),
-            '<div><p></p></div>'
+            '<div><p></p></div>',
+            '<div>\r\n<p></p></div>'
         );
 
         eql(
@@ -410,8 +440,8 @@ describe('Patch', () => {
             const fn = sinon.spy();
             const newFn = sinon.spy(); 
             p(
-                h('div', {'ev-click': fn}),
-                h('div', {'ev-click': newFn})
+                h('div', {'ev-click': fn}, 'test'),
+                h('div', {'ev-click': newFn}, 'test')
             );
             container.firstChild.click();
             sEql(fn.callCount, 0);
@@ -438,7 +468,7 @@ describe('Patch', () => {
             sEql(fn.callCount, 1);
         });
 
-        it('patch event on children', () => {
+        it('1patch event on children', () => {
             const fn = sinon.spy();
             const newFn = sinon.spy();
             p(
@@ -460,10 +490,30 @@ describe('Patch', () => {
     });
 
     describe('Key', () => {
+        function map(arr, fn) {
+            const ret = [];
+            for (let i = 0; i < arr.length; i++) {
+                ret.push(fn(arr[i], i));
+            }
+            return ret;
+        }
+        function each(arr, fn) {
+            for (let i = 0; i< arr.length; i++) {
+                fn(arr[i], i);
+            }
+        }
         function createVNodeFromArray(arr) {
-            return h('div', null, arr.map(value => h('span', {key: value}, value)));
+            return h('div', null, map(arr, value => h('span', {key: value}, value)));
         }
         function saveChildren() {
+            if (isIE8) {
+                const ret = [];
+                const children = container.firstChild.children;
+                for (let i = 0; i < children.length; i++) {
+                    ret.push(children[i]);
+                }
+                return ret;
+            }
             return Array.prototype.slice.call(container.firstChild.children, 0);
         }
 
@@ -474,7 +524,7 @@ describe('Patch', () => {
 
             patch(vNode, createVNodeFromArray([2, '3', 1, 'a', 'test']));
 
-            [1, 2, 0, 4, 3].forEach((order, index) => {
+            each([1, 2, 0, 4, 3], (order, index) => {
                 sEql(container.firstChild.children[index], childNodes[order]);
             });
         });
@@ -498,7 +548,7 @@ describe('Patch', () => {
                 h('span')
             ]));
 
-            [1, 0, 3, 2, 4].forEach((order, index) => {
+            each([1, 0, 3, 2, 4], (order, index) => {
                 sEql(container.firstChild.children[index], childNodes[order]);
             });
         });
@@ -526,14 +576,14 @@ describe('Patch', () => {
             function run(Component) {
                 reset();
                 function create(arr) {
-                    return h('div', null, arr.map(value => h(Component, {key: value})));
+                    return h('div', null, map(arr, value => h(Component, {key: value})));
                 }
                 const vNode = create([1, 2, 3]);
                 r(vNode);
                 const childNodes = saveChildren();
                 patch(vNode, create([2, 1, 3]));
 
-                [1, 0, 2].forEach((order, index) => {
+                each([1, 0, 2], (order, index) => {
                     sEql(container.firstChild.children[index], childNodes[order]);
                 });
             }
@@ -556,7 +606,7 @@ describe('Patch', () => {
                 h(ClassComponent, {key: 2})
             ]));
 
-            [2, 0, 1].forEach((order, index) => {
+            each([2, 0, 1], (order, index) => {
                 sEql(container.firstChild.children[index], childNodes[order]);
             });
         });
@@ -632,7 +682,7 @@ describe('Patch', () => {
             it('insert multiple keys and delete multiple keys', () => {
                 create([1, 2, 3, 4, 5, 6, 7, 8], [11, 3, 5, 4, 9, 10, 1]);
                 sEql(children.length, 7);
-                [[1, 2], [2, 4], [3, 3], [6, 0]].forEach(([order, index]) => {
+                each([[1, 2], [2, 4], [3, 3], [6, 0]], ([order, index]) => {
                     sEql(children[order], childNodes[index]);
                 });
             });

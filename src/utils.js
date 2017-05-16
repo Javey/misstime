@@ -70,7 +70,7 @@ export const SimpleMap = typeof Map === 'function' ? Map : (function() {
             index = this._keys.push(key) - 1;
             this.size++;
         }
-        this._values.push(value);
+        this._values[index] = value;
         return this;
     };
     SimpleMap.prototype.get = function(key) {
@@ -81,7 +81,7 @@ export const SimpleMap = typeof Map === 'function' ? Map : (function() {
     SimpleMap.prototype.delete = function(key) {
         const index = indexOf(this._keys, key);
         if (!~index) return false;
-        this._keys.spilce(index, 1);
+        this._keys.splice(index, 1);
         this._values.splice(index, 1);
         this.size--;
         return true;

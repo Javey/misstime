@@ -17,7 +17,7 @@ var toString = Object.prototype.toString;
 var doc = typeof document === 'undefined' ? minDocument : document;
 
 var isArray = Array.isArray || function (arr) {
-    return toString.call(arr) === '[object array]';
+    return toString.call(arr) === '[object Array]';
 };
 
 function isObject(o) {
@@ -82,7 +82,7 @@ var SimpleMap = typeof Map === 'function' ? Map : function () {
             index = this._keys.push(key) - 1;
             this.size++;
         }
-        this._values.push(value);
+        this._values[index] = value;
         return this;
     };
     SimpleMap.prototype.get = function (key) {
@@ -93,7 +93,7 @@ var SimpleMap = typeof Map === 'function' ? Map : function () {
     SimpleMap.prototype.delete = function (key) {
         var index = indexOf(this._keys, key);
         if (!~index) return false;
-        this._keys.spilce(index, 1);
+        this._keys.splice(index, 1);
         this._values.splice(index, 1);
         this.size--;
         return true;
@@ -115,7 +115,7 @@ var booleanProps = {
     loop: true,
     open: true,
     checked: true,
-    default: true,
+    'default': true,
     capture: true,
     disabled: true,
     readOnly: true,
@@ -148,6 +148,14 @@ MountedQueue.prototype.trigger = function () {
     while (callback = queue.shift()) {
         callback();
     }
+};
+
+var isIE8 = typeof navigator !== 'undefined' && /ie 8.0/i.test(navigator.userAgent);
+
+var setTextContent = isIE8 ? function (dom, text) {
+    dom.innerText = text;
+} : function (dom, text) {
+    dom.textContent = text;
 };
 
 var Types = {
@@ -269,15 +277,24 @@ function Event(e) {
         this[propKey] = e[propKey];
     }
 
+    if (!e.target) {
+        this.target = e.srcElement;
+    }
+
     this._rawEvent = e;
 }
 Event.prototype.preventDefault = function () {
-    this._rawEvent.preventDefault();
+    var e = this._rawEvent;
+    if (e.preventDefault) {
+        e.preventDefault();
+    } else {
+        e.returnValue = false;
+    }
 };
 Event.prototype.stopPropagation = function () {
     var e = this._rawEvent;
     e.cancelBubble = true;
-    e.stopImmediatePropagation();
+    e.stopImmediatePropagation && e.stopImmediatePropagation();
 };
 
 function MouseEvent(e) {
@@ -310,6 +327,26 @@ function proxyEvent(e) {
     }
 }
 
+var addEventListener = void 0;
+var removeEventListener = void 0;
+if ('addEventListener' in doc) {
+    addEventListener = function addEventListener(name, fn) {
+        doc.addEventListener(name, fn, false);
+    };
+
+    removeEventListener = function removeEventListener(name, fn) {
+        doc.removeEventListener(name, fn);
+    };
+} else {
+    addEventListener = function addEventListener(name, fn) {
+        doc.attachEvent("on" + name, fn);
+    };
+
+    removeEventListener = function removeEventListener(name, fn) {
+        doc.detachEvent("on" + name, fn);
+    };
+}
+
 var delegatedEvents = {};
 
 function handleEvent(name, lastEvent, nextEvent, dom) {
@@ -326,7 +363,7 @@ function handleEvent(name, lastEvent, nextEvent, dom) {
         var items = delegatedRoots.items;
         if (items.delete(dom)) {
             if (items.size === 0) {
-                doc.removeEventListener(name, delegatedRoots.docEvent);
+                removeEventListener(name, delegatedRoots.docEvent);
                 delete delegatedRoots[name];
             }
         }
@@ -355,11 +392,13 @@ function dispatchEvent(event, target, items, count, isClick) {
 function attachEventToDocument(name, delegatedRoots) {
     var docEvent = function docEvent(event) {
         var count = delegatedRoots.items.size;
+        event || (event = window.event);
         if (count > 0) {
-            dispatchEvent(proxyEvent(event), event.target, delegatedRoots.items, count, event.type === 'click');
+            event = proxyEvent(event);
+            dispatchEvent(event, event.target, delegatedRoots.items, count, event.type === 'click');
         }
     };
-    doc.addEventListener(name, docEvent);
+    addEventListener(name, docEvent);
     return docEvent;
 }
 
@@ -384,7 +423,7 @@ function createElement(vNode, parentDom, mountedQueue) {
     } else if (type & Types.HtmlComment) {
         return createCommentElement(vNode, parentDom);
     } else {
-        throw new Error('unknown vnode type');
+        throw new Error('unknown vnode type ' + type);
     }
 }
 
@@ -505,7 +544,7 @@ function createComponentFunctionVNode(vNode) {
 
 function createElements(vNodes, parentDom, mountedQueue) {
     if (isStringOrNumber(vNodes)) {
-        parentDom.textContent = vNodes;
+        setTextContent(parentDom, vNodes);
     } else if (isArray(vNodes)) {
         for (var i = 0; i < vNodes.length; i++) {
             createElement(vNodes[i], parentDom, mountedQueue);
@@ -598,7 +637,7 @@ function removeComponentClass(vNode, parentDom, nextVNode) {
 }
 
 function removeAllChildren(dom, vNodes) {
-    dom.textContent = '';
+    setTextContent(dom, '');
     removeElements(vNodes);
 }
 
@@ -738,6 +777,13 @@ function patchChildren(lastChildren, nextChildren, parentDom, mountedQueue) {
         }
     } else if (isNullOrUndefined(nextChildren)) {
         removeElements(lastChildren, parentDom);
+    } else if (isStringOrNumber(nextChildren)) {
+        if (isStringOrNumber(lastChildren)) {
+            parentDom.firstChild.nodeValue = nextChildren;
+        } else {
+            removeElements(lastChildren, parentDom);
+            setTextContent(parentDom, nextChildren);
+        }
     } else if (isArray(lastChildren)) {
         if (isArray(nextChildren)) {
             patchChildrenByKey(lastChildren, nextChildren, parentDom, mountedQueue);
@@ -748,6 +794,9 @@ function patchChildren(lastChildren, nextChildren, parentDom, mountedQueue) {
     } else if (isArray(nextChildren)) {
         removeElement(lastChildren, parentDom);
         createElements(nextChildren, parentDom, mountedQueue);
+    } else if (isStringOrNumber(lastChildren)) {
+        setTextContent(parentDom, '');
+        createElement(nextChildren, parentDom);
     } else {
         patchVNode(lastChildren, nextChildren, parentDom, mountedQueue);
     }
@@ -889,14 +938,8 @@ function patchChildrenByKey(a, b, dom, mountedQueue) {
                 ++bStart;
             }
         } else {
-            i = aLength - patched;
-            while (i > 0) {
-                aNode = a[aStart++];
-                if (aNode !== null) {
-                    removeElement(aNode, dom);
-                    --i;
-                }
-            }
+            // some browsers, e.g. ie, must insert before remove for some element,
+            // e.g. select/option, otherwise the selected property will be weird
             if (moved) {
                 var seq = lisAlgorithm(sources);
                 j = seq.length - 1;
@@ -919,6 +962,14 @@ function patchChildrenByKey(a, b, dom, mountedQueue) {
                         pos = i + bStart;
                         insertOrAppend(pos, b.length, createElement(b[pos], null, mountedQueue), b, dom);
                     }
+                }
+            }
+            i = aLength - patched;
+            while (i > 0) {
+                aNode = a[aStart++];
+                if (aNode !== null) {
+                    removeElement(aNode, dom);
+                    --i;
                 }
             }
         }
@@ -1042,48 +1093,55 @@ function patchProp(prop, lastValue, nextValue, dom) {
 
 function removeProp(prop, lastValue, dom) {
     if (!isNullOrUndefined(lastValue)) {
-        var handled = false;
         switch (prop) {
-            // case 'className':
-            // dom.removeAttribute('class');
-            // handled = true;
-            // break;
             case 'value':
                 dom.value = '';
-                handled = true;
-                break;
+                return;
             case 'style':
                 dom.removeAttribute('style');
-                handled = true;
-                break;
+                return;
             case 'attributes':
                 for (var key in lastValue) {
                     dom.removeAttribute(key);
                 }
-                handled = true;
-                break;
+                return;
+            case 'dataset':
+                removeDataset(lastValue, dom);
+                return;
             default:
                 break;
         }
-        if (!handled) {
-            if (isEventProp(prop)) {
-                handleEvent(prop.substr(3), lastValue, null, dom);
-            } else if (isObject(lastValue)) {
-                var domProp = dom[prop];
-                try {
-                    dom[prop] = undefined;
-                    delete dom[prop];
-                } catch (e) {
-                    for (var _key in lastValue) {
-                        delete domProp[_key];
-                    }
+
+        if (booleanProps[prop]) {
+            dom[prop] = false;
+        } else if (isEventProp(prop)) {
+            handleEvent(prop.substr(3), lastValue, null, dom);
+        } else if (isObject(lastValue)) {
+            var domProp = dom[prop];
+            try {
+                dom[prop] = undefined;
+                delete dom[prop];
+            } catch (e) {
+                for (var _key in lastValue) {
+                    delete domProp[_key];
                 }
-            } else {
-                dom.removeAttribute(prop);
             }
+        } else {
+            dom.removeAttribute(prop);
         }
     }
 }
+
+var removeDataset = isIE8 ? function (lastValue, dom) {
+    for (var key in lastValue) {
+        dom.removeAttribute('data-' + kebabCase(key));
+    }
+} : function (lastValue, dom) {
+    var domProp = dom.dataset;
+    for (var key in lastValue) {
+        delete domProp[key];
+    }
+};
 
 function patchPropByObject(prop, lastValue, nextValue, dom) {
     if (lastValue && !isObject(lastValue) && !isNullOrUndefined(lastValue)) {
@@ -1094,9 +1152,46 @@ function patchPropByObject(prop, lastValue, nextValue, dom) {
             return patchAttributes(lastValue, nextValue, dom);
         case 'style':
             return patchStyle(lastValue, nextValue, dom);
+        case 'dataset':
+            return patchDataset(prop, lastValue, nextValue, dom);
         default:
             return patchObject(prop, lastValue, nextValue, dom);
     }
+}
+
+var patchDataset = isIE8 ? function patchDataset(prop, lastValue, nextValue, dom) {
+    var hasRemoved = {};
+    var key = void 0;
+    var value = void 0;
+
+    for (key in nextValue) {
+        var dataKey = 'data-' + kebabCase(key);
+        value = nextValue[key];
+        if (isNullOrUndefined(value)) {
+            dom.removeAttribute(dataKey);
+            hasRemoved[key] = true;
+        } else {
+            dom.setAttribute(dataKey, value);
+        }
+    }
+
+    if (!isNullOrUndefined(lastValue)) {
+        for (key in lastValue) {
+            if (isNullOrUndefined(nextValue[key]) && !hasRemoved[key]) {
+                dom.removeAttribute('data-' + kebabCase(key));
+            }
+        }
+    }
+} : patchObject;
+
+var _cache = {};
+function kebabCase(word) {
+    if (!_cache[word]) {
+        _cache[word] = word.replace(/[A-Z]/g, function (item) {
+            return '-' + item.toLowerCase();
+        });
+    }
+    return _cache[word];
 }
 
 function patchObject(prop, lastValue, nextValue, dom) {
