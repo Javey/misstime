@@ -37,11 +37,12 @@ module.exports = function(config) {
         ],
         plugins: [
             'karma-chrome-launcher',
+            'karma-firefox-launcher',
             'karma-mocha',
             'karma-webpack',
         ],
         // browsers: ['Chrome', 'Safari', 'Firefox', 'Opera', 'IE', 'Phantomjs'],
-        browsers: process.env.TRAVIS ? ['Chrome_travis_ci'] : ['Chrome'],
+        browsers: process.env.TRAVIS ? ['Chrome_travis_ci', 'Firefox'] : ['Chrome'],
         customLaunchers: {
             Chrome_travis_ci: {
                 base: 'Chrome',
