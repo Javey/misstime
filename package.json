@@ -7,7 +7,7 @@
     "test": "test"
   },
   "scripts": {
-    "test": "mocha --compilers js:babel-core/register test/vnode.js",
+    "test": "npm run karma:test",
     "build": "rollup --config rollup.config.js",
     "karma:benchmark": "karma start karma.benchmark.conf.js",
     "karma:test": "karma start karma.mocha.conf.js"

@@ -25,7 +25,7 @@ module.exports = function(config) {
             'benchmark',
         ],
         reporters: [
-          'benchmark',
+            'benchmark',
         ],
         plugins: [
             'karma-chrome-launcher',

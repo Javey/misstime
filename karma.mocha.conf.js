@@ -40,7 +40,7 @@ module.exports = function(config) {
             'karma-mocha',
             'karma-webpack',
         ],
-        browser: ['chrome'],
+        browser: ['Chrome', 'Safari', 'Firefox', 'Opera', 'IE', 'Phantomjs'],
         client: {
             mocha: {
                 reporter: 'html'
