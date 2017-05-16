@@ -52,6 +52,7 @@ module.exports = function(config) {
             mocha: {
                 reporter: 'html'
             }
-        }
+        },
+        singleRun: true
     });
 };
