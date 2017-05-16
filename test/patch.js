@@ -60,6 +60,20 @@ describe('Patch', () => {
         p(lastVNode, nextVNode);
         eqlHtml(container, html, ie8Html);
     }
+
+    function eqlObj(lastVNode, nextVNode, obj) {
+        p(lastVNode, nextVNode);
+        const node = container.firstChild;
+        if (obj.tag) {
+            assert.strictEqual(node.tagName.toLowerCase(), obj.tag);
+        }
+        if (obj.props) {
+            for (let i in obj.props) {
+                assert.strictEqual(node.getAttribute(i), obj.props[i]);
+            }
+        }
+    }
+
     function sEql(a, b) {
         assert.strictEqual(a, b);
     }
@@ -195,25 +209,25 @@ describe('Patch', () => {
     });
 
     it('patch dataset', () => {
-        eql(
+        eqlObj(
             h('div', {dataset: {a: 1, b: 'b'}}),
             h('div', {dataset: {a: 2, c: 'c'}}),
-            '<div data-a="2" data-c="c"></div>'
+            {tag: 'div', props: {'data-a': '2', 'data-c': 'c', 'data-b': null}}
         );
-        eql(
+        eqlObj(
             h('div'),
             h('div', {dataset: {a: 2, c: 'c'}}),
-            '<div data-a="2" data-c="c"></div>'
+            {tag: 'div', props: {'data-a': '2', 'data-c': 'c'}}
         );
-        eql(
+        eqlObj(
             h('div', {dataset: null}),
             h('div', {dataset: {a: 2, c: 'c'}}),
-            '<div data-a="2" data-c="c"></div>'
+            {tag: 'div', props: {'data-a': '2', 'data-c': 'c'}}
         );
-        eql(
+        eqlObj(
             h('div'),
             h('div', {dataset: {a: 2, c: 'c'}}),
-            '<div data-a="2" data-c="c"></div>'
+            {tag: 'div', props: {'data-a': '2', 'data-c': 'c'}}
         );
         eql(
             h('div', {dataset: {a: 1, b: 'b'}}),
@@ -223,10 +237,10 @@ describe('Patch', () => {
     });
 
     it('patch attributes', () => {
-        eql(
+        eqlObj(
             h('div', {attributes: {a: 1, b: 'b'}}),
             h('div', {attributes: {a: 2, c: 'c'}}),
-            '<div a="2" c="c"></div>'
+            {div: 'div', props: {a: '2', c: 'c', b: null}}
         );
 
         eql(
@@ -241,16 +255,16 @@ describe('Patch', () => {
             '<div></div>'
         );
 
-        eql(
+        eqlObj(
             h('div'),
             h('div', {attributes: {a: 2, c: 'c'}}),
-            '<div a="2" c="c"></div>'
+            {div: 'div', props: {a: '2', c: 'c'}}
         );
 
-        eql(
+        eqlObj(
             h('div', {attributes: {a: 1, b: 'b'}}),
             h('div', {attributes: {a: null, c: 'c'}}),
-            '<div c="c"></div>'
+            {div: 'div', props: {a: null, b: null, c: 'c'}}
         );
     });
 

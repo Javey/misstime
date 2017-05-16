@@ -40,6 +40,18 @@ describe('Render', () => {
         r(vNode);
         eqlHtml(container, html, ie8Html);
     }
+    function eqlObj(vNode, obj) {
+        r(vNode);
+        const node = container.firstChild;
+        if (obj.tag) {
+            assert.strictEqual(node.tagName.toLowerCase(), obj.tag);
+        }
+        if (obj.props) {
+            for (let i in obj.props) {
+                assert.strictEqual(node.getAttribute(i), obj.props[i]);
+            }
+        }
+    }
 
     it('render null', () => {
         eql(null, '');
@@ -60,7 +72,7 @@ describe('Render', () => {
 
     it('render properties', () => {
         const div = h('div', {test: 'test', className: 'test'});
-        eql(div, '<div class="test" test="test"></div>');
+        eqlObj(div, {tag: 'div', props: {'class': 'test', test: 'test'}});
         assert.strictEqual(container.children.length, 1);
     });
 
@@ -77,16 +89,23 @@ describe('Render', () => {
     });
 
     it('render dataset', () => {
-        eql(
+        eqlObj(
             h('div', {dataset: {a: 1, b: 'b', aA: 'a'}}),
-            '<div data-a="1" data-b="b" data-a-a="a"></div>'
+            {
+                tag: 'div',
+                props: {
+                    'data-a': '1',
+                    'data-b': 'b',
+                    'data-a-a': 'a'
+                }
+            }
         );
     });
 
     it('render attributes', () => {
-        eql(
+        eqlObj(
             h('div', {attributes: {a: 1, b: 'b'}}),
-            '<div a="1" b="b"></div>'
+            {tag: 'div', props: {a: '1', b: 'b'}}
         );
     });
 
