@@ -7,9 +7,42 @@ const customLaunchers = {
         base: 'SauceLabs',
         browserName: 'chrome',
         platform: 'Windows 7',
-        version: '35'
+        version: '58'
+    },
+    sl_firefox: {
+        base: 'SauceLabs',
+        browserName: 'firefox',
+        platform: 'Windows 7',
+        version: '53'
+    },
+    sl_opera: {
+        base: 'SauceLabs',
+        browserName: 'opera',
+        platform: 'Windows 7',
+        version: '12'
+    },
+    sl_ie13: {
+        base: 'SauceLabs',
+        browserName: 'ie',
+        platform: 'Windows 10',
+        version: '13'
+    },
+    sl_safari: {
+        base: 'SauceLabs',
+        browserName: 'safari',
+        platform: 'MacOS Sierra 10.12',
+        version: '10'
     }
 };
+
+[8, 9, 10, 11].forEach(v => {
+    customLaunchers[`sl_ie${v}`] = {
+        base: 'SauceLabs',
+        browserName: 'ie',
+        platform: 'Windows 7',
+        version: v
+    };
+});
 
 module.exports = function(config) {
     config.set({
