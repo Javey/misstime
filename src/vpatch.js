@@ -525,6 +525,7 @@ const removeDataset = isIE8 ?
 function patchPropByObject(prop, lastValue, nextValue, dom) {
     if (lastValue && !isObject(lastValue) && !isNullOrUndefined(lastValue)) {
         removeProp(prop, lastValue, dom);
+        lastValue = null;
     }
     switch (prop) {
         case 'attributes':
