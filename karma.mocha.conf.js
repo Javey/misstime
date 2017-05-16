@@ -23,14 +23,20 @@ const customLaunchers = {
     },
     sl_ie13: {
         base: 'SauceLabs',
-        browserName: 'ie',
+        browserName: 'MicrosoftEdge',
         platform: 'Windows 10',
-        version: '13'
+        version: '13.10586'
+    },
+    sl_ie14: {
+        base: 'SauceLabs',
+        browserName: 'MicrosoftEdge',
+        platform: 'Windows 10',
+        version: '14.14393'
     },
     sl_safari: {
         base: 'SauceLabs',
         browserName: 'safari',
-        platform: 'MacOS Sierra 10.12',
+        platform: 'macOS 10.12',
         version: '10'
     }
 };
@@ -38,7 +44,7 @@ const customLaunchers = {
 [8, 9, 10, 11].forEach(v => {
     customLaunchers[`sl_ie${v}`] = {
         base: 'SauceLabs',
-        browserName: 'ie',
+        browserName: 'internet explorer',
         platform: 'Windows 7',
         version: v
     };
