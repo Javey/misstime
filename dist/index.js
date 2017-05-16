@@ -172,7 +172,7 @@ Types.Component = Types.ComponentClass | Types.ComponentFunction;
 Types.TextElement = Types.Text | Types.HtmlComment;
 
 var EMPTY_OBJ = {};
-if (process.env.NODE_ENV !== 'production') {
+if (process.env.NODE_ENV !== 'production' && !isIE8) {
     Object.freeze(EMPTY_OBJ);
 }
 
@@ -1146,6 +1146,7 @@ var removeDataset = isIE8 ? function (lastValue, dom) {
 function patchPropByObject(prop, lastValue, nextValue, dom) {
     if (lastValue && !isObject(lastValue) && !isNullOrUndefined(lastValue)) {
         removeProp(prop, lastValue, dom);
+        lastValue = null;
     }
     switch (prop) {
         case 'attributes':
