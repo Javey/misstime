@@ -1,4 +1,5 @@
 import assert from 'assert';
+import {browser} from '../src/utils';
 
 export function innerHTML(obj, convertToLowerCase = true) {
     var zz = obj.innerHTML != null ? String(obj.innerHTML) : obj
@@ -39,7 +40,7 @@ export function innerHTML(obj, convertToLowerCase = true) {
   return zz;
 } 
 
-export const isIE8 = /IE 8.0/i.test(navigator.userAgent);
+export const isIE8 = browser.isIE8;
 
 export function eqlHtml(container, html, ie8Html) {
     assert.strictEqual(innerHTML(container), isIE8 & ie8Html !== undefined ? ie8Html : html);

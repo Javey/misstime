@@ -1,4 +1,4 @@
-import {SimpleMap, isNullOrUndefined, createObject, doc as document, isIE8} from './utils';
+import {SimpleMap, isNullOrUndefined, createObject, doc as document, browser} from './utils';
 
 const ALL_PROPS = [
     "altKey", "bubbles", "cancelable", "ctrlKey",

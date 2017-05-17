@@ -77,14 +77,20 @@ describe('Render', () => {
     });
 
     it('render style', () => {
-        eql(
-            h('div', {style: 'color: red; font-size: 20px'}),
-            '<div style="color: red; font-size: 20px"></div>'
+        // the ';' at last is missing in ie
+        const style = 'color: red; font-size: 20px';
+        r(h('div', {style: 'color: red; font-size: 20px'}));
+        assert.strictEqual(
+            container.firstChild.getAttribute('style')
+                .toLowerCase().substr(0, style.length),
+            style
         );
-        eql(
-            h('div', {style: {color: 'red', fontSize: '20px'}}),
-            '<div style="color: red; font-size: 20px;"></div>',
-            '<div style="color: red; font-size: 20px"></div>'
+
+        r(h('div', {style: {color: 'red', fontSize: '20px'}}));
+        assert.strictEqual(
+            container.firstChild.getAttribute('style')
+                .toLowerCase().substr(0, style.length),
+            style
         );
     });
 

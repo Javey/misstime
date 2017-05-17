@@ -139,9 +139,19 @@ MountedQueue.prototype.trigger = function() {
     }
 };
 
-export const isIE8 = typeof navigator !== 'undefined' && /ie 8.0/i.test(navigator.userAgent);
+export const browser = {};
+if (typeof navigator !== 'undefined') {
+    const ua = navigator.userAgent;
+    const index = ua.indexOf('MSIE ');
+    if (~index) {
+        browser.isIE = true;
+        const version = parseInt(ua.substring(index + 5, ua.indexOf('.', index)), 10);
+        browser.version = version;
+        browser.isIE8 = version === 8;
+    }
+}
 
-export const setTextContent = isIE8 ? function(dom, text) {
+export const setTextContent = browser.isIE8 ? function(dom, text) {
     dom.innerText = text;
 } : function(dom, text) {
     dom.textContent = text;

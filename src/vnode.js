@@ -1,4 +1,4 @@
-import {isArray, isStringOrNumber, isNullOrUndefined, isIE8} from './utils';
+import {isArray, isStringOrNumber, isNullOrUndefined, browser} from './utils';
 
 export const Types = {
     Text: 1,
@@ -14,7 +14,7 @@ Types.Component = Types.ComponentClass | Types.ComponentFunction;
 Types.TextElement = Types.Text | Types.HtmlComment;
 
 export const EMPTY_OBJ = {};
-if (process.env.NODE_ENV !== 'production' && !isIE8) {
+if (process.env.NODE_ENV !== 'production' && !browser.isIE) {
     Object.freeze(EMPTY_OBJ);
 }
 

@@ -15,7 +15,7 @@ import {
 import {isObject, isArray, isNullOrUndefined, 
     skipProps, MountedQueue, isEventProp, 
     booleanProps, strictProps,
-    isIE8, setTextContent, isStringOrNumber
+    browser, setTextContent, isStringOrNumber
 } from './utils';
 import {handleEvent} from './event';
 
@@ -509,7 +509,7 @@ function removeProp(prop, lastValue, dom) {
     }
 }
 
-const removeDataset = isIE8 ? 
+const removeDataset = browser.isIE ? 
     function(lastValue, dom) {
         for (let key in lastValue) {
             dom.removeAttribute(`data-${kebabCase(key)}`);
@@ -539,7 +539,7 @@ function patchPropByObject(prop, lastValue, nextValue, dom) {
     }
 }
 
-const patchDataset = isIE8 ? 
+const patchDataset = browser.isIE ? 
     function patchDataset(prop, lastValue, nextValue, dom) {
         let hasRemoved = {};
         let key;
