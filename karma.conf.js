@@ -45,7 +45,6 @@ module.exports = function(config) {
         sauceLabs: {
             testName: 'Miss Unit Tests'
         },
-        reportes: ['dots', 'saucelabs'],
         client: {
             mocha: {
                 reporter: 'html'

@@ -54,5 +54,6 @@ module.exports = function(config) {
     config.set({
         browsers: Object.keys(customLaunchers),
         customLaunchers: customLaunchers,
+        reporters: ['dots', 'saucelabs'],
     });
 };
