@@ -1,6 +1,6 @@
 'use strict';
 
-Object.defineProperty(exports, '__esModule', { value: true });
+exports._esModule = true;
 
 function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
 
@@ -90,7 +90,7 @@ var SimpleMap = typeof Map === 'function' ? Map : function () {
         if (!~index) return;
         return this._values[index];
     };
-    SimpleMap.prototype.delete = function (key) {
+    SimpleMap.prototype['delete'] = function (key) {
         var index = indexOf(this._keys, key);
         if (!~index) return false;
         this._keys.splice(index, 1);
@@ -150,9 +150,19 @@ MountedQueue.prototype.trigger = function () {
     }
 };
 
-var isIE8 = typeof navigator !== 'undefined' && /ie 8.0/i.test(navigator.userAgent);
+var browser = {};
+if (typeof navigator !== 'undefined') {
+    var ua = navigator.userAgent;
+    var index = ua.indexOf('MSIE ');
+    if (~index) {
+        browser.isIE = true;
+        var version = parseInt(ua.substring(index + 5, ua.indexOf('.', index)), 10);
+        browser.version = version;
+        browser.isIE8 = version === 8;
+    }
+}
 
-var setTextContent = isIE8 ? function (dom, text) {
+var setTextContent = browser.isIE8 ? function (dom, text) {
     dom.innerText = text;
 } : function (dom, text) {
     dom.textContent = text;
@@ -172,7 +182,7 @@ Types.Component = Types.ComponentClass | Types.ComponentFunction;
 Types.TextElement = Types.Text | Types.HtmlComment;
 
 var EMPTY_OBJ = {};
-if (process.env.NODE_ENV !== 'production' && !isIE8) {
+if (process.env.NODE_ENV !== 'production' && !browser.isIE) {
     Object.freeze(EMPTY_OBJ);
 }
 
@@ -361,7 +371,7 @@ function handleEvent(name, lastEvent, nextEvent, dom) {
         delegatedRoots.items.set(dom, nextEvent);
     } else if (delegatedRoots) {
         var items = delegatedRoots.items;
-        if (items.delete(dom)) {
+        if (items["delete"](dom)) {
             if (items.size === 0) {
                 removeEventListener(name, delegatedRoots.docEvent);
                 delete delegatedRoots[name];
@@ -1132,7 +1142,7 @@ function removeProp(prop, lastValue, dom) {
     }
 }
 
-var removeDataset = isIE8 ? function (lastValue, dom) {
+var removeDataset = browser.isIE ? function (lastValue, dom) {
     for (var key in lastValue) {
         dom.removeAttribute('data-' + kebabCase(key));
     }
@@ -1160,7 +1170,7 @@ function patchPropByObject(prop, lastValue, nextValue, dom) {
     }
 }
 
-var patchDataset = isIE8 ? function patchDataset(prop, lastValue, nextValue, dom) {
+var patchDataset = browser.isIE ? function patchDataset(prop, lastValue, nextValue, dom) {
     var hasRemoved = {};
     var key = void 0;
     var value = void 0;
