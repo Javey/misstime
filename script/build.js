@@ -5,7 +5,6 @@ const config = require('../rollup.config');
 function write(dest, content) {
     return new Promise((resolve, reject) => {
         fs.writeFile(dest, content, err => {
-            console.log(err)
             if (err) return reject(err);
             resolve();
         });
@@ -14,11 +13,11 @@ function write(dest, content) {
 
 function build() {
     return rollup.rollup(config).then(buddle => {
-        let code = buddle.generate(config).code;
-        code = code.replace(
-            "Object.defineProperty(exports, '__esModule', { value: true });",
-            'exports._esModule = true;'
-        );
+        var code = buddle.generate(config).code;
+        // code = code.replace(
+            // "Object.defineProperty(exports, '__esModule', { value: true });",
+            // 'exports._esModule = true;'
+        // );
         return write(config.dest, code);
     }).catch(e => console.log(e));
 }

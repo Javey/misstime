@@ -1,7 +1,5 @@
 'use strict';
 
-exports._esModule = true;
-
 function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
 
 var minDocument = _interopDefault(require('min-document'));

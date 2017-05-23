@@ -5,6 +5,8 @@ module.exports = {
     entry: 'src/index.js',
     dest: 'dist/index.js',
     format: 'cjs',
+    legacy: true,
+    external: ['min-document'],
     plugins: [
         babel({
             exclude: 'node_modules/**',
