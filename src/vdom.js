@@ -81,7 +81,7 @@ export function createComponentClass(vNode, parentDom, mountedQueue, lastVNode) 
     const props = vNode.props;
     const instance = new vNode.tag(props); 
     const dom = instance.init(lastVNode, vNode);
-    const ref = props.ref;
+    const ref = vNode.ref;
 
     vNode.dom = dom;
     vNode.children = instance;

@@ -7,10 +7,13 @@ class ClassComponent {
         this.props = props;
     }
     init() { 
-        return this.dom = render(h('span', this.props, this.props.children));
+        this.vNode = h('span', this.props, this.props.children);
+        return this.dom = render(this.vNode);
     }
-    update() {
-        return this.dom;
+    update(lastVNode, nextVNode) {
+        var oldVnode = this.vNode;
+        this.vNode = h('span', nextVNode.props, nextVNode.props.children);
+        return this.dom = patch(oldVnode, this.vNode);
     }
 } 
 
@@ -449,6 +452,33 @@ describe('Patch', () => {
         sEql(o.i, null);
     });
 
+    it('update class component', () => {
+        eql(
+            h('div', null, h(ClassComponent, {
+                children: 'a'
+            })),
+            h('div', null, h(ClassComponent, {
+                children: 'b'
+            })),
+            '<div><span>b</span></div>'
+        );
+    });
+
+    it('update class component many times', () => {
+        const vNode1 = h('div', null, h(ClassComponent, {
+            children: 'a'
+        }));
+        const vNode2 = h('div', null, h(ClassComponent, {
+            children: 'b'
+        }));
+        const vNode3 = h('div', null, h(ClassComponent, {
+            children: 'c'
+        }));
+        eql(vNode1, vNode2, '<div><span>b</span></div>');
+        patch(vNode2, vNode3);
+        eqlHtml(container, '<div><span>c</span></div>');
+    });
+
     describe('Event', () => {
         it('patch event', () => {
             const fn = sinon.spy();
@@ -482,7 +512,7 @@ describe('Patch', () => {
             sEql(fn.callCount, 1);
         });
 
-        it('1patch event on children', () => {
+        it('patch event on children', () => {
             const fn = sinon.spy();
             const newFn = sinon.spy();
             p(

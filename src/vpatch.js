@@ -113,6 +113,7 @@ function patchComponentClass(lastVNode, nextVNode, parentDom, mountedQueue) {
         instance = lastVNode.children;
         newDom = instance.update(lastVNode, nextVNode);
         nextVNode.dom = newDom;
+        nextVNode.children = instance;
     }
 
     if (dom !== newDom) {

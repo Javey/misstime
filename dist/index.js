@@ -484,7 +484,7 @@ function createComponentClass(vNode, parentDom, mountedQueue, lastVNode) {
     var props = vNode.props;
     var instance = new vNode.tag(props);
     var dom = instance.init(lastVNode, vNode);
-    var ref = props.ref;
+    var ref = vNode.ref;
 
     vNode.dom = dom;
     vNode.children = instance;
@@ -757,6 +757,7 @@ function patchComponentClass(lastVNode, nextVNode, parentDom, mountedQueue) {
         instance = lastVNode.children;
         newDom = instance.update(lastVNode, nextVNode);
         nextVNode.dom = newDom;
+        nextVNode.children = instance;
     }
 
     if (dom !== newDom) {
