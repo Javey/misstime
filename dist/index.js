@@ -31,6 +31,10 @@ function isNullOrUndefined(o) {
     return o === null || o === undefined;
 }
 
+function isComponentInstance(o) {
+    return o && typeof o.init === 'function';
+}
+
 function isEventProp(propName) {
     return propName.substr(0, 3) === 'ev-';
 }
@@ -172,11 +176,12 @@ var Types = {
 
     ComponentClass: 4,
     ComponentFunction: 8,
+    ComponentInstance: 16,
 
-    HtmlComment: 16
+    HtmlComment: 32
 };
 Types.Element = Types.HtmlElement;
-Types.Component = Types.ComponentClass | Types.ComponentFunction;
+Types.ComponentClassOrInstance = Types.ComponentClass | Types.ComponentInstance;
 Types.TextElement = Types.Text | Types.HtmlComment;
 
 var EMPTY_OBJ = {};
@@ -189,9 +194,9 @@ function VNode(type, tag, props, children, className, key, ref) {
     this.tag = tag;
     this.props = props;
     this.children = children;
-    this.key = key || props.key;
-    this.ref = ref || props.ref;
-    this.className = className || props.className;
+    this.key = key;
+    this.ref = ref;
+    this.className = className;
 }
 
 function createVNode(tag, props, children, className, key, ref) {
@@ -216,7 +221,7 @@ function createVNode(tag, props, children, className, key, ref) {
         props.children = normalizeChildren(props.children);
     }
 
-    return new VNode(type, tag, props, normalizeChildren(children), className, key, ref);
+    return new VNode(type, tag, props, normalizeChildren(children), className || props.className, key || props.key, ref || props.ref);
 }
 
 function createCommentVNode(children) {
@@ -229,10 +234,17 @@ function createTextVNode(text) {
 
 
 
+function createComponentInstanceVNode(instance) {
+    var props = instance.props || EMPTY_OBJ;
+    return new VNode(Types.ComponentInstance, instance.constructor, props, instance, null, props.key, props.ref);
+}
+
 function normalizeChildren(vNodes) {
     if (isArray(vNodes)) {
         var childNodes = addChild(vNodes, { index: 0 });
         return childNodes.length ? childNodes : null;
+    } else if (isComponentInstance(vNodes)) {
+        return createComponentInstanceVNode(vNodes);
     }
     return vNodes;
 }
@@ -262,6 +274,11 @@ function addChild(vNodes, reference) {
                 newVNodes = vNodes.slice(0, i);
             }
             newVNodes.push(applyKey(createTextVNode(n), reference));
+        } else if (isComponentInstance(n)) {
+            if (!newVNodes) {
+                newVNodes = vNodes.slice(0, i);
+            }
+            newVNodes.push(applyKey(createComponentInstanceVNode(n)), reference);
         } else if (n.type) {
             if (!newVNodes) {
                 newVNodes = vNodes.slice(0, i);
@@ -424,10 +441,12 @@ function createElement(vNode, parentDom, mountedQueue) {
         return createHtmlElement(vNode, parentDom, mountedQueue);
     } else if (type & Types.Text) {
         return createTextElement(vNode, parentDom);
-    } else if (type & Types.ComponentClass) {
-        return createComponentClass(vNode, parentDom, mountedQueue);
+    } else if (type & Types.ComponentClassOrInstance) {
+        return createComponentClassOrInstance(vNode, parentDom, mountedQueue);
     } else if (type & Types.ComponentFunction) {
         return createComponentFunction(vNode, parentDom, mountedQueue);
+        // } else if (type & Types.ComponentInstance) {
+        // return createComponentInstance(vNode, parentDom, mountedQueue);
     } else if (type & Types.HtmlComment) {
         return createCommentElement(vNode, parentDom);
     } else {
@@ -480,9 +499,9 @@ function createTextElement(vNode, parentDom) {
     return dom;
 }
 
-function createComponentClass(vNode, parentDom, mountedQueue, lastVNode) {
+function createComponentClassOrInstance(vNode, parentDom, mountedQueue, lastVNode) {
     var props = vNode.props;
-    var instance = new vNode.tag(props);
+    var instance = vNode.type & Types.ComponentClass ? new vNode.tag(props) : vNode.children;
     var dom = instance.init(lastVNode, vNode);
     var ref = vNode.ref;
 
@@ -505,6 +524,29 @@ function createComponentClass(vNode, parentDom, mountedQueue, lastVNode) {
 
     return dom;
 }
+
+// export function createComponentInstance(vNode, parentDom, mountedQueue, lastVNode) {
+// const props = vNode.props;
+// const instance = vNode.children;
+// const dom = instance.init(lastVNode, vNode);
+// const ref = vNode.ref;
+
+// vNode.dom = dom;
+
+// if (parentDom) {
+// parentDom.appendChild(dom);
+// }
+
+// if (typeof instance.mount === 'function') {
+// mountedQueue.push(() => instance.mount(lastVNode, vNode));
+// }
+
+// if (typeof ref === 'function') {
+// ref(instance);
+// }
+
+// return dom;
+// }
 
 function createComponentFunction(vNode, parentDom, mountedQueue) {
     var props = vNode.props;
@@ -580,8 +622,8 @@ function removeElement(vNode, parentDom) {
         return removeHtmlElement(vNode, parentDom);
     } else if (type & Types.TextElement) {
         return removeText(vNode, parentDom);
-    } else if (type & Types.ComponentClass) {
-        return removeComponentClass(vNode, parentDom);
+    } else if (type & Types.ComponentClassOrInstance) {
+        return removeComponentClassOrInstance(vNode, parentDom);
     } else if (type & Types.ComponentFunction) {
         return removeComponentFunction(vNode, parentDom);
     }
@@ -625,7 +667,7 @@ function removeComponentFunction(vNode, parentDom) {
     removeElement(vNode.children, parentDom);
 }
 
-function removeComponentClass(vNode, parentDom, nextVNode) {
+function removeComponentClassOrInstance(vNode, parentDom, nextVNode) {
     var instance = vNode.children;
     var ref = vNode.ref;
 
@@ -700,6 +742,12 @@ function patchVNode(lastVNode, nextVNode, parentDom, mountedQueue) {
             } else {
                 replaceElement(lastVNode, nextVNode, parentDom, mountedQueue);
             }
+        } else if (nextType & Types.ComponentInstance) {
+            if (lastType & Types.ComponentInstance) {
+                patchComponentIntance(lastVNode, nextVNode, parentDom, mountedQueue);
+            } else {
+                replaceElement(lastVNode, nextVNode, parentDom, mountedQueue);
+            }
         }
     }
     return nextVNode.dom;
@@ -751,13 +799,33 @@ function patchComponentClass(lastVNode, nextVNode, parentDom, mountedQueue) {
     var newDom = void 0;
 
     if (lastTag !== nextTag || lastVNode.key !== nextVNode.key) {
-        newDom = createComponentClass(nextVNode, null, mountedQueue, lastVNode);
-        removeComponentClass(lastVNode, null, nextVNode);
+        removeComponentClassOrInstance(lastVNode, null, nextVNode);
+        newDom = createComponentClassOrInstance(nextVNode, null, mountedQueue, lastVNode);
     } else {
         instance = lastVNode.children;
         newDom = instance.update(lastVNode, nextVNode);
         nextVNode.dom = newDom;
         nextVNode.children = instance;
+    }
+
+    if (dom !== newDom) {
+        replaceChild(parentDom, newDom, dom);
+    }
+}
+
+function patchComponentIntance(lastVNode, nextVNode, parentDom, mountedQueue) {
+    var lastInstance = lastVNode.children;
+    var nextInstance = nextVNode.children;
+    var dom = lastVNode.dom;
+
+    var newDom = void 0;
+
+    if (lastInstance !== nextInstance) {
+        removeComponentClassOrInstance(lastVNode, null, nextVNode);
+        newDom = createComponentClassOrInstance(nextVNode, null, mountedQueue, lastVNode);
+    } else {
+        newDom = lastInstance.update(lastVNode, nextVNode);
+        nextVNode.dom = newDom;
     }
 
     if (dom !== newDom) {

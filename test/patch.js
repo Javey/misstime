@@ -928,7 +928,8 @@ describe('Patch', () => {
             eql(
                 h('div', null, c),
                 h('div', null, c),
-                '<div><div></div></div>'
+                '<div><div></div></div>',
+                '<div>\r\n<div></div></div>'
             );
 
             sEql(_p.init.callCount, 1);
