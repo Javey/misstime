@@ -14,10 +14,6 @@ function write(dest, content) {
 function build() {
     return rollup.rollup(config).then(buddle => {
         var code = buddle.generate(config).code;
-        // code = code.replace(
-            // "Object.defineProperty(exports, '__esModule', { value: true });",
-            // 'exports._esModule = true;'
-        // );
         return write(config.dest, code);
     }).catch(e => console.log(e));
 }

@@ -4,8 +4,9 @@
   "description": "",
   "main": "dist/index.js",
   "browser": {
-      "min-document": false
+    "min-document": false
   },
+  "module": "src/index.js",
   "directories": {
     "test": "test"
   },
@@ -30,6 +31,8 @@
     "babel-preset-es2015": "^6.24.1",
     "babel-preset-es2015-loose": "^8.0.0",
     "babel-preset-es2015-loose-rollup": "git+https://github.com/kazupon/babel-preset-es2015-loose-rollup.git",
+    "gulp": "^3.9.1",
+    "gulp-babel": "^6.1.2",
     "karma": "~1.1.1",
     "karma-benchmark": "^0.7.1",
     "karma-benchmark-reporter": "^0.1.1",
