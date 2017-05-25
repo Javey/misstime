@@ -4,7 +4,7 @@ import {innerHTML, eqlHtml} from './utils';
 
 class ClassComponent {
     constructor(props) {
-        this.props = props;
+        this.props = props || {};
     }
     init() {
         return render(h('span', this.props, this.props.children));
@@ -312,6 +312,28 @@ describe('Render', () => {
             '<p><span></span></p>'
         );
         assert.strictEqual(o.j instanceof ClassComponent, true);
+    });
+
+    it('render component instance', () => {
+        let i = new ClassComponent();
+        eql(
+            h('div', null, i),
+            '<div><span></span></div>'
+        );
+
+        i = new ClassComponent({className: 'a'});
+        eql(
+            h('div', null, i),
+            '<div><span class="a"></span></div>'
+        );
+
+        const o = {};
+        i = new ClassComponent({className: 'a', ref: (i) => o.i = i});
+        eql(
+            h('div', null, i),
+            '<div><span class="a"></span></div>'
+        );
+        assert.strictEqual(o.i === i, true);
     });
 
     describe('Event', () => {

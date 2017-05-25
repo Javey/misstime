@@ -4,7 +4,7 @@ import {eqlHtml, isIE8} from './utils';
 
 class ClassComponent {
     constructor(props) {
-        this.props = props;
+        this.props = props || {};
     }
     init() { 
         this.vNode = h('span', this.props, this.props.children);
@@ -19,7 +19,7 @@ class ClassComponent {
 
 class NewComponent {
     constructor(props) {
-        this.props = props;
+        this.props = props || {};
     }
     init() {
         return this.dom = render(h('section', this.props, this.props.children));
@@ -422,6 +422,49 @@ describe('Patch', () => {
         );
     });
 
+    it('patch instance component with instance component', () => {
+        const a = new ClassComponent({children: h('a')});
+        const b = new ClassComponent({children: h('b')});
+        const c = new NewComponent();
+        eql(
+            h('div', null, a),
+            h('div', null, b),
+            '<div><span><b></b></span></div>'
+        );
+
+        eql(
+            h('div', null, a),
+            h('div', null, c),
+            '<div><section></section></div>'
+        );
+    });
+
+    it('patch instance component with class component', () => {
+        const a = new ClassComponent();
+        eql(
+            h('div', null, a),
+            h('div', null, h(NewComponent)),
+            '<div><section></section></div>'
+        );
+    });
+
+    it('patch instance component with element', () => {
+        const a = new ClassComponent();
+        eql(
+            h('div', null, a),
+            h('div', null, h('a')),
+            '<div><a></a></div>'
+        );
+    });
+
+    it('patch class component with instance component', () => {
+        eql(
+            h('div', null, h(ClassComponent)),
+            h('div', null, new NewComponent()),
+            '<div><section></section></div>'
+        );
+    });
+
     it('remove function component', () => {
         const o = {};
         eql(
@@ -747,23 +790,23 @@ describe('Patch', () => {
         let _p;
         let _np;
 
-        beforeEach(() => {
-            function createComponent() {
-                function Component(props) {
-                    this.props = props;
-                }
-                Component.prototype.init = sinon.spy(function() {
-                    return this.dom = render(h('span', this.props, this.props.children));
-                });
-                Component.prototype.mount = sinon.spy();
-                Component.prototype.update = sinon.spy(function() {
-                    return render(h('div', this.props, this.props.children));
-                });
-                Component.prototype.destroy = sinon.spy();
-
-                return Component;
+        function createComponent() {
+            function Component(props) {
+                this.props = props || {};
             }
+            Component.prototype.init = sinon.spy(function() {
+                return this.dom = render(h('span', this.props, this.props.children));
+            });
+            Component.prototype.mount = sinon.spy();
+            Component.prototype.update = sinon.spy(function() {
+                return render(h('div', this.props, this.props.children));
+            });
+            Component.prototype.destroy = sinon.spy();
 
+            return Component;
+        }
+
+        beforeEach(() => {
             Component = createComponent();
             _p = Component.prototype;
             NewComponent = createComponent();
@@ -845,6 +888,69 @@ describe('Patch', () => {
             sEql(_p.init.calledWithExactly(undefined, lastVNode), true); 
             sEql(_p.mount.calledWithExactly(undefined, lastVNode), true);
             sEql(_p.destroy.calledWithExactly(lastVNode, nextVNode), true);
+        });
+
+        it('should destroy children when destroy class component', () => {
+            const C = createComponent();
+            const cp = C.prototype;
+
+            eql(
+                h('div', null, h(Component, {children: h(C)})),
+                h('div', null, h(NewComponent)),
+                '<div><span></span></div>'
+            );
+
+            sEql(cp.init.callCount, 1);
+            sEql(cp.mount.callCount, 1);
+            sEql(cp.update.callCount, 0);
+            sEql(cp.destroy.callCount, 1);
+        });
+
+        it('check method for instance component replacing', () => {
+            eql(
+                h('div', null, new Component()), 
+                h('div', null, new NewComponent()), 
+                '<div><span></span></div>'
+            );
+
+            sEql(_p.init.callCount, 1);
+            sEql(_p.mount.callCount, 1);
+            sEql(_p.update.callCount, 0);
+            sEql(_p.destroy.callCount, 1);
+            sEql(_np.init.callCount, 1);
+            sEql(_np.mount.callCount, 1);
+            sEql(_np.update.callCount, 0);
+            sEql(_np.destroy.callCount, 0);
+        });
+
+        it('check method for instance component updating', () => {
+            const c = new Component();
+            eql(
+                h('div', null, c),
+                h('div', null, c),
+                '<div><div></div></div>'
+            );
+
+            sEql(_p.init.callCount, 1);
+            sEql(_p.mount.callCount, 1);
+            sEql(_p.update.callCount, 1);
+            sEql(_p.destroy.callCount, 0);
+        });
+
+        it('should destroy children when destroy instance component', () => {
+            const C = createComponent();
+            const cp = C.prototype;
+
+            eql(
+                h('div', null, new Component({children: h(C)})),
+                h('div', null, new NewComponent()),
+                '<div><span></span></div>'
+            );
+
+            sEql(cp.init.callCount, 1);
+            sEql(cp.mount.callCount, 1);
+            sEql(cp.update.callCount, 0);
+            sEql(cp.destroy.callCount, 1);
         });
     });
 });

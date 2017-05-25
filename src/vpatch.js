@@ -4,9 +4,9 @@ import {
     createElements, 
     removeElements, 
     removeElement,
-    removeComponentClass,
+    removeComponentClassOrInstance,
     removeAllChildren,
-    createComponentClass,
+    createComponentClassOrInstance,
     createComponentFunction,
     createComponentFunctionVNode,
     createRef,
@@ -52,6 +52,12 @@ export function patchVNode(lastVNode, nextVNode, parentDom, mountedQueue) {
         } else if (nextType & Types.ComponentFunction) {
             if (lastType & Types.ComponentFunction) {
                 patchComponentFunction(lastVNode, nextVNode, parentDom, mountedQueue);
+            } else {
+                replaceElement(lastVNode, nextVNode, parentDom, mountedQueue);
+            }
+        } else if (nextType & Types.ComponentInstance) {
+            if (lastType & Types.ComponentInstance) {
+                patchComponentIntance(lastVNode, nextVNode, parentDom, mountedQueue);
             } else {
                 replaceElement(lastVNode, nextVNode, parentDom, mountedQueue);
             }
@@ -107,13 +113,33 @@ function patchComponentClass(lastVNode, nextVNode, parentDom, mountedQueue) {
     let newDom;
 
     if (lastTag !== nextTag || lastVNode.key !== nextVNode.key) {
-        newDom = createComponentClass(nextVNode, null, mountedQueue, lastVNode);
-        removeComponentClass(lastVNode, null, nextVNode);
+        removeComponentClassOrInstance(lastVNode, null, nextVNode);
+        newDom = createComponentClassOrInstance(nextVNode, null, mountedQueue, lastVNode);
     } else {
         instance = lastVNode.children;
         newDom = instance.update(lastVNode, nextVNode);
         nextVNode.dom = newDom;
         nextVNode.children = instance;
+    }
+
+    if (dom !== newDom) {
+        replaceChild(parentDom, newDom, dom);
+    }
+}
+
+function patchComponentIntance(lastVNode, nextVNode, parentDom, mountedQueue) {
+    const lastInstance = lastVNode.children;
+    const nextInstance = nextVNode.children;
+    const dom = lastVNode.dom;
+
+    let newDom;
+
+    if (lastInstance !== nextInstance) {
+        removeComponentClassOrInstance(lastVNode, null, nextVNode);
+        newDom = createComponentClassOrInstance(nextVNode, null, mountedQueue, lastVNode);
+    } else {
+        newDom = lastInstance.update(lastVNode, nextVNode);
+        nextVNode.dom = newDom;
     }
 
     if (dom !== newDom) {

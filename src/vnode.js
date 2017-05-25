@@ -1,4 +1,7 @@
-import {isArray, isStringOrNumber, isNullOrUndefined, browser} from './utils';
+import {
+    isArray, isStringOrNumber, isNullOrUndefined, 
+    isComponentInstance, browser
+} from './utils';
 
 export const Types = {
     Text: 1,
@@ -6,11 +9,12 @@ export const Types = {
 
     ComponentClass: 1 << 2,
     ComponentFunction: 1 << 3,
+    ComponentInstance: 1 << 4,
 
-    HtmlComment: 1 << 4
+    HtmlComment: 1 << 5
 };
 Types.Element = Types.HtmlElement;
-Types.Component = Types.ComponentClass | Types.ComponentFunction;
+Types.ComponentClassOrInstance = Types.ComponentClass | Types.ComponentInstance;
 Types.TextElement = Types.Text | Types.HtmlComment;
 
 export const EMPTY_OBJ = {};
@@ -23,9 +27,9 @@ export function VNode(type, tag, props, children, className, key, ref) {
     this.tag = tag;
     this.props = props;
     this.children = children;
-    this.key = key || props.key;
-    this.ref = ref || props.ref;
-    this.className = className || props.className;
+    this.key = key;
+    this.ref = ref;
+    this.className = className;
 } 
 
 export function createVNode(tag, props, children, className, key, ref) {
@@ -50,7 +54,11 @@ export function createVNode(tag, props, children, className, key, ref) {
         props.children = normalizeChildren(props.children);
     }
 
-    return new VNode(type, tag, props, normalizeChildren(children), className, key, ref);
+    return new VNode(type, tag, props, normalizeChildren(children), 
+        className || props.className, 
+        key || props.key, 
+        ref || props.ref
+    );
 }
 
 export function createCommentVNode(children) {
@@ -65,10 +73,19 @@ export function createVoidVNode() {
     return new VNode(Types.VoidElement, null, EMPTY_OBJ);
 }
 
+export function createComponentInstanceVNode(instance) {
+    const props = instance.props || EMPTY_OBJ;
+    return new VNode(Types.ComponentInstance, instance.constructor, 
+        props, instance, null, props.key, props.ref
+    );
+}
+
 function normalizeChildren(vNodes) {
     if (isArray(vNodes)) {
         const childNodes = addChild(vNodes, {index: 0});
         return childNodes.length ? childNodes : null;
+    } else if (isComponentInstance(vNodes)) {
+        return createComponentInstanceVNode(vNodes);
     }
     return vNodes;
 }
@@ -98,6 +115,11 @@ function addChild(vNodes, reference) {
                 newVNodes = vNodes.slice(0, i);
             }
             newVNodes.push(applyKey(createTextVNode(n), reference));
+        } else if (isComponentInstance(n)) {
+            if (!newVNodes) {
+                newVNodes = vNodes.slice(0, i);
+            }
+            newVNodes.push(applyKey(createComponentInstanceVNode(n)), reference);
         } else if (n.type) {
             if (!newVNodes) {
                 newVNodes = vNodes.slice(0, i);

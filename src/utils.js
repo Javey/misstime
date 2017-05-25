@@ -21,6 +21,10 @@ export function isNullOrUndefined(o) {
     return o === null || o === undefined;
 }
 
+export function isComponentInstance(o) {
+    return o && typeof o.init === 'function';
+}
+
 export function isEventProp(propName) {
     return propName.substr(0, 3) === 'ev-';
 }
