@@ -1,6 +1,7 @@
 import {h, hc, render} from '../src';
 import assert from 'assert';
 import {innerHTML, eqlHtml} from './utils';
+import {MountedQueue} from '../src/utils';
 
 class ClassComponent {
     constructor(props) {
@@ -397,10 +398,13 @@ describe('Render', () => {
         let C;
         let init;
         let mount;
+        let P;
+        let pInit;
+        let pMount;
 
         beforeEach(() => {
-            init = sinon.spy((lastVNode, vNode) => {
-                return render(h('div', vNode.props, vNode.props.children));
+            init = sinon.spy(function(lastVNode, vNode) {
+                return render(h('div', vNode.props, vNode.props.children), null, this.mountedQueue);
             });
             mount = sinon.spy((lastVNode, vNode) => {
                 assert.strictEqual(container.firstChild, vNode.dom);
@@ -411,6 +415,20 @@ describe('Render', () => {
             CC.prototype.init = init;
             CC.prototype.mount = mount;
             C = CC;
+
+            pInit = sinon.spy(function(lastVNode, nextVNode) {
+                console.log(this.mountedQueue);
+                return render(h('div', null, 'test'), null, this.mountedQueue);
+            });
+            pMount = sinon.spy((lastVNode, nextVNode) => {
+                assert.strictEqual(container.firstChild.firstChild, nextVNode.dom);
+            });
+            function PP(props) {
+                this.props = props;
+            }
+            PP.prototype.init = pInit;
+            PP.prototype.mount = pMount;
+            P = PP;
         });
 
         it('init and mount', () => {
@@ -422,5 +440,28 @@ describe('Render', () => {
             assert.strictEqual(mount.calledWith(undefined, vNode), true);
             assert.strictEqual(mount.calledAfter(init), true);
         }); 
+
+        it('mount in nested component', () => {
+            const vNode = h(C, {children: h(P)});
+            r(vNode);
+            assert.strictEqual(pMount.callCount, 1);
+        });
+
+        it('mount component in element', () => {
+            const vNode = h('div', null, h(P));
+            r(vNode);
+            assert.strictEqual(pMount.callCount, 1);
+        });
+
+        it('mount manually', () => {
+            const mountedQueue = new MountedQueue();
+            const vNode = h(C);
+            reset();
+            const dom = render(vNode, null, mountedQueue);
+            container.appendChild(dom);
+            mountedQueue.trigger();
+
+            assert.strictEqual(mount.callCount, 1);
+        });
     });
 });

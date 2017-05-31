@@ -7,11 +7,17 @@ import {
     setTextContent
 } from './utils';
 
-export function render(vNode, parentDom) {
+export function render(vNode, parentDom, mountedQueue) {
     if (isNullOrUndefined(vNode)) return;
-    const mountedQueue = new MountedQueue();
+    let isTrigger = false;
+    if (parentDom || !mountedQueue) {
+        mountedQueue = new MountedQueue();
+        isTrigger = true;
+    }
     const dom = createElement(vNode, parentDom, mountedQueue);
-    mountedQueue.trigger();
+    if (isTrigger) {
+        mountedQueue.trigger();
+    }
     return dom;
 }
 
@@ -83,6 +89,8 @@ export function createComponentClassOrInstance(vNode, parentDom, mountedQueue, l
     const props = vNode.props;
     const instance = vNode.type & Types.ComponentClass ?
         new vNode.tag(props) : vNode.children;
+    instance.parentDom = null;
+    instance.mountedQueue = mountedQueue;
     const dom = instance.init(lastVNode, vNode);
     const ref = vNode.ref;
 
@@ -103,29 +111,6 @@ export function createComponentClassOrInstance(vNode, parentDom, mountedQueue, l
 
     return dom;
 }
-
-// export function createComponentInstance(vNode, parentDom, mountedQueue, lastVNode) {
-    // const props = vNode.props;
-    // const instance = vNode.children;
-    // const dom = instance.init(lastVNode, vNode);
-    // const ref = vNode.ref;
-
-    // vNode.dom = dom;
-
-    // if (parentDom) {
-        // parentDom.appendChild(dom);
-    // }
-
-    // if (typeof instance.mount === 'function') {
-        // mountedQueue.push(() => instance.mount(lastVNode, vNode));
-    // }
-
-    // if (typeof ref === 'function') {
-        // ref(instance);
-    // }
-
-    // return dom;
-// }
 
 export function createComponentFunction(vNode, parentDom, mountedQueue) {
     const props = vNode.props;
