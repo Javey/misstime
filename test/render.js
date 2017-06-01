@@ -244,6 +244,16 @@ describe('Render', () => {
         );
     });
 
+    it('render function component which return an array', () => {
+        function C(props) {
+            return [h('div', null, null, props.className), h('span', null, null, props.className)];
+        }
+        eql(
+            h('div', null, h(C, {className: 'a'})),
+            '<div><div class="a"></div><span class="a"></span></div>'
+        );
+    });
+
     it('render div with ref', () => {
         const o = {};
         eql(
@@ -296,11 +306,11 @@ describe('Render', () => {
         eql(
             h(ClassComponent, {
                 children: [
-                    h(FunctionComponent, {ref: (i) => o.i = i})
+                    h('span', {ref: (i) => o.i = i})
                 ]
             }),
-            '<span><p></p></span>',
-            '<span>\r\n<p></p></span>'
+            '<span><span></span></span>',
+            '<span>\r\n<span></span></span>'
         );
         assert.strictEqual(o.i, container.firstChild.firstChild);
 

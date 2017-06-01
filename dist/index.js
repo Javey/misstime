@@ -210,7 +210,8 @@ function createVNode(tag, props, children, className, key, ref) {
             if (tag.prototype.init) {
                 type = Types.ComponentClass;
             } else {
-                type = Types.ComponentFunction;
+                return tag(props);
+                // type = Types.ComponentFunction;
             }
             break;
         default:
@@ -427,11 +428,17 @@ function attachEventToDocument(name, delegatedRoots) {
     return docEvent;
 }
 
-function render(vNode, parentDom) {
+function render(vNode, parentDom, mountedQueue) {
     if (isNullOrUndefined(vNode)) return;
-    var mountedQueue = new MountedQueue();
+    var isTrigger = false;
+    if (parentDom || !mountedQueue) {
+        mountedQueue = new MountedQueue();
+        isTrigger = true;
+    }
     var dom = createElement(vNode, parentDom, mountedQueue);
-    mountedQueue.trigger();
+    if (isTrigger) {
+        mountedQueue.trigger();
+    }
     return dom;
 }
 
@@ -502,6 +509,8 @@ function createTextElement(vNode, parentDom) {
 function createComponentClassOrInstance(vNode, parentDom, mountedQueue, lastVNode) {
     var props = vNode.props;
     var instance = vNode.type & Types.ComponentClass ? new vNode.tag(props) : vNode.children;
+    instance.parentDom = null;
+    instance.mountedQueue = mountedQueue;
     var dom = instance.init(lastVNode, vNode);
     var ref = vNode.ref;
 
@@ -525,41 +534,28 @@ function createComponentClassOrInstance(vNode, parentDom, mountedQueue, lastVNod
     return dom;
 }
 
-// export function createComponentInstance(vNode, parentDom, mountedQueue, lastVNode) {
-// const props = vNode.props;
-// const instance = vNode.children;
-// const dom = instance.init(lastVNode, vNode);
-// const ref = vNode.ref;
-
-// vNode.dom = dom;
-
-// if (parentDom) {
-// parentDom.appendChild(dom);
-// }
-
-// if (typeof instance.mount === 'function') {
-// mountedQueue.push(() => instance.mount(lastVNode, vNode));
-// }
-
-// if (typeof ref === 'function') {
-// ref(instance);
-// }
-
-// return dom;
-// }
-
 function createComponentFunction(vNode, parentDom, mountedQueue) {
     var props = vNode.props;
     var ref = vNode.ref;
 
     createComponentFunctionVNode(vNode);
 
-    var dom = createElement(vNode.children, null, mountedQueue);
+    var children = vNode.children;
+    var dom = void 0;
+    // support ComponentFunction return an array for macro usage
+    if (isArray(children)) {
+        dom = [];
+        for (var i = 0; i < children.length; i++) {
+            dom.push(createElement(children[i], parentDom, mountedQueue));
+        }
+    } else {
+        dom = createElement(vNode.children, parentDom, mountedQueue);
+    }
     vNode.dom = dom;
 
-    if (parentDom) {
-        parentDom.appendChild(dom);
-    }
+    // if (parentDom) {
+    // parentDom.appendChild(dom);
+    // }
 
     if (ref) {
         createRef(dom, ref, mountedQueue);
@@ -581,10 +577,12 @@ function createCommentElement(vNode, parentDom) {
 
 function createComponentFunctionVNode(vNode) {
     var result = vNode.tag(vNode.props);
-    if (isArray(result)) {
-        throw new Error('ComponentFunction ' + vNode.tag.name + ' returned a invalid vNode');
-    } else if (isStringOrNumber(result)) {
+    if (isStringOrNumber(result)) {
         result = createTextVNode(result);
+    } else if (process.env.NODE_ENV !== 'production') {
+        if (isArray(result)) {
+            throw new Error('ComponentFunction ' + vNode.tag.name + ' returned a invalid vNode');
+        }
     }
 
     vNode.children = result;
@@ -679,7 +677,8 @@ function removeComponentClassOrInstance(vNode, parentDom, nextVNode) {
         ref(null);
     }
 
-    removeElements(vNode.props.children, null);
+    // instance destroy method will remove everything
+    // removeElements(vNode.props.children, null);
 
     if (parentDom) {
         parentDom.removeChild(vNode.dom);
@@ -838,12 +837,12 @@ function patchComponentFunction(lastVNode, nextVNode, parentDom, mountedQueue) {
     var nextTag = nextVNode.tag;
 
     if (lastVNode.key !== nextVNode.key) {
-        removeElement(lastVNode.children, parentDom);
+        removeElements(lastVNode.children, parentDom);
         createComponentFunction(nextVNode, parentDom, mountedQueue);
     } else {
         nextVNode.dom = lastVNode.dom;
         createComponentFunctionVNode(nextVNode);
-        patchVNode(lastVNode.children, nextVNode.children, parentDom, mountedQueue);
+        patchChildren(lastVNode.children, nextVNode.children, parentDom, mountedQueue);
     }
 }
 
@@ -873,7 +872,7 @@ function patchChildren(lastChildren, nextChildren, parentDom, mountedQueue) {
         createElements(nextChildren, parentDom, mountedQueue);
     } else if (isStringOrNumber(lastChildren)) {
         setTextContent(parentDom, '');
-        createElement(nextChildren, parentDom);
+        createElement(nextChildren, parentDom, mountedQueue);
     } else {
         patchVNode(lastChildren, nextChildren, parentDom, mountedQueue);
     }
@@ -1341,3 +1340,4 @@ exports.patch = patch;
 exports.render = render;
 exports.hc = createCommentVNode;
 exports.remove = removeElement;
+exports.MountedQueue = MountedQueue;

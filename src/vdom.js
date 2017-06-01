@@ -118,12 +118,22 @@ export function createComponentFunction(vNode, parentDom, mountedQueue) {
 
     createComponentFunctionVNode(vNode);
 
-    const dom = createElement(vNode.children, null, mountedQueue);
+    let children = vNode.children;
+    let dom;
+    // support ComponentFunction return an array for macro usage
+    if (isArray(children)) {
+        dom = [];
+        for (let i = 0; i < children.length; i++) {
+            dom.push(createElement(children[i], parentDom, mountedQueue));
+        }
+    } else {
+        dom = createElement(vNode.children, parentDom, mountedQueue);
+    }
     vNode.dom = dom;
 
-    if (parentDom) {
-        parentDom.appendChild(dom);
-    }
+    // if (parentDom) {
+        // parentDom.appendChild(dom);
+    // }
 
     if (ref) {
         createRef(dom, ref, mountedQueue);
@@ -145,10 +155,12 @@ export function createCommentElement(vNode, parentDom) {
 
 export function createComponentFunctionVNode(vNode) {
     let result = vNode.tag(vNode.props);
-    if (isArray(result)) {
-        throw new Error(`ComponentFunction ${vNode.tag.name} returned a invalid vNode`);
-    } else if (isStringOrNumber(result)) {
+    if (isStringOrNumber(result)) {
         result = createTextVNode(result);
+    } else if (process.env.NODE_ENV !== 'production') {
+        if (isArray(result)) {
+            throw new Error(`ComponentFunction ${vNode.tag.name} returned a invalid vNode`);
+        }
     }
 
     vNode.children = result;

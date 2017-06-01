@@ -152,12 +152,12 @@ function patchComponentFunction(lastVNode, nextVNode, parentDom, mountedQueue) {
     const nextTag = nextVNode.tag;
 
     if (lastVNode.key !== nextVNode.key) {
-        removeElement(lastVNode.children, parentDom);
+        removeElements(lastVNode.children, parentDom);
         createComponentFunction(nextVNode, parentDom, mountedQueue);
     } else {
         nextVNode.dom = lastVNode.dom;
         createComponentFunctionVNode(nextVNode);
-        patchVNode(lastVNode.children, nextVNode.children, parentDom, mountedQueue);
+        patchChildren(lastVNode.children, nextVNode.children, parentDom, mountedQueue);
     }
 }
 
@@ -187,7 +187,7 @@ function patchChildren(lastChildren, nextChildren, parentDom, mountedQueue) {
         createElements(nextChildren, parentDom, mountedQueue);
     } else if (isStringOrNumber(lastChildren)) {
         setTextContent(parentDom, '');
-        createElement(nextChildren, parentDom);
+        createElement(nextChildren, parentDom, mountedQueue);
     } else {
         patchVNode(lastChildren, nextChildren, parentDom, mountedQueue);
     }

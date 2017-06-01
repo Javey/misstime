@@ -1,4 +1,4 @@
-import {h, hc, render, patch} from '../src';
+import {h, hc, render, patch, remove} from '../src';
 import assert from 'assert';
 import {eqlHtml, isIE8} from './utils';
 
@@ -14,6 +14,9 @@ class ClassComponent {
         var oldVnode = this.vNode;
         this.vNode = h('span', nextVNode.props, nextVNode.props.children);
         return this.dom = patch(oldVnode, this.vNode);
+    }
+    destroy() {
+        remove(this.vNode);
     }
 } 
 
@@ -422,6 +425,23 @@ describe('Patch', () => {
         );
     });
 
+    it('patch function component which return an array', () => {
+        function C(props) {
+            return [h('div', null, null, props.className), h('span', null, null, props.className)];
+        }
+
+        eql(
+            h('div', null, h(C)),
+            h('div', null, h(C, {className: 'a'})),
+            '<div><div class="a"></div><span class="a"></span></div>'
+        );
+        eql(
+            h('div', null, h(ClassComponent)),
+            h('div', null, h(C, {className: 'a'})),
+            '<div><div class="a"></div><span class="a"></span></div>'
+        );
+    });
+
     it('patch instance component with instance component', () => {
         const a = new ClassComponent({children: h('a')});
         const b = new ClassComponent({children: h('b')});
@@ -795,13 +815,16 @@ describe('Patch', () => {
                 this.props = props || {};
             }
             Component.prototype.init = sinon.spy(function() {
-                return this.dom = render(h('span', this.props, this.props.children));
+                this.vNode = h('span', this.props, this.props.children);
+                return this.dom = render(this.vNode);
             });
             Component.prototype.mount = sinon.spy();
             Component.prototype.update = sinon.spy(function() {
                 return render(h('div', this.props, this.props.children));
             });
-            Component.prototype.destroy = sinon.spy();
+            Component.prototype.destroy = sinon.spy(function() {
+                remove(this.vNode);
+            });
 
             return Component;
         }

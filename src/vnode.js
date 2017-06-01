@@ -43,7 +43,8 @@ export function createVNode(tag, props, children, className, key, ref) {
             if (tag.prototype.init) {
                 type = Types.ComponentClass;
             } else {
-                type = Types.ComponentFunction;
+                return tag(props);
+                // type = Types.ComponentFunction;
             }
             break;
         default:
