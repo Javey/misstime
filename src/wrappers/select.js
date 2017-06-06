@@ -1,4 +1,5 @@
 import {isNullOrUndefined, isArray, indexOf} from '../utils';
+import {Types} from '../vnode';
 
 export function processSelect(vNode, dom, nextProps, isRender) {
     const multiple = nextProps.multiple;
@@ -14,12 +15,16 @@ export function processSelect(vNode, dom, nextProps, isRender) {
         }
         
         if (multiple) {
+            var flag = {hasSelected: false};
             if (isArray(children)) {
                 for (let i = 0; i < children.length; i++) {
-                    updateChildOptionGroup(children[i], value);
+                    updateChildOptionGroup(children[i], value, flag);
                 }
             } else {
-                updateChildOptionGroup(children, value);
+                updateChildOptionGroup(children, value, flag);
+            }
+            if (!flag.hasSelected) {
+                dom.value = value;
             }
         } else {
             dom.value = value;
@@ -27,7 +32,7 @@ export function processSelect(vNode, dom, nextProps, isRender) {
     }
 }
 
-function updateChildOptionGroup(vNode, value) {
+function updateChildOptionGroup(vNode, value, flag) {
     const tag = vNode.tag;
 
     if (tag === 'optgroup') {
@@ -35,24 +40,29 @@ function updateChildOptionGroup(vNode, value) {
 
         if (isArray(children)) {
             for (let i = 0; i < children.length; i++) {
-                updateChildOption(children[i], value);
+                updateChildOption(children[i], value, flag);
             }
         } else {
-            updateChildOption(children, value);
+            updateChildOption(children, value, flag);
         }
     } else {
-        updateChildOption(vNode, value);
+        updateChildOption(vNode, value, flag);
     }
 }
 
-function updateChildOption(vNode, value) {
-    const props = vNode.props;
-    const dom = vNode.dom;
+function updateChildOption(vNode, value, flag) {
+    // skip text and comment node
+    if (vNode.type & Types.HtmlElement) {
+        const props = vNode.props;
+        const dom = vNode.dom;
 
-    dom.value = props.value;
-    if (isArray(value) && indexOf(value, props.value) !== -1 || props.value === value) {
-        dom.selected = true;
-    } else if (!isNullOrUndefined(value) || !isNullOrUndefined(props.selected)) {
-        dom.selected = !!props.selected;
+        if (isArray(value) && indexOf(value, props.value) !== -1 || props.value === value) {
+            dom.selected = true;
+            if (!flag.hasSelected) flag.hasSelected = true;
+        } else if (!isNullOrUndefined(value) || !isNullOrUndefined(props.selected)) {
+            let selected = !!props.selected;
+            if (!flag.hasSelected && selected) flag.hasSelected = true;
+            dom.selected = selected;
+        }
     }
 }

@@ -486,6 +486,10 @@ export function patchProp(prop, lastValue, nextValue, dom, isSelectElement) {
             if (dom[prop] !== value) {
                 dom[prop] = value;
             }
+            // add a private property _value for select an object
+            if (prop === 'value') {
+                dom._value = value;
+            }
         } else if (isNullOrUndefined(nextValue)) {
             removeProp(prop, lastValue, dom);
         } else if (isEventProp(prop)) {
