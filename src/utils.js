@@ -126,7 +126,9 @@ export const booleanProps = {
 
 export const strictProps = {
     volume: true,
-    defaultChecked: true
+    defaultChecked: true,
+    value: true,
+    defaultValue: true
 };
 
 export function MountedQueue() {

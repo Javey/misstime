@@ -11,9 +11,13 @@ export const Types = {
     ComponentFunction: 1 << 3,
     ComponentInstance: 1 << 4,
 
-    HtmlComment: 1 << 5
+    HtmlComment: 1 << 5,
+
+    InputElement: 1 << 6,
+    SelectElement: 1 << 7,
+    TextareaElement: 1 << 8
 };
-Types.Element = Types.HtmlElement;
+Types.Element = Types.HtmlElement | Types.InputElement | Types.SelectElement | Types.TextareaElement;
 Types.ComponentClassOrInstance = Types.ComponentClass | Types.ComponentInstance;
 Types.TextElement = Types.Text | Types.HtmlComment;
 
@@ -37,7 +41,15 @@ export function createVNode(tag, props, children, className, key, ref) {
     props || (props = EMPTY_OBJ);
     switch (typeof tag) {
         case 'string':
-            type = Types.HtmlElement;
+            if (tag === 'input') {
+                type = Types.InputElement;
+            } else if(tag === 'select') {
+                type = Types.SelectElement;
+            } else if (tag === 'textarea') {
+                type = Types.TextareaElement;
+            } else {
+                type = Types.HtmlElement;
+            }
             break;
         case 'function':
             if (tag.prototype.init) {

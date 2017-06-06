@@ -347,6 +347,82 @@ describe('Render', () => {
         assert.strictEqual(o.i === i, true);
     });
 
+    it('render single select element', () => {
+        eql(
+            h('select', {value: ''}, [
+                h('option', {value: 1}, '1'),
+                h('option', {value: 2}, '2')
+            ]),
+            '<select><option value="1">1</option><option value="2">2</option></select>'
+        );
+        assert.strictEqual(container.firstChild.value, '');
+        assert.strictEqual(container.firstChild.firstChild.selected, false);
+        assert.strictEqual(container.firstChild.children[1].selected, false);
+
+        eql(
+            h('select', {value: 2}, [
+                h('option', {value: 1}, '1'),
+                h('option', {value: 2}, '2')
+            ]),
+            '<select><option value="1">1</option><option value="2">2</option></select>'
+        );
+        assert.strictEqual(container.firstChild.value, '2');
+        assert.strictEqual(container.firstChild.firstChild.selected, false);
+        assert.strictEqual(container.firstChild.children[1].selected, true);
+
+        eql(
+            h('select', {defaultValue: 2}, [
+                h('option', {value: 1}, '1'),
+                h('option', {value: 2}, '2')
+            ]),
+            '<select><option value="1">1</option><option value="2">2</option></select>'
+        );
+        assert.strictEqual(container.firstChild.value, '2');
+        assert.strictEqual(container.firstChild.firstChild.selected, false);
+        assert.strictEqual(container.firstChild.children[1].selected, true);
+    });
+
+    it('render multiple select element', () => {
+        eql(
+            h('select', {value: 2, multiple: true}, [
+                h('option', {value: 1}, '1'),
+                h('option', {value: 2}, '2')
+            ]),
+            '<select multiple="true"><option value="1">1</option><option value="2">2</option></select>'
+        );
+        assert.strictEqual(container.firstChild.value, '2');
+        assert.strictEqual(container.firstChild.firstChild.selected, false);
+        assert.strictEqual(container.firstChild.children[1].selected, true);
+
+        r(
+            h('select', {value: '', multiple: true}, [
+                h('option', {value: 1}, '1'),
+                h('option', {value: 2}, '2')
+            ])
+        );
+        assert.strictEqual(container.firstChild.value, '');
+        assert.strictEqual(container.firstChild.firstChild.selected, false);
+        assert.strictEqual(container.firstChild.children[1].selected, false);
+
+        r(
+            h('select', {value: [2], multiple: true}, [
+                h('option', {value: 1}, '1'),
+                h('option', {value: 2}, '2')
+            ])
+        );
+        assert.strictEqual(container.firstChild.firstChild.selected, false);
+        assert.strictEqual(container.firstChild.children[1].selected, true);
+
+        r(
+            h('select', {value: [1, 2], multiple: true}, [
+                h('option', {value: 1}, '1'),
+                h('option', {value: 2}, '2')
+            ])
+        );
+        assert.strictEqual(container.firstChild.firstChild.selected, true);
+        assert.strictEqual(container.firstChild.children[1].selected, true);
+    });
+
     describe('Event', () => {
         it('attach event listener', () => {
             const fn = sinon.spy();

@@ -18,6 +18,7 @@ import {isObject, isArray, isNullOrUndefined,
     browser, setTextContent, isStringOrNumber
 } from './utils';
 import {handleEvent} from './event';
+import {processSelect} from './wrappers/select';
 
 export function patch(lastVNode, nextVNode, parentDom) {
     const mountedQueue = new MountedQueue();
@@ -457,8 +458,12 @@ export function patchProps(lastVNode, nextVNode) {
     const dom = nextVNode.dom;
     let prop;
     if (nextProps !== EMPTY_OBJ) {
+        const isSelectElement = (nextVNode.type & Types.SelectElement) > 0;
         for (prop in nextProps) {
-            patchProp(prop, lastProps[prop], nextProps[prop], dom);
+            patchProp(prop, lastProps[prop], nextProps[prop], dom, isSelectElement);
+        }
+        if (isSelectElement) {
+            processSelect(nextVNode, dom, nextProps);
         }
     }
     if (lastProps !== EMPTY_OBJ) {
@@ -470,9 +475,9 @@ export function patchProps(lastVNode, nextVNode) {
     }
 }
 
-export function patchProp(prop, lastValue, nextValue, dom) {
+export function patchProp(prop, lastValue, nextValue, dom, isSelectElement) {
     if (lastValue !== nextValue) {
-        if (skipProps[prop]) {
+        if (skipProps[prop] || isSelectElement && prop === 'value') {
             return;
         } else if (booleanProps[prop]) {
             dom[prop] = !!nextValue;

@@ -6,6 +6,7 @@ import {
     isNullOrUndefined, isEventProp, doc as document,
     setTextContent
 } from './utils';
+import {processSelect} from './wrappers/select';
 
 export function render(vNode, parentDom, mountedQueue) {
     if (isNullOrUndefined(vNode)) return;
@@ -23,7 +24,7 @@ export function render(vNode, parentDom, mountedQueue) {
 
 export function createElement(vNode, parentDom, mountedQueue) {
     const type = vNode.type;
-    if (type & Types.HtmlElement) {
+    if (type & Types.Element) {
         return createHtmlElement(vNode, parentDom, mountedQueue);
     } else if (type & Types.Text) {
         return createTextElement(vNode, parentDom);
@@ -58,8 +59,12 @@ export function createHtmlElement(vNode, parentDom, mountedQueue) {
     }
 
     if (props !== EMPTY_OBJ) {
+        const isSelectElement = (vNode.type & Types.SelectElement) > 0;
         for (let prop in props) {
-            patchProp(prop, null, props[prop], dom);
+            patchProp(prop, null, props[prop], dom, isSelectElement);
+        }
+        if (isSelectElement) {
+            processSelect(vNode, dom, props, true);
         }
     }
 

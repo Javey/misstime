@@ -542,6 +542,122 @@ describe('Patch', () => {
         eqlHtml(container, '<div><span>c</span></div>');
     });
 
+    it('patch single select element', () => {
+        eql(
+            h('select', {value: ''}, [
+                h('option', {value: 1}, '1'),
+                h('option', {value: 2}, '2')
+            ]),
+            h('select', {value: '1'}, [
+                h('option', {value: 1}, '1'),
+                h('option', {value: 2}, '2')
+            ]),
+            '<select><option value="1">1</option><option value="2">2</option></select>'
+        );
+        assert.strictEqual(container.firstChild.value, '1');
+        assert.strictEqual(container.firstChild.firstChild.selected, true);
+        assert.strictEqual(container.firstChild.children[1].selected, false);
+
+        eql(
+            h('select', {value: '1'}, [
+                h('option', {value: 1}, '1'),
+                h('option', {value: 2}, '2')
+            ]),
+            h('select', {value: ''}, [
+                h('option', {value: 1}, '1'),
+                h('option', {value: 2}, '2')
+            ]),
+            '<select><option value="1">1</option><option value="2">2</option></select>'
+        );
+        assert.strictEqual(container.firstChild.value, '');
+        assert.strictEqual(container.firstChild.firstChild.selected, false);
+        assert.strictEqual(container.firstChild.children[1].selected, false);
+
+        eql(
+            h('select', {defaultValue: 2}, [
+                h('option', {value: 1}, '1'),
+                h('option', {value: 2}, '2')
+            ]),
+            h('select', {value: '1'}, [
+                h('option', {value: 1}, '1'),
+                h('option', {value: 2}, '2')
+            ]),
+            '<select><option value="1">1</option><option value="2">2</option></select>'
+        );
+        assert.strictEqual(container.firstChild.value, '1');
+        assert.strictEqual(container.firstChild.firstChild.selected, true);
+        assert.strictEqual(container.firstChild.children[1].selected, false);
+    });
+
+    it('patch multiple select element', () => {
+        p(
+            h('select', {value: 2, multiple: true}, [
+                h('option', {value: 1}, '1'),
+                h('option', {value: 2}, '2')
+            ]),
+            h('select', {value: 1, multiple: true}, [
+                h('option', {value: 1}, '1'),
+                h('option', {value: 2}, '2')
+            ])
+        );
+        assert.strictEqual(container.firstChild.value, '1');
+        assert.strictEqual(container.firstChild.firstChild.selected, true);
+        assert.strictEqual(container.firstChild.children[1].selected, false);
+
+        p(
+            h('select', {value: 2, multiple: true}, [
+                h('option', {value: 1}, '1'),
+                h('option', {value: 2}, '2')
+            ]),
+            h('select', {value: '', multiple: true}, [
+                h('option', {value: 1}, '1'),
+                h('option', {value: 2}, '2')
+            ])
+        );
+        assert.strictEqual(container.firstChild.value, '');
+        assert.strictEqual(container.firstChild.firstChild.selected, false);
+        assert.strictEqual(container.firstChild.children[1].selected, false);
+
+        p(
+            h('select', {value: '', multiple: true}, [
+                h('option', {value: 1}, '1'),
+                h('option', {value: 2}, '2')
+            ]),
+            h('select', {value: [1, 2], multiple: true}, [
+                h('option', {value: 1}, '1'),
+                h('option', {value: 2}, '2')
+            ])
+        );
+        assert.strictEqual(container.firstChild.firstChild.selected, true);
+        assert.strictEqual(container.firstChild.children[1].selected, true);
+
+        p(
+            h('select', {value: [1, 2], multiple: true}, [
+                h('option', {value: 1}, '1'),
+                h('option', {value: 2}, '2')
+            ]),
+            h('select', {value: [], multiple: true}, [
+                h('option', {value: 1}, '1'),
+                h('option', {value: 2}, '2')
+            ])
+        );
+        assert.strictEqual(container.firstChild.firstChild.selected, false);
+        assert.strictEqual(container.firstChild.children[1].selected, false);
+
+        p(
+            h('select', {value: [1, 2], multiple: true}, [
+                h('option', {value: 1}, '1'),
+                h('option', {value: 2}, '2')
+            ]),
+            h('select', {value: '', multiple: true}, [
+                h('option', {value: 1}, '1'),
+                h('option', {value: 2}, '2')
+            ])
+        );
+        assert.strictEqual(container.firstChild.firstChild.selected, false);
+        assert.strictEqual(container.firstChild.children[1].selected, false);
+    });
+
     describe('Event', () => {
         it('patch event', () => {
             const fn = sinon.spy();
