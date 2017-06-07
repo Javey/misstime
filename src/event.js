@@ -94,6 +94,12 @@ if ('addEventListener' in document) {
 const delegatedEvents = {};
 
 export function handleEvent(name, lastEvent, nextEvent, dom) {
+    if (name === 'blur') {
+        name = 'focusout';
+    } else if (name === 'focus') {
+        name = 'focusin';
+    }
+
     let delegatedRoots = delegatedEvents[name];
 
     if (nextEvent) {
