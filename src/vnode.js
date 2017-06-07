@@ -17,7 +17,8 @@ export const Types = {
     SelectElement: 1 << 7,
     TextareaElement: 1 << 8
 };
-Types.Element = Types.HtmlElement | Types.InputElement | Types.SelectElement | Types.TextareaElement;
+Types.FormElement = Types.InputElement | Types.SelectElement | Types.TextareaElement;
+Types.Element = Types.HtmlElement | Types.FormElement;
 Types.ComponentClassOrInstance = Types.ComponentClass | Types.ComponentInstance;
 Types.TextElement = Types.Text | Types.HtmlComment;
 
