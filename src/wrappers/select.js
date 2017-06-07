@@ -14,20 +14,16 @@ export function processSelect(vNode, dom, nextProps, isRender) {
             value = nextProps.defaultValue;
         }
         
-        if (multiple) {
-            var flag = {hasSelected: false};
-            if (isArray(children)) {
-                for (let i = 0; i < children.length; i++) {
-                    updateChildOptionGroup(children[i], value, flag);
-                }
-            } else {
-                updateChildOptionGroup(children, value, flag);
-            }
-            if (!flag.hasSelected) {
-                dom.value = value;
+        var flag = {hasSelected: false};
+        if (isArray(children)) {
+            for (let i = 0; i < children.length; i++) {
+                updateChildOptionGroup(children[i], value, flag);
             }
         } else {
-            dom.value = value;
+            updateChildOptionGroup(children, value, flag);
+        }
+        if (!flag.hasSelected) {
+            dom.value = '';
         }
     }
 }

@@ -380,6 +380,16 @@ describe('Render', () => {
         assert.strictEqual(container.firstChild.value, '2');
         assert.strictEqual(container.firstChild.firstChild.selected, false);
         assert.strictEqual(container.firstChild.children[1].selected, true);
+
+        r(
+            h('select', {value: '1'}, [
+                h('option', {value: 1}, '1'),
+                h('option', {value: 2}, '2')
+            ])
+        );
+        assert.strictEqual(container.firstChild.value, '');
+        assert.strictEqual(container.firstChild.firstChild.selected, false);
+        assert.strictEqual(container.firstChild.children[1].selected, false);
     });
 
     it('render multiple select element', () => {
@@ -421,6 +431,15 @@ describe('Render', () => {
         );
         assert.strictEqual(container.firstChild.firstChild.selected, true);
         assert.strictEqual(container.firstChild.children[1].selected, true);
+
+        r(
+            h('select', {value: [1, '2'], multiple: true}, [
+                h('option', {value: 1}, '1'),
+                h('option', {value: 2}, '2')
+            ])
+        );
+        assert.strictEqual(container.firstChild.firstChild.selected, true);
+        assert.strictEqual(container.firstChild.children[1].selected, false);
     });
 
     describe('Event', () => {
