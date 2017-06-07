@@ -123,7 +123,7 @@ function patchComponentClass(lastVNode, nextVNode, parentDom, mountedQueue) {
         nextVNode.children = instance;
     }
 
-    if (dom !== newDom) {
+    if (dom !== newDom && !newDom.parentNode) {
         replaceChild(parentDom, newDom, dom);
     }
 }
@@ -143,7 +143,7 @@ function patchComponentIntance(lastVNode, nextVNode, parentDom, mountedQueue) {
         nextVNode.dom = newDom;
     }
 
-    if (dom !== newDom) {
+    if (dom !== newDom && !newDom.parentNode) {
         replaceChild(parentDom, newDom, dom);
     }
 }
