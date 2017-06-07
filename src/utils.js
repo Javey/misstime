@@ -102,7 +102,7 @@ export const skipProps = {
     className: true,
     checked: true,
     multiple: true,
-    defaultValue: true
+    defaultValue: true,
 };
 
 export const booleanProps = {
@@ -129,7 +129,8 @@ export const booleanProps = {
 
 export const strictProps = {
     volume: true,
-    defaultChecked: true
+    defaultChecked: true,
+    value: true,
 };
 
 export function MountedQueue() {
