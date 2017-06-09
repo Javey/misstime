@@ -20,7 +20,7 @@ module.exports = function(config) {
                     {
                         test: /\.js$/,
                         loader: 'babel-loader',
-                        exclude: /node-modules/
+                        exclude: /node_modules/
                     }
                 ]
             },
