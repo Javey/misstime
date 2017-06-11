@@ -60,6 +60,10 @@ export function createVNode(tag, props, children, className, key, ref) {
                 // type = Types.ComponentFunction;
             }
             break;
+        case 'object':
+            if (tag.init) {
+                return createComponentInstanceVNode(tag);
+            }
         default:
             throw new Error(`unknown vNode type: ${tag}`);
     }
