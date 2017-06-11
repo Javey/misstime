@@ -334,7 +334,7 @@ describe('Render', () => {
 
         i = new ClassComponent({className: 'a'});
         eql(
-            h('div', null, i),
+            h('div', null, [i]),
             '<div><span class="a"></span></div>'
         );
 

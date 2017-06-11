@@ -133,7 +133,7 @@ function addChild(vNodes, reference) {
             if (!newVNodes) {
                 newVNodes = vNodes.slice(0, i);
             }
-            newVNodes.push(applyKey(createComponentInstanceVNode(n)), reference);
+            newVNodes.push(applyKey(createComponentInstanceVNode(n), reference));
         } else if (n.type) {
             if (!newVNodes) {
                 newVNodes = vNodes.slice(0, i);

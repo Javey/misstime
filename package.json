@@ -12,6 +12,7 @@
   },
   "scripts": {
     "test": "karma start karma.mocha.conf.js",
+    "test:local": "karma start karma.conf.js",
     "build": "node script/build.js",
     "karma:benchmark": "karma start karma.benchmark.conf.js",
     "karma:test": "karma start karma.server.conf.js"
