@@ -114,7 +114,9 @@ function patchComponentClass(lastVNode, nextVNode, parentDom, mountedQueue) {
     let newDom;
 
     if (lastTag !== nextTag || lastVNode.key !== nextVNode.key) {
-        removeComponentClassOrInstance(lastVNode, null, nextVNode);
+        // we should call this function in component's init method
+        // because it should be destroyed before async component has rendered
+        // removeComponentClassOrInstance(lastVNode, null, nextVNode);
         newDom = createComponentClassOrInstance(nextVNode, null, mountedQueue, lastVNode);
     } else {
         instance = lastVNode.children;
@@ -136,7 +138,7 @@ function patchComponentIntance(lastVNode, nextVNode, parentDom, mountedQueue) {
     let newDom;
 
     if (lastInstance !== nextInstance) {
-        removeComponentClassOrInstance(lastVNode, null, nextVNode);
+        // removeComponentClassOrInstance(lastVNode, null, nextVNode);
         newDom = createComponentClassOrInstance(nextVNode, null, mountedQueue, lastVNode);
     } else {
         newDom = lastInstance.update(lastVNode, nextVNode);
