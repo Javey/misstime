@@ -10,7 +10,8 @@ import {
     createComponentFunction,
     createComponentFunctionVNode,
     createRef,
-    replaceChild
+    replaceChild,
+    appendChild
 } from './vdom';
 import {isObject, isArray, isNullOrUndefined, 
     skipProps, MountedQueue, isEventProp, 
@@ -125,7 +126,8 @@ function patchComponentClass(lastVNode, nextVNode, parentDom, mountedQueue) {
         nextVNode.children = instance;
     }
 
-    if (dom !== newDom && !newDom.parentNode) {
+    // perhaps the dom has be replaced
+    if (dom !== newDom && dom.parentNode) {
         replaceChild(parentDom, newDom, dom);
     }
 }
@@ -145,7 +147,7 @@ function patchComponentIntance(lastVNode, nextVNode, parentDom, mountedQueue) {
         nextVNode.dom = newDom;
     }
 
-    if (dom !== newDom && !newDom.parentNode) {
+    if (dom !== newDom && dom.parentNode) {
         replaceChild(parentDom, newDom, dom);
     }
 }
@@ -434,7 +436,7 @@ function insertOrAppend(pos, length, newDom, nodes, dom) {
     if (nextPos < length) {
         dom.insertBefore(newDom, nodes[nextPos].dom);
     } else {
-        dom.appendChild(newDom);
+        appendChild(dom, newDom);
     }
 }
 

@@ -10,28 +10,29 @@ import {processForm} from './wrappers/process';
 
 export function render(vNode, parentDom, mountedQueue) {
     if (isNullOrUndefined(vNode)) return;
-    let isTrigger = false;
-    if (parentDom || !mountedQueue) {
+    let isTrigger = true;
+    if (mountedQueue) {
+        isTrigger = false;
+    } else {
         mountedQueue = new MountedQueue();
-        isTrigger = true;
     }
-    const dom = createElement(vNode, parentDom, mountedQueue);
+    const dom = createElement(vNode, parentDom, mountedQueue, !isTrigger /* isNotAppendChild */);
     if (isTrigger) {
         mountedQueue.trigger();
     }
     return dom;
 }
 
-export function createElement(vNode, parentDom, mountedQueue) {
+export function createElement(vNode, parentDom, mountedQueue, isNotAppendChild) {
     const type = vNode.type;
     if (type & Types.Element) {
-        return createHtmlElement(vNode, parentDom, mountedQueue);
+        return createHtmlElement(vNode, parentDom, mountedQueue, isNotAppendChild);
     } else if (type & Types.Text) {
         return createTextElement(vNode, parentDom);
     } else if (type & Types.ComponentClassOrInstance) {
-        return createComponentClassOrInstance(vNode, parentDom, mountedQueue);
+        return createComponentClassOrInstance(vNode, parentDom, mountedQueue, null, isNotAppendChild);
     } else if (type & Types.ComponentFunction) {
-        return createComponentFunction(vNode, parentDom, mountedQueue);
+        return createComponentFunction(vNode, parentDom, mountedQueue, isNotAppendChild);
     // } else if (type & Types.ComponentInstance) {
         // return createComponentInstance(vNode, parentDom, mountedQueue);
     } else if (type & Types.HtmlComment) {
@@ -41,7 +42,7 @@ export function createElement(vNode, parentDom, mountedQueue) {
     }
 }
 
-export function createHtmlElement(vNode, parentDom, mountedQueue) {
+export function createHtmlElement(vNode, parentDom, mountedQueue, isNotAppendChild) {
     const dom = document.createElement(vNode.tag);
     const children = vNode.children;
     const ref = vNode.ref;
@@ -51,7 +52,7 @@ export function createHtmlElement(vNode, parentDom, mountedQueue) {
     vNode.dom = dom;
 
     if (!isNullOrUndefined(children)) {
-        createElements(children, dom, mountedQueue);
+        createElements(children, dom, mountedQueue, isNotAppendChild);
     }
 
     if (!isNullOrUndefined(className)) {
@@ -72,7 +73,7 @@ export function createHtmlElement(vNode, parentDom, mountedQueue) {
         createRef(dom, ref, mountedQueue);
     }
 
-    if (parentDom) {
+    if (parentDom && !isNotAppendChild) {
         parentDom.appendChild(dom);
     }
 
@@ -90,11 +91,11 @@ export function createTextElement(vNode, parentDom) {
     return dom;
 }
 
-export function createComponentClassOrInstance(vNode, parentDom, mountedQueue, lastVNode) {
+export function createComponentClassOrInstance(vNode, parentDom, mountedQueue, lastVNode, isNotAppendChild) {
     const props = vNode.props;
     const instance = vNode.type & Types.ComponentClass ?
         new vNode.tag(props) : vNode.children;
-    instance.parentDom = null;
+    instance.parentDom = parentDom;
     instance.mountedQueue = mountedQueue;
     const dom = instance.init(lastVNode, vNode);
     const ref = vNode.ref;
@@ -102,8 +103,9 @@ export function createComponentClassOrInstance(vNode, parentDom, mountedQueue, l
     vNode.dom = dom;
     vNode.children = instance;
 
-    if (parentDom) {
-        parentDom.appendChild(dom);
+    if (parentDom && !isNotAppendChild) {
+        appendChild(parentDom, vNode);
+        // parentDom.appendChild(dom);
     }
 
     if (typeof instance.mount === 'function') {
@@ -173,15 +175,15 @@ export function createComponentFunctionVNode(vNode) {
     return vNode;
 }
 
-export function createElements(vNodes, parentDom, mountedQueue) {
+export function createElements(vNodes, parentDom, mountedQueue, isNotAppendChild) {
     if (isStringOrNumber(vNodes)) {
         setTextContent(parentDom, vNodes);
     } else if (isArray(vNodes)) {
         for (let i = 0; i < vNodes.length; i++) {
-            createElement(vNodes[i], parentDom, mountedQueue);
+            createElement(vNodes[i], parentDom, mountedQueue, isNotAppendChild);
         }
     } else {
-        createElement(vNodes, parentDom, mountedQueue);
+        createElement(vNodes, parentDom, mountedQueue, isNotAppendChild);
     }
 }
 
@@ -264,7 +266,8 @@ export function removeComponentClassOrInstance(vNode, parentDom, nextVNode) {
     // removeElements(vNode.props.children, null);
 
     if (parentDom) {
-        parentDom.removeChild(vNode.dom);
+        removeChild(parentDom, vNode);
+        // parentDom.removeChild(vNode.dom);
     }
 }
 
@@ -276,6 +279,23 @@ export function removeAllChildren(dom, vNodes) {
 export function replaceChild(parentDom, nextDom, lastDom) {
     if (!parentDom) parentDom = lastDom.parentNode;
     parentDom.replaceChild(nextDom, lastDom);
+}
+
+export function removeChild(parentDom, vNode) {
+    const dom = vNode.dom;
+    if (dom._umount) {
+        dom._umount(vNode, parentDom);
+    } else {
+        parentDom.removeChild(dom);
+    }
+}
+
+export function appendChild(parentDom, vNode) {
+    const dom = vNode.dom;
+    parentDom.appendChild(dom);
+    if (dom._mount) {
+        dom._mount(vNode, parentDom);
+    }
 }
 
 export function createRef(dom, ref, mountedQueue) {
