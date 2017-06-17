@@ -8,7 +8,7 @@ import {
 } from './utils';
 import {processForm} from './wrappers/process';
 
-export function render(vNode, parentDom, mountedQueue) {
+export function render(vNode, parentDom, mountedQueue, parentVNode) {
     if (isNullOrUndefined(vNode)) return;
     let isTrigger = true;
     if (mountedQueue) {
@@ -16,23 +16,23 @@ export function render(vNode, parentDom, mountedQueue) {
     } else {
         mountedQueue = new MountedQueue();
     }
-    const dom = createElement(vNode, parentDom, mountedQueue, !isTrigger /* isNotAppendChild */);
+    const dom = createElement(vNode, parentDom, mountedQueue, true /* isRender */, parentVNode);
     if (isTrigger) {
         mountedQueue.trigger();
     }
     return dom;
 }
 
-export function createElement(vNode, parentDom, mountedQueue, isNotAppendChild) {
+export function createElement(vNode, parentDom, mountedQueue, isRender, parentVNode) {
     const type = vNode.type;
     if (type & Types.Element) {
-        return createHtmlElement(vNode, parentDom, mountedQueue, isNotAppendChild);
+        return createHtmlElement(vNode, parentDom, mountedQueue, isRender, parentVNode);
     } else if (type & Types.Text) {
         return createTextElement(vNode, parentDom);
     } else if (type & Types.ComponentClassOrInstance) {
-        return createComponentClassOrInstance(vNode, parentDom, mountedQueue, null, isNotAppendChild);
-    } else if (type & Types.ComponentFunction) {
-        return createComponentFunction(vNode, parentDom, mountedQueue, isNotAppendChild);
+        return createComponentClassOrInstance(vNode, parentDom, mountedQueue, null, isRender, parentVNode);
+    // } else if (type & Types.ComponentFunction) {
+        // return createComponentFunction(vNode, parentDom, mountedQueue, isNotAppendChild, isRender);
     // } else if (type & Types.ComponentInstance) {
         // return createComponentInstance(vNode, parentDom, mountedQueue);
     } else if (type & Types.HtmlComment) {
@@ -42,7 +42,7 @@ export function createElement(vNode, parentDom, mountedQueue, isNotAppendChild) 
     }
 }
 
-export function createHtmlElement(vNode, parentDom, mountedQueue, isNotAppendChild) {
+export function createHtmlElement(vNode, parentDom, mountedQueue, isRender, parentVNode) {
     const dom = document.createElement(vNode.tag);
     const children = vNode.children;
     const ref = vNode.ref;
@@ -52,7 +52,7 @@ export function createHtmlElement(vNode, parentDom, mountedQueue, isNotAppendChi
     vNode.dom = dom;
 
     if (!isNullOrUndefined(children)) {
-        createElements(children, dom, mountedQueue, isNotAppendChild);
+        createElements(children, dom, mountedQueue, isRender, vNode);
     }
 
     if (!isNullOrUndefined(className)) {
@@ -73,7 +73,7 @@ export function createHtmlElement(vNode, parentDom, mountedQueue, isNotAppendChi
         createRef(dom, ref, mountedQueue);
     }
 
-    if (parentDom && !isNotAppendChild) {
+    if (parentDom && !dom.parentNode) {
         parentDom.appendChild(dom);
     }
 
@@ -91,19 +91,21 @@ export function createTextElement(vNode, parentDom) {
     return dom;
 }
 
-export function createComponentClassOrInstance(vNode, parentDom, mountedQueue, lastVNode, isNotAppendChild) {
+export function createComponentClassOrInstance(vNode, parentDom, mountedQueue, lastVNode, isRender, parentVNode) {
     const props = vNode.props;
     const instance = vNode.type & Types.ComponentClass ?
         new vNode.tag(props) : vNode.children;
     instance.parentDom = parentDom;
     instance.mountedQueue = mountedQueue;
+    instance.isRender = isRender;
+    instance.parentVNode = parentVNode;
     const dom = instance.init(lastVNode, vNode);
     const ref = vNode.ref;
 
     vNode.dom = dom;
     vNode.children = instance;
 
-    if (parentDom && !isNotAppendChild) {
+    if (parentDom) {
         appendChild(parentDom, vNode);
         // parentDom.appendChild(dom);
     }
@@ -175,15 +177,15 @@ export function createComponentFunctionVNode(vNode) {
     return vNode;
 }
 
-export function createElements(vNodes, parentDom, mountedQueue, isNotAppendChild) {
+export function createElements(vNodes, parentDom, mountedQueue, isRender, parentVNode) {
     if (isStringOrNumber(vNodes)) {
         setTextContent(parentDom, vNodes);
     } else if (isArray(vNodes)) {
         for (let i = 0; i < vNodes.length; i++) {
-            createElement(vNodes[i], parentDom, mountedQueue, isNotAppendChild);
+            createElement(vNodes[i], parentDom, mountedQueue, isRender, parentVNode);
         }
     } else {
-        createElement(vNodes, parentDom, mountedQueue, isNotAppendChild);
+        createElement(vNodes, parentDom, mountedQueue, isRender, parentVNode);
     }
 }
 
@@ -266,25 +268,41 @@ export function removeComponentClassOrInstance(vNode, parentDom, nextVNode) {
     // removeElements(vNode.props.children, null);
 
     if (parentDom) {
-        removeChild(parentDom, vNode);
+        // if (typeof instance.unmount === 'function') {
+            // if (!instance.unmount(vNode, nextVNode, parentDom)) {
+                // parentDom.removeChild(vNode.dom); 
+            // }
+        // } else {
+            // parentDom.removeChild(vNode.dom); 
+            removeChild(parentDom, vNode);
+        // }
         // parentDom.removeChild(vNode.dom);
     }
 }
 
 export function removeAllChildren(dom, vNodes) {
-    setTextContent(dom, '');
-    removeElements(vNodes);
+    // setTextContent(dom, '');
+    // removeElements(vNodes);
 }
 
-export function replaceChild(parentDom, nextDom, lastDom) {
+export function replaceChild(parentDom, lastVNode, nextVNode) {
+    const lastDom = lastVNode.dom;
+    const nextDom = nextVNode.dom;
     if (!parentDom) parentDom = lastDom.parentNode;
-    parentDom.replaceChild(nextDom, lastDom);
+    if (lastDom._unmount) {
+        lastDom._unmount(lastVNode, parentDom);
+        if (!nextDom.parentNode) {
+            parentDom.appendChild(nextDom);
+        }
+    } else {
+        parentDom.replaceChild(nextDom, lastDom);
+    }
 }
 
 export function removeChild(parentDom, vNode) {
     const dom = vNode.dom;
-    if (dom._umount) {
-        dom._umount(vNode, parentDom);
+    if (dom._unmount) {
+        dom._unmount(vNode, parentDom);
     } else {
         parentDom.removeChild(dom);
     }
@@ -292,10 +310,13 @@ export function removeChild(parentDom, vNode) {
 
 export function appendChild(parentDom, vNode) {
     const dom = vNode.dom;
-    parentDom.appendChild(dom);
-    if (dom._mount) {
-        dom._mount(vNode, parentDom);
+    // for animation the dom will not be moved
+    if (!dom.parentNode) {
+        parentDom.appendChild(dom);
     }
+    // if (dom._mount) {
+        // dom._mount(vNode, parentDom);
+    // }
 }
 
 export function createRef(dom, ref, mountedQueue) {
