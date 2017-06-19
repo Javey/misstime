@@ -21,10 +21,17 @@ import {isObject, isArray, isNullOrUndefined,
 import {handleEvent} from './event';
 import {processForm} from './wrappers/process';
 
-export function patch(lastVNode, nextVNode, parentDom, parentVNode) {
-    const mountedQueue = new MountedQueue();
+export function patch(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode) {
+    let isTrigger = true;
+    if (mountedQueue) {
+        isTrigger = false;
+    } else {
+        mountedQueue = new MountedQueue();
+    }
     const dom = patchVNode(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode);
-    mountedQueue.trigger();
+    if (isTrigger) {
+        mountedQueue.trigger();
+    }
     return dom;
 }
 
@@ -74,13 +81,12 @@ function patchElement(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode
     const nextProps = nextVNode.props;
     const lastChildren = lastVNode.children;
     const nextChildren = nextVNode.children;
-    const nextRef = nextVNode.ref;
     const lastClassName = lastVNode.className;
     const nextClassName = nextVNode.className;
 
     nextVNode.dom = dom;
 
-    if (lastVNode.tag !== nextVNode.tag) {
+    if (lastVNode.tag !== nextVNode.tag || lastVNode.key !== nextVNode.key) {
         replaceElement(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode);
     } else {
         if (lastChildren !== nextChildren) {
@@ -99,6 +105,7 @@ function patchElement(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode
             }
         }
 
+        const nextRef = nextVNode.ref;
         if (!isNullOrUndefined(nextRef) && lastVNode.ref !== nextRef) {
             createRef(dom, nextRef, mountedQueue);
         }
@@ -121,6 +128,8 @@ function patchComponentClass(lastVNode, nextVNode, parentDom, mountedQueue, pare
         newDom = createComponentClassOrInstance(nextVNode, parentDom, mountedQueue, lastVNode, false, parentVNode);
     } else {
         instance = lastVNode.children;
+        instance.mountedQueue = mountedQueue;
+        instance.isRender = false;
         newDom = instance.update(lastVNode, nextVNode);
         nextVNode.dom = newDom;
         nextVNode.children = instance;
@@ -334,7 +343,7 @@ function patchChildrenByKey(a, b, dom, mountedQueue, parentVNode) {
         if (aLength === a.length && patched === 0) {
             // removeAllChildren(dom, a);
             // children maybe have animation
-            removeElements(a, dom)
+            removeElements(a, dom);
             while (bStart < bLength) {
                 createElement(b[bStart], dom, mountedQueue, false, parentVNode);
                 ++bStart;

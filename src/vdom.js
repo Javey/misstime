@@ -45,7 +45,6 @@ export function createElement(vNode, parentDom, mountedQueue, isRender, parentVN
 export function createHtmlElement(vNode, parentDom, mountedQueue, isRender, parentVNode) {
     const dom = document.createElement(vNode.tag);
     const children = vNode.children;
-    const ref = vNode.ref;
     const props = vNode.props;
     const className = vNode.className;
 
@@ -69,12 +68,13 @@ export function createHtmlElement(vNode, parentDom, mountedQueue, isRender, pare
         }
     }
 
+    const ref = vNode.ref;
     if (!isNullOrUndefined(ref)) {
         createRef(dom, ref, mountedQueue);
     }
 
-    if (parentDom && !dom.parentNode) {
-        parentDom.appendChild(dom);
+    if (parentDom) {
+        appendChild(parentDom, dom);
     }
 
     return dom;
@@ -106,7 +106,7 @@ export function createComponentClassOrInstance(vNode, parentDom, mountedQueue, l
     vNode.children = instance;
 
     if (parentDom) {
-        appendChild(parentDom, vNode);
+        appendChild(parentDom, dom);
         // parentDom.appendChild(dom);
     }
 
@@ -308,15 +308,11 @@ export function removeChild(parentDom, vNode) {
     }
 }
 
-export function appendChild(parentDom, vNode) {
-    const dom = vNode.dom;
+export function appendChild(parentDom, dom) {
     // for animation the dom will not be moved
     if (!dom.parentNode) {
         parentDom.appendChild(dom);
     }
-    // if (dom._mount) {
-        // dom._mount(vNode, parentDom);
-    // }
 }
 
 export function createRef(dom, ref, mountedQueue) {

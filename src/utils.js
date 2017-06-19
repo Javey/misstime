@@ -139,6 +139,9 @@ export function MountedQueue() {
 MountedQueue.prototype.push = function(fn) {
     this.queue.push(fn);
 };
+MountedQueue.prototype.unshift = function(fn) {
+    this.queue.unshift(fn);
+};
 MountedQueue.prototype.trigger = function() {
     const queue = this.queue;
     let callback;
