@@ -49,6 +49,7 @@ export function createHtmlElement(vNode, parentDom, mountedQueue, isRender, pare
     const className = vNode.className;
 
     vNode.dom = dom;
+    vNode.parentVNode = parentVNode;
 
     if (!isNullOrUndefined(children)) {
         createElements(children, dom, mountedQueue, isRender, vNode);

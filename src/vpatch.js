@@ -85,6 +85,7 @@ function patchElement(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode
     const nextClassName = nextVNode.className;
 
     nextVNode.dom = dom;
+    nextVNode.parentVNode = parentVNode;
 
     if (lastVNode.tag !== nextVNode.tag || lastVNode.key !== nextVNode.key) {
         replaceElement(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode);
@@ -130,9 +131,11 @@ function patchComponentClass(lastVNode, nextVNode, parentDom, mountedQueue, pare
         instance = lastVNode.children;
         instance.mountedQueue = mountedQueue;
         instance.isRender = false;
+        instance.parentVNode = parentVNode;
         newDom = instance.update(lastVNode, nextVNode);
         nextVNode.dom = newDom;
         nextVNode.children = instance;
+        nextVNode.parentVNode = parentVNode;
     }
 
     // perhaps the dom has be replaced
@@ -152,8 +155,12 @@ function patchComponentIntance(lastVNode, nextVNode, parentDom, mountedQueue, pa
         // removeComponentClassOrInstance(lastVNode, null, nextVNode);
         newDom = createComponentClassOrInstance(nextVNode, parentDom, mountedQueue, lastVNode, false, parentVNode);
     } else {
+        lastInstance.mountedQueue = mountedQueue;
+        lastInstance.isRender = false;
+        lastInstance.parentVNode = parentVNode;
         newDom = lastInstance.update(lastVNode, nextVNode);
         nextVNode.dom = newDom;
+        nextVNode.parentVNode = parentVNode;
     }
 
     if (dom !== newDom && dom.parentNode) {
