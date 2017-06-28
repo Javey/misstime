@@ -282,7 +282,7 @@ function patchChildrenByKey(a, b, dom, mountedQueue, parentVNode) {
             insertOrAppend(
                 bEnd, bLength, 
                 createElement(b[bStart], null, mountedQueue, false, parentVNode),
-                b, dom
+                b, dom, true /* detectParent: for animate, if the parentNode exists, then do nothing*/
             );
             ++bStart;
         }
@@ -385,7 +385,7 @@ function patchChildrenByKey(a, b, dom, mountedQueue, parentVNode) {
                         insertOrAppend(
                             pos, b.length,
                             createElement(b[pos], null, mountedQueue, false, parentVNode),
-                            b, dom
+                            b, dom, true
                         );
                     }
                 }
@@ -449,9 +449,11 @@ function lisAlgorithm(arr) {
     return result;
 }
 
-function insertOrAppend(pos, length, newDom, nodes, dom) {
+function insertOrAppend(pos, length, newDom, nodes, dom, detectParent) {
     const nextPos = pos + 1;
-    if (nextPos < length) {
+    if (detectParent && newDom.parentNode) {
+        return;
+    } else if (nextPos < length) {
         dom.insertBefore(newDom, nodes[nextPos].dom);
     } else {
         appendChild(dom, newDom);
