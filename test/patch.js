@@ -134,6 +134,10 @@ describe('Patch', () => {
         );
     });
 
+    it('patch string with array', () => {
+        // todo
+    });
+
     it('patch comment', () => {
         eql(
             hc('div'),
