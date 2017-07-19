@@ -123,8 +123,8 @@ function patchComponentClass(lastVNode, nextVNode, parentDom, mountedQueue, pare
     let newDom;
 
     if (lastTag !== nextTag || lastVNode.key !== nextVNode.key) {
-        // we should call this function in component's init method
-        // because it should be destroyed before async component has rendered
+        // we should call this remove function in component's init method
+        // because it should be destroyed until async component has rendered
         // removeComponentClassOrInstance(lastVNode, null, nextVNode);
         newDom = createComponentClassOrInstance(nextVNode, parentDom, mountedQueue, lastVNode, false, parentVNode);
     } else {
@@ -455,9 +455,10 @@ function lisAlgorithm(arr) {
 
 function insertOrAppend(pos, length, newDom, nodes, dom, detectParent) {
     const nextPos = pos + 1;
-    if (detectParent && newDom.parentNode) {
-        return;
-    } else if (nextPos < length) {
+    // if (detectParent && newDom.parentNode) {
+        // return;
+    // } else
+    if (nextPos < length) {
         dom.insertBefore(newDom, nodes[nextPos].dom);
     } else {
         appendChild(dom, newDom);

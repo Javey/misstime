@@ -526,7 +526,6 @@ describe('Render', () => {
             C = CC;
 
             pInit = sinon.spy(function(lastVNode, nextVNode) {
-                console.log(this.mountedQueue);
                 return render(h('div', null, 'test'), null, this.mountedQueue);
             });
             pMount = sinon.spy((lastVNode, nextVNode) => {
@@ -544,9 +543,9 @@ describe('Render', () => {
             const vNode = h(C, {className: 'test', children: 'text'});
             r(vNode);
             assert.strictEqual(init.callCount, 1);
-            assert.strictEqual(init.calledWith(undefined, vNode), true);
+            assert.strictEqual(init.calledWith(null, vNode), true);
             assert.strictEqual(mount.callCount, 1);
-            assert.strictEqual(mount.calledWith(undefined, vNode), true);
+            assert.strictEqual(mount.calledWith(null, vNode), true);
             assert.strictEqual(mount.calledAfter(init), true);
         }); 
 

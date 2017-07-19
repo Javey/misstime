@@ -1,4 +1,5 @@
 import {h, hc, render, patch, remove} from '../src';
+import {removeComponentClassOrInstance} from '../src/vdom';
 import assert from 'assert';
 import {eqlHtml, isIE8} from './utils';
 
@@ -135,7 +136,11 @@ describe('Patch', () => {
     });
 
     it('patch string with array', () => {
-        // todo
+        eql(
+            h('div', null, 'a'),
+            h('div', null, [h('span'), h('span')]),
+            '<div><span></span><span></span></div>'
+        );
     });
 
     it('patch comment', () => {
@@ -934,7 +939,8 @@ describe('Patch', () => {
             function Component(props) {
                 this.props = props || {};
             }
-            Component.prototype.init = sinon.spy(function() {
+            Component.prototype.init = sinon.spy(function(lastVNode, nextVNode) {
+                if (lastVNode) removeComponentClassOrInstance(lastVNode, null, nextVNode);
                 this.vNode = h('span', this.props, this.props.children);
                 return this.dom = render(this.vNode);
             });
@@ -1018,8 +1024,8 @@ describe('Patch', () => {
             const nextVNode = h(Component);
             p(lastVNode, nextVNode);
 
-            sEql(_p.init.calledWithExactly(undefined, lastVNode), true); 
-            sEql(_p.mount.calledWithExactly(undefined, lastVNode), true);
+            sEql(_p.init.calledWithExactly(null, lastVNode), true); 
+            sEql(_p.mount.calledWithExactly(null, lastVNode), true);
             sEql(_p.update.calledWithExactly(lastVNode, nextVNode), true);
         });
 
@@ -1028,9 +1034,9 @@ describe('Patch', () => {
             const nextVNode = h(NewComponent);
             p(lastVNode, nextVNode);
 
-            sEql(_p.init.calledWithExactly(undefined, lastVNode), true); 
-            sEql(_p.mount.calledWithExactly(undefined, lastVNode), true);
-            sEql(_p.destroy.calledWithExactly(lastVNode, nextVNode), true);
+            sEql(_p.init.calledWithExactly(null, lastVNode), true); 
+            sEql(_p.mount.calledWithExactly(null, lastVNode), true);
+            sEql(_p.destroy.calledWithExactly(lastVNode, nextVNode, null), true);
         });
 
         it('should destroy children when destroy class component', () => {
