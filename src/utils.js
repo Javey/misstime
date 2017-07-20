@@ -133,6 +133,26 @@ export const strictProps = {
     value: true,
 };
 
+export const selfClosingTags = {
+    'area': true,
+    'base': true,
+    'br': true,
+    'col': true,
+    'command': true,
+    'embed': true,
+    'hr': true,
+    'img': true,
+    'input': true,
+    'keygen': true,
+    'link': true,
+    'menuitem': true,
+    'meta': true,
+    'param': true,
+    'source': true,
+    'track': true,
+    'wbr': true
+};
+
 export function MountedQueue() {
     this.queue = [];
 }
@@ -167,3 +187,4 @@ export const setTextContent = browser.isIE8 ? function(dom, text) {
 } : function(dom, text) {
     dom.textContent = text;
 };
+

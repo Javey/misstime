@@ -630,9 +630,10 @@ const patchDataset = browser.isIE ?
     } : patchObject;
 
 const _cache = {};
-function kebabCase(word) {
+const uppercasePattern = /[A-Z]/g;
+export function kebabCase(word) {
     if (!_cache[word]) {
-        _cache[word] = word.replace(/[A-Z]/g, (item) => {
+        _cache[word] = word.replace(uppercasePattern, (item) => {
             return `-${item.toLowerCase()}`;
         });
     }
