@@ -1,8 +1,6 @@
-import minDocument from 'min-document';
-
 const toString = Object.prototype.toString;
 
-export const doc = typeof document === 'undefined' ? minDocument : document;
+export const doc = typeof document === 'undefined' ? null : document;
 
 export const isArray = Array.isArray || function(arr) {
     return toString.call(arr) === '[object Array]';

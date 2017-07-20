@@ -3,9 +3,6 @@
   "version": "0.1.0",
   "description": "",
   "main": "dist/index.js",
-  "browser": {
-    "min-document": false
-  },
   "module": "src/index.js",
   "directories": {
     "test": "test"
@@ -19,9 +16,6 @@
   },
   "author": "",
   "license": "ISC",
-  "dependencies": {
-    "min-document": "git://github.com/Javey/min-document#master"
-  },
   "devDependencies": {
     "babel-core": "^6.24.1",
     "babel-loader": "^7.0.0",
