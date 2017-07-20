@@ -461,7 +461,8 @@ function insertOrAppend(pos, length, newDom, nodes, dom, detectParent) {
     if (nextPos < length) {
         dom.insertBefore(newDom, nodes[nextPos].dom);
     } else {
-        appendChild(dom, newDom);
+        dom.appendChild(newDom);
+        // appendChild(dom, newDom);
     }
 }
 

@@ -13,9 +13,9 @@ export function toString(vNode, parent, disableSplitText, firstChild) {
     let html;
     if (type & Types.ComponentClass) {
         const instance = new tag(props); 
-        html = instance.init(null, vNode);
+        html = instance.toString();
     } else if (type & Types.ComponentInstance) {
-        html = vNode.children.init(null, vNode);
+        html = vNode.children.toString();
     } else if (type & Types.Element) {
         let innerHTML;
         html = `<${tag}`;

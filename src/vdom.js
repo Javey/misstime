@@ -310,10 +310,9 @@ export function removeChild(parentDom, vNode) {
 }
 
 export function appendChild(parentDom, dom) {
-    // for animation the dom will not be moved
-    // if (!dom.parentNode) {
+    if (!dom.parentNode) {
         parentDom.appendChild(dom);
-    // }
+    }
 }
 
 export function createRef(dom, ref, mountedQueue) {
