@@ -136,6 +136,14 @@ function patchComponentClass(lastVNode, nextVNode, parentDom, mountedQueue, pare
         nextVNode.dom = newDom;
         nextVNode.children = instance;
         nextVNode.parentVNode = parentVNode;
+        
+        // for intact.js, the dom will not be removed and
+        // the component will not be destoryed, so the ref
+        // function need be called in update method.
+        const ref = nextVNode.ref;
+        if (typeof ref === 'function') {
+            ref(instance);
+        }
     }
 
     // perhaps the dom has be replaced
@@ -161,6 +169,11 @@ function patchComponentIntance(lastVNode, nextVNode, parentDom, mountedQueue, pa
         newDom = lastInstance.update(lastVNode, nextVNode);
         nextVNode.dom = newDom;
         nextVNode.parentVNode = parentVNode;
+
+        const ref = nextVNode.ref;
+        if (typeof ref === 'function') {
+            ref(instance);
+        }
     }
 
     if (dom !== newDom && dom.parentNode) {
