@@ -63,7 +63,7 @@ export function toString(vNode, parent, disableSplitText, firstChild) {
             html += '>';
             if (innerHTML) {
                 html += innerHTML;
-            } else if (children) {
+            } else if (!isNullOrUndefined(children)) {
                 if (isString(children)) {
                     html += children === '' ? ' ' : escapeText(children);
                 } else if (isNumber(children)) {
@@ -76,7 +76,7 @@ export function toString(vNode, parent, disableSplitText, firstChild) {
                             html += child === '' ? ' ' : escapeText(child);
                         } else if (isNumber(child)) {
                             html += child;
-                        } else {
+                        } else if (!isNullOrUndefined(child)) {
                             if (!(child.type & Types.Text)) {
                                 index = -1;
                             } else {
