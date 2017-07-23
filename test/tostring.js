@@ -6,6 +6,17 @@ function eql(vNode, html) {
     assert.strictEqual(toString(vNode), html);
 }
 
+class ClassComponent {
+    constructor(props) {
+        this.props = props || {};
+    }
+    init() {}
+    toString() {
+        this.vNode = h('span', this.props, this.props.children);
+        return toString(this.vNode);
+    }
+}
+
 describe('toString', () => {
     it('render element to string', () => {
         eql(h('div'), '<div></div>');
@@ -100,6 +111,26 @@ describe('toString', () => {
         eql(
             h('div', null, '<div></div>'), 
             '<div>&lt;div&gt;&lt;/div&gt;</div>'
+        );
+    });
+
+    it('render class component to string', () => {
+        eql(
+            h(ClassComponent, {
+                className: 'test',
+                children: h('i')
+            }),
+            '<span class="test"><i></i></span>'
+        );
+    });
+
+    it('render instance component to string', () => {
+        eql(
+            h(new ClassComponent({
+                className: 'test',
+                children: h('i')
+            })),
+            '<span class="test"><i></i></span>'
         );
     });
 });

@@ -32,7 +32,10 @@ export function toString(vNode, parent, disableSplitText, firstChild) {
                     innerHTML = value;
                 } else if (prop === 'style') {
                     html += ` style="${renderStylesToString(value)}"`;
-                } else if (prop === 'children') {
+                } else if (
+                    prop === 'children' || prop === 'className' || 
+                    prop === 'key' || prop === 'ref'
+                ) {
                     // ignore
                 } else if (prop === 'defaultValue') {
                     if (isNullOrUndefined(props.value)) {

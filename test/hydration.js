@@ -1,11 +1,39 @@
 import {hydrateRoot} from '../src/hydration';
-import {h, hc, renderString, patch} from '../src';
+import {h, hc, renderString, patch, hydrate} from '../src';
 import assert from 'assert';
 import {eqlHtml} from './utils';
 
 function sEql(a, b) {
     assert.strictEqual(a, b);
 }
+
+class ClassComponent {
+    constructor(props) {
+        this.props = props || {};
+    }
+    init() {
+        this.render();
+        return this.dom = render(this.vNode);
+    }
+    toString() {
+        this.render();
+        return renderString(this.vNode);
+    }
+    hydrate(vNode, dom) {
+        this.render();
+        return this.dom = hydrate(this.vNode, dom, this.mountedQueue, this.parentDom, vNode);
+    }
+    update(lastVNode, nextVNode) {
+        var oldVnode = this.vNode;
+        this.props = nextVNode.props;
+        this.render();
+        return this.dom = patch(oldVnode, this.vNode);
+    }
+    render() {
+        this.vNode = h('span', this.props, this.props.children);
+    }
+}
+
 
 describe('hydrate', () => {
     let container;
@@ -16,7 +44,7 @@ describe('hydrate', () => {
     });
 
     afterEach(() => {
-        // document.body.removeChild(container);
+        document.body.removeChild(container);
     });
 
     function hy(vNode) {
@@ -45,7 +73,6 @@ describe('hydrate', () => {
 
     it('hydrate text elements', () => {
         const vNode = h('div', null, ['test1', 'test2']);
-        container.innerHTML = renderString(vNode);
         hy(vNode);
         sEql(vNode.children[0].dom, container.firstChild.childNodes[0]);
         sEql(vNode.children[1].dom, container.firstChild.childNodes[1]);
@@ -53,5 +80,31 @@ describe('hydrate', () => {
 
         patch(vNode, h('div', null, ['test3']));
         eqlHtml(container, '<div>test3</div>');
+    });
+
+    it('hydrate comment', () => {
+        const vNode = h('div', null, hc('test'));
+        hy(vNode);
+        sEql(vNode.children.dom, container.firstChild.firstChild);
+        
+        patch(vNode, h('div', null, 'test'));
+        eqlHtml(container, '<div>test</div>');
+    });
+
+    it('hydrate component class', () => {
+        const vNode = h(ClassComponent, {
+            className: 'test',
+            children: [h('i')]
+        });
+        hy(vNode);
+        sEql(vNode.dom, container.firstChild);
+        sEql(vNode.children.vNode.dom, container.firstChild);
+        sEql(vNode.children.vNode.children[0].dom, container.firstChild.firstChild);
+
+        patch(vNode, h(ClassComponent, {
+            className: 'hello',
+            children: h('b')
+        }));
+        eqlHtml(container, '<span class="hello"><b></b></span>');
     });
 });

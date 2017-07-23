@@ -1,6 +1,6 @@
 import {Types, EMPTY_OBJ} from './vnode';
 import {createElement, createRef,
-    createTextElement
+    createTextElement, createCommentElement
 } from './vdom';
 import {isNullOrUndefined, setTextContent,
     isStringOrNumber, isArray, MountedQueue
@@ -11,37 +11,90 @@ import {processForm} from './wrappers/process';
 export function hydrateRoot(vNode, parentDom, mountedQueue) {
     if (!isNullOrUndefined(parentDom)) {
         let dom = parentDom.firstChild;
-
+        let newDom = hydrate(vNode, dom, mountedQueue, parentDom, null);
+        dom = parentDom.firstChild;
         if (dom !== null) {
-            let isTrigger = true;
-            if (mountedQueue) {
-                isTrigger = false;
-            } else {
-                mountedQueue = new MountedQueue();
-            }
-            hydrate(vNode, dom, mountedQueue);
-            dom = parentDom.firstChild;
             // should only one entry
             while (dom = dom.nextSibling) {
                 parentDom.removeChild(dom);
             }
-            if (isTrigger) {
-                mountedQueue.trigger();
-            }
-            return true;
         }
+        return newDom;
     }
-    return false;
+    return null;
 }
 
-function hydrate(vNode, dom, mountedQueue) {
+export function hydrate(vNode, dom, mountedQueue, parentDom, parentVNode) {
+    if (dom !== null) {
+        let isTrigger = true;
+        if (mountedQueue) {
+            isTrigger = false;
+        } else {
+            mountedQueue = new MountedQueue();
+        }
+        dom = hydrateElement(vNode, dom, mountedQueue, parentDom, parentVNode);
+        if (isTrigger) {
+            mountedQueue.trigger();
+        }
+    }
+    return dom;
+}
+
+export function hydrateElement(vNode, dom, mountedQueue, parentDom, parentVNode) {
     const type = vNode.type;
     
     if (type & Types.Element) {
-        hydrateElement(vNode, dom, mountedQueue);
+        return hydrateHtmlElement(vNode, dom, mountedQueue, parentDom, parentVNode);
     } else if (type & Types.Text) {
-        hydrateText(vNode, dom);
+        return hydrateText(vNode, dom);
+    } else if (type & Types.HtmlComment) {
+        return hydrateComment(vNode, dom);
+    } else if (type & Types.ComponentClassOrInstance) {
+        return hydrateComponentClassOrInstance(vNode, dom, mountedQueue, parentDom, parentVNode);
     }
+}
+
+function hydrateComponentClassOrInstance(vNode, dom, mountedQueue, parentDom, parentVNode) {
+    const props = vNode.props;
+    const instance = vNode.type & Types.ComponentClass ?
+        new vNode.tag(props) : vNode.children;
+    instance.parentDom = parentDom;
+    instance.mountedQueue = mountedQueue;
+    instance.isRender = true;
+    instance.parentVNode = parentVNode;
+    let newDom = instance.hydrate(vNode, dom);
+
+    vNode.dom = newDom;
+    vNode.children = instance;
+
+    if (typeof instance.mount === 'function') {
+        mountedQueue.push(() => instance.mount(null, vNode));
+    }
+
+    const ref = vNode.ref;
+    if (typeof ref === 'function') {
+        ref(instance);
+    }
+
+    if (dom !== newDom && dom.parentNode) {
+        dom.parentNode.replaceChild(newDom, dom);
+    }
+
+    return dom;
+}
+
+function hydrateComment(vNode, dom) {
+    if (dom.nodeType !== 8) {
+        const newDom = createCommentElement(vNode, null);
+        dom.parentNode.replaceChild(newDom, dom);
+        return newDom;
+    }
+    const comment = vNode.children;
+    if (dom.data !== comment) {
+        dom.data = comment;
+    }
+    vNode.dom = dom;
+    return dom;
 }
 
 function hydrateText(vNode, dom) {
@@ -61,16 +114,18 @@ function hydrateText(vNode, dom) {
     return dom;
 }
 
-function hydrateElement(vNode, dom, mountedQueue) {
+function hydrateHtmlElement(vNode, dom, mountedQueue, parentDom, parentVNode) {
     const children = vNode.children;
     const props = vNode.props;
     const className = vNode.className;
     const type = vNode.type;
     const ref = vNode.ref;
 
+    vNode.parentVNode = parentVNode;
+
     if (dom.nodeType !== 1 || dom.tagName.toLowerCase() !== vNode.tag) {
         warning('Server-side markup doesn\'t match client-side markup');
-        const newDom = createElement(vNode, null, mountedQueue);
+        const newDom = createElement(vNode, null, mountedQueue, parentDom, parentVNode);
         dom.parentNode.replaceChild(newDom, dom);
 
         return newDom;
@@ -78,7 +133,7 @@ function hydrateElement(vNode, dom, mountedQueue) {
 
     vNode.dom = dom;
     if (!isNullOrUndefined(children)) {
-        hydrateChildren(children, dom, mountedQueue);
+        hydrateChildren(children, dom, mountedQueue, vNode);
     } else if (dom.firstChild !== null) {
         setTextContent(dom, '');
     }
@@ -102,9 +157,11 @@ function hydrateElement(vNode, dom, mountedQueue) {
     if (ref) {
         createRef(dom, ref, mountedQueue);
     }
+
+    return dom;
 }
 
-function hydrateChildren(children, parentDom, mountedQueue) {
+function hydrateChildren(children, parentDom, mountedQueue, parentVNode) {
     normalizeChildren(parentDom);
     let dom = parentDom.firstChild;
 
@@ -128,39 +185,37 @@ function hydrateChildren(children, parentDom, mountedQueue) {
             if (!isNullOrUndefined(child)) {
                 if (dom !== null) {
                     const nextSibling = dom.nextSibling;
-                    hydrate(child, dom, mountedQueue);
+                    hydrateElement(child, dom, mountedQueue, parentDom, parentVNode);
                     dom = nextSibling;
                 } else {
-                    createElement(child, parentDom, mountedQueue);
+                    createElement(child, parentDom, mountedQueue, true, parentVNode);
                 }
             }
         }
     } else {
         if (dom !== null) {
-            hydrate(children, dom, mountedQueue);
+            hydrateElement(children, dom, mountedQueue, parentDom, parentVNode);
         } else {
-            createElement(children, parentDom, mountedQueue);
+            createElement(children, parentDom, mountedQueue, true, parentVNode);
         }
     }
 
     // clear any other DOM nodes, there should be on a single entry for the root
-    while (dom) {
+    // while (dom) {
         // const nextSibling = dom.nextSibling;
         // parentDom.removeChild(dom);
         // dom = nextSibling;
-    }
+    // }
 }
 
 function normalizeChildren(parentDom) {
     let dom = parentDom.firstChild;
 
     while (dom) {
-        if (dom.nodeType === 8) {
-            if (dom.data === '') {
-                const lastDom = dom.previousSibling;
-                parentDom.removeChild(dom);
-                dom = lastDom || parentDom.firstChild;
-            }
+        if (dom.nodeType === 8 && dom.data === '') {
+            const lastDom = dom.previousSibling;
+            parentDom.removeChild(dom);
+            dom = lastDom || parentDom.firstChild;
         } else {
             dom = dom.nextSibling;
         }
