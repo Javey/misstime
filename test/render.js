@@ -1,6 +1,6 @@
 import {h, hc, render} from '../src';
 import assert from 'assert';
-import {innerHTML, eqlHtml} from './utils';
+import {innerHTML, eqlHtml, dispatchEvent} from './utils';
 import {MountedQueue} from '../src/utils';
 
 class ClassComponent {
@@ -500,6 +500,19 @@ describe('Render', () => {
             r(h('a', {'ev-click': fn, href: "https://www.baidu.com"}, 'test'));
             container.firstChild.click();
             assert.strictEqual(location.href, url);
+        });
+
+        it('mouseenter & mouseleave event', () => {
+            const fn1 = sinon.spy(() => {});
+            const fn2 = sinon.spy(() => {});
+            r(h('div', {
+                'ev-mouseenter': fn1,
+                'ev-mouseleave': fn2 
+            }, 'test'));
+            dispatchEvent(container.firstChild, 'mouseenter');
+            dispatchEvent(container.firstChild, 'mouseleave');
+            assert.strictEqual(fn1.callCount, 1);
+            assert.strictEqual(fn2.callCount, 1);
         });
     });
 

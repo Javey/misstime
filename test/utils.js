@@ -45,3 +45,14 @@ export const isIE8 = browser.isIE8;
 export function eqlHtml(container, html, ie8Html) {
     assert.strictEqual(innerHTML(container), isIE8 & ie8Html !== undefined ? ie8Html : html);
 }
+
+export function dispatchEvent(target, eventName) {
+    let event;
+    if (typeof CustomEvent !== 'undefined') {
+        event = new CustomEvent(eventName);
+    } else {
+        event = document.createEvent('Event');
+        event.initEvent(eventName, true, true);
+    }
+    target.dispatchEvent(event);
+}

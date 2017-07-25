@@ -74,24 +74,28 @@ function proxyEvent(e) {
 let addEventListener;
 let removeEventListener;
 if ('addEventListener' in document) {
-    addEventListener = function(name, fn) {
-        document.addEventListener(name, fn, false);
+    addEventListener = function(dom, name, fn) {
+        dom.addEventListener(name, fn, false);
     };
 
-    removeEventListener = function(name, fn) {
-        document.removeEventListener(name, fn);
+    removeEventListener = function(dom, name, fn) {
+        dom.removeEventListener(name, fn);
     };
 } else {
-    addEventListener = function(name, fn) {
-        document.attachEvent(`on${name}`, fn);
+    addEventListener = function(dom, name, fn) {
+        dom.attachEvent(`on${name}`, fn);
     };
 
-    removeEventListener = function(name, fn) {
-        document.detachEvent(`on${name}`, fn);
+    removeEventListener = function(dom, name, fn) {
+        dom.detachEvent(`on${name}`, fn);
     };
 }
 
 const delegatedEvents = {};
+const unDelegatesEvents = {
+    'mouseenter': true,
+    'mouseleave': true
+};
 
 export function handleEvent(name, lastEvent, nextEvent, dom) {
     if (name === 'blur') {
@@ -100,22 +104,31 @@ export function handleEvent(name, lastEvent, nextEvent, dom) {
         name = 'focusin';
     }
 
-    let delegatedRoots = delegatedEvents[name];
+    if (!unDelegatesEvents[name]) {
+        let delegatedRoots = delegatedEvents[name];
 
-    if (nextEvent) {
-        if (!delegatedRoots) {
-            delegatedRoots = {items: new SimpleMap(), docEvent: null};
-            delegatedRoots.docEvent = attachEventToDocument(name, delegatedRoots); 
-            delegatedEvents[name] = delegatedRoots;
-        }
-        delegatedRoots.items.set(dom, nextEvent);
-    } else if (delegatedRoots) {
-        const items = delegatedRoots.items;
-        if (items.delete(dom)) {
-            if (items.size === 0) {
-                removeEventListener(name, delegatedRoots.docEvent);
-                delete delegatedRoots[name];
+        if (nextEvent) {
+            if (!delegatedRoots) {
+                delegatedRoots = {items: new SimpleMap(), docEvent: null};
+                delegatedRoots.docEvent = attachEventToDocument(name, delegatedRoots); 
+                delegatedEvents[name] = delegatedRoots;
             }
+            delegatedRoots.items.set(dom, nextEvent);
+        } else if (delegatedRoots) {
+            const items = delegatedRoots.items;
+            if (items.delete(dom)) {
+                if (items.size === 0) {
+                    removeEventListener(document, name, delegatedRoots.docEvent);
+                    delete delegatedRoots[name];
+                }
+            }
+        }
+    } else {
+        if (lastEvent) {
+            removeEventListener(dom, name, lastEvent);
+        }
+        if (nextEvent) {
+            addEventListener(dom, name, nextEvent);
         }
     }
 }
@@ -148,6 +161,6 @@ function attachEventToDocument(name, delegatedRoots) {
             dispatchEvent(event, event.target, delegatedRoots.items, count, event.type === 'click'); 
         }
     };
-    addEventListener(name, docEvent);
+    addEventListener(document, name, docEvent);
     return docEvent;
 }
