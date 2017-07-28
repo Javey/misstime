@@ -15,7 +15,9 @@ export const Types = {
 
     InputElement: 1 << 6,
     SelectElement: 1 << 7,
-    TextareaElement: 1 << 8
+    TextareaElement: 1 << 8,
+
+    UnescapeText: 1 << 9 // for server side render unescape text
 };
 Types.FormElement = Types.InputElement | Types.SelectElement | Types.TextareaElement;
 Types.Element = Types.HtmlElement | Types.FormElement;
@@ -81,6 +83,10 @@ export function createVNode(tag, props, children, className, key, ref) {
 
 export function createCommentVNode(children) {
     return new VNode(Types.HtmlComment, null, EMPTY_OBJ, children);
+}
+
+export function createUnescapeTextVNode(children) {
+    return new VNode(Types.UnescapeText, null, EMPTY_OBJ, children);
 }
 
 export function createTextVNode(text) {

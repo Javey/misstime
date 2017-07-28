@@ -96,9 +96,12 @@ export function toString(vNode, parent, disableSplitText, firstChild) {
             html += `</${tag}>`;
         }
     } else if (type & Types.Text) {
-        html = (firstChild || disableSplitText ? '' : '<!---->') + (children === '' ? ' ' : escapeText(children));
+        html = (firstChild || disableSplitText ? '' : '<!---->') + 
+            (children === '' ? ' ' : escapeText(children));
     } else if (type & Types.HtmlComment) {
         html = `<!--${children}-->`;
+    } else if (type & Types.UnescapeText) {
+        html = isNullOrUndefined(children) ? '' : children;
     } else {
         throw new Error(`Unknown vNode: ${vNode}`);
     }
