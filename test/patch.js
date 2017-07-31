@@ -134,6 +134,14 @@ describe('Patch', () => {
             '<div></div>'
         );
     });
+    
+    it('patch string child with undefined', () => {
+        eql(
+            h('div', null, 'a'),
+            h('div'),
+            '<div></div>'
+        );
+    });
 
     it('patch string with array', () => {
         eql(

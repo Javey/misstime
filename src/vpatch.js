@@ -201,7 +201,11 @@ function patchChildren(lastChildren, nextChildren, parentDom, mountedQueue, pare
             createElements(nextChildren, parentDom, mountedQueue, false, parentVNode);
         }
     } else if (isNullOrUndefined(nextChildren)) {
-        removeElements(lastChildren, parentDom); 
+        if (isStringOrNumber(lastChildren)) {
+            setTextContent(parentDom, '');
+        } else {
+            removeElements(lastChildren, parentDom); 
+        }
     } else if (isStringOrNumber(nextChildren)) {
         if (isStringOrNumber(lastChildren)) {
             parentDom.firstChild.nodeValue = nextChildren;
