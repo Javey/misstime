@@ -143,6 +143,14 @@ describe('Patch', () => {
         );
     });
 
+    it('patch empty string child with string', () => {
+        eql(
+            h('div', null, ''),
+            h('div', null, 'a'),
+            '<div>a</div>'
+        );
+    });
+
     it('patch string with array', () => {
         eql(
             h('div', null, 'a'),
