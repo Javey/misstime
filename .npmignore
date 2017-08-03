@@ -9,3 +9,4 @@ karma*
 gulpfile.js
 rollup.config.js
 webpack.config.js
+.travis.yml
