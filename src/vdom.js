@@ -59,13 +59,14 @@ export function createHtmlElement(vNode, parentDom, mountedQueue, isRender, pare
         dom.className = className;
     }
 
+    // in IE8, the select value will be set to the first option's value forcely
+    // when it is appended to parent dom. We change its value in processForm does not
+    // work. So processForm after it has be appended to parent dom.
+    let isFormElement;
     if (props !== EMPTY_OBJ) {
-        const isFormElement = (vNode.type & Types.FormElement) > 0;
+        isFormElement = (vNode.type & Types.FormElement) > 0;
         for (let prop in props) {
             patchProp(prop, null, props[prop], dom, isFormElement);
-        }
-        if (isFormElement) {
-            processForm(vNode, dom, props, true);
         }
     }
 
@@ -76,6 +77,10 @@ export function createHtmlElement(vNode, parentDom, mountedQueue, isRender, pare
 
     if (parentDom) {
         appendChild(parentDom, dom);
+    }
+
+    if (isFormElement) {
+        processForm(vNode, dom, props, true);
     }
 
     return dom;
@@ -310,7 +315,10 @@ export function removeChild(parentDom, vNode) {
 }
 
 export function appendChild(parentDom, dom) {
-    if (!dom.parentNode) {
+    // in IE8, when a element has appendChild,
+    // then its parentNode will be HTMLDocument object,
+    // so check the tagName for this case
+    if (!dom.parentNode || !dom.parentNode.tagName) {
         parentDom.appendChild(dom);
     }
 }

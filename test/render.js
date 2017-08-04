@@ -250,7 +250,8 @@ describe('Render', () => {
         }
         eql(
             h('div', null, h(C, {className: 'a'})),
-            '<div><div class="a"></div><span class="a"></span></div>'
+            '<div><div class="a"></div><span class="a"></span></div>',
+            '<div>\r\n<div class="a"></div><span class="a"></span></div>'
         );
     });
 
@@ -309,8 +310,7 @@ describe('Render', () => {
                     h('span', {ref: (i) => o.i = i})
                 ]
             }),
-            '<span><span></span></span>',
-            '<span>\r\n<span></span></span>'
+            '<span><span></span></span>'
         );
         assert.strictEqual(o.i, container.firstChild.firstChild);
 
@@ -357,7 +357,8 @@ describe('Render', () => {
                 h('option', {value: 1}, '1'),
                 h('option', {value: 2}, '2')
             ]),
-            '<select><option value="1">1</option><option value="2">2</option></select>'
+            '<select><option value="1">1</option><option value="2">2</option></select>',
+            '<select><option value="1" _value="1">1</option><option value="2" _value="2">2</option></select>'
         );
         assert.strictEqual(container.firstChild.value, '');
         assert.strictEqual(container.firstChild.firstChild.selected, false);
@@ -368,7 +369,8 @@ describe('Render', () => {
                 h('option', {value: 1}, '1'),
                 h('option', {value: 2}, '2')
             ]),
-            '<select><option value="1">1</option><option value="2">2</option></select>'
+            '<select><option value="1">1</option><option value="2">2</option></select>',
+            '<select><option value="1" _value="1">1</option><option selected value="2" _value="2">2</option></select>'
         );
         assert.strictEqual(container.firstChild.value, '2');
         assert.strictEqual(container.firstChild.firstChild.selected, false);
@@ -379,7 +381,8 @@ describe('Render', () => {
                 h('option', {value: 1}, '1'),
                 h('option', {value: 2}, '2')
             ]),
-            '<select><option value="1">1</option><option value="2">2</option></select>'
+            '<select><option value="1">1</option><option value="2">2</option></select>',
+            '<select><option value="1" _value="1">1</option><option selected value="2" _value="2">2</option></select>'
         );
         assert.strictEqual(container.firstChild.value, '2');
         assert.strictEqual(container.firstChild.firstChild.selected, false);
@@ -402,7 +405,8 @@ describe('Render', () => {
                 h('option', {value: 1}, '1'),
                 h('option', {value: 2}, '2')
             ]),
-            '<select multiple=""><option value="1">1</option><option value="2">2</option></select>'
+            '<select multiple=""><option value="1">1</option><option value="2">2</option></select>',
+            '<select multiple><option value="1" _value="1">1</option><option selected value="2" _value="2">2</option></select>'
         );
         assert.strictEqual(container.firstChild.value, '2');
         assert.strictEqual(container.firstChild.firstChild.selected, false);

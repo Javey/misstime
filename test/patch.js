@@ -139,7 +139,8 @@ describe('Patch', () => {
         eql(
             h('div', null, 'a'),
             h('div'),
-            '<div></div>'
+            '<div></div>',
+            '<div>&nbsp;</div>'
         );
     });
 
@@ -155,7 +156,8 @@ describe('Patch', () => {
         eql(
             h('div', null, 'a'),
             h('div', null, [h('span'), h('span')]),
-            '<div><span></span><span></span></div>'
+            '<div><span></span><span></span></div>',
+            '<div><span></span><span></span>&nbsp;</div>'
         );
     });
 
@@ -458,12 +460,14 @@ describe('Patch', () => {
         eql(
             h('div', null, h(C)),
             h('div', null, h(C, {className: 'a'})),
-            '<div><div class="a"></div><span class="a"></span></div>'
+            '<div><div class="a"></div><span class="a"></span></div>',
+            '<div>\r\n<div class="a"></div><span class="a"></span></div>'
         );
         eql(
             h('div', null, h(ClassComponent)),
             h('div', null, h(C, {className: 'a'})),
-            '<div><div class="a"></div><span class="a"></span></div>'
+            '<div><div class="a"></div><span class="a"></span></div>',
+            '<div>\r\n<div class="a"></div><span class="a"></span></div>'
         );
     });
 
@@ -577,7 +581,8 @@ describe('Patch', () => {
                 h('option', {value: 1}, '1'),
                 h('option', {value: 2}, '2')
             ]),
-            '<select><option value="1">1</option><option value="2">2</option></select>'
+            '<select><option value="1">1</option><option value="2">2</option></select>',
+            '<select><option value="1" _value="1">1</option><option value="2" _value="2">2</option></select>'
         );
         assert.strictEqual(container.firstChild.value, '');
         assert.strictEqual(container.firstChild.firstChild.selected, false);
@@ -592,7 +597,8 @@ describe('Patch', () => {
                 h('option', {value: 1}, '1'),
                 h('option', {value: 2}, '2')
             ]),
-            '<select><option value="1">1</option><option value="2">2</option></select>'
+            '<select><option value="1">1</option><option value="2">2</option></select>',
+            '<select><option value="1" _value="1">1</option><option value="2" _value="2">2</option></select>'
         );
         assert.strictEqual(container.firstChild.value, '');
         assert.strictEqual(container.firstChild.firstChild.selected, false);
@@ -607,7 +613,8 @@ describe('Patch', () => {
                 h('option', {value: 1}, '1'),
                 h('option', {value: 2}, '2')
             ]),
-            '<select><option value="1">1</option><option value="2">2</option></select>'
+            '<select><option value="1">1</option><option value="2">2</option></select>',
+            '<select><option selected value="1" _value="1">1</option><option value="2" _value="2">2</option></select>'
         );
         assert.strictEqual(container.firstChild.value, '1');
         assert.strictEqual(container.firstChild.firstChild.selected, true);

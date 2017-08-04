@@ -50,9 +50,12 @@ export function dispatchEvent(target, eventName) {
     let event;
     if (typeof CustomEvent !== 'undefined') {
         event = new CustomEvent(eventName);
-    } else {
+    } else if (document.createEvent) {
         event = document.createEvent('Event');
         event.initEvent(eventName, true, true);
+    } else if (document.createEventObject) {
+        event = document.createEventObject();
+        return target.fireEvent(`on${eventName}`, event);
     }
     target.dispatchEvent(event);
 }
