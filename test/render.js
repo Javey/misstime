@@ -400,13 +400,11 @@ describe('Render', () => {
     });
 
     it('render multiple select element', () => {
-        eql(
+        r(
             h('select', {value: 2, multiple: true}, [
                 h('option', {value: 1}, '1'),
                 h('option', {value: 2}, '2')
-            ]),
-            '<select multiple=""><option value="1">1</option><option value="2">2</option></select>',
-            '<select multiple><option value="1" _value="1">1</option><option selected value="2" _value="2">2</option></select>'
+            ])
         );
         assert.strictEqual(container.firstChild.value, '2');
         assert.strictEqual(container.firstChild.firstChild.selected, false);
