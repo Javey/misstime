@@ -1,10 +1,18 @@
 <p align="center">
-    <a href="https://travis-ci.org/Javey/miss"><img src="https://img.shields.io/travis/Javey/miss.svg" /></a>
+    <a href="https://travis-ci.org/Javey/misstime">
+        <img src="https://img.shields.io/travis/Javey/misstime.svg" />
+    </a>
     <br />
-    <a href="https://saucelabs.com/u/javey">
-        <img src="https://saucelabs.com/browser-matrix/javey.svg?auth=961d9f2abde0b757199d9ceb1ec17cbc" alt="Sauce Test Status"/>
+    <a href="https://saucelabs.com/u/JaveyZ">
+        <img src="https://saucelabs.com/browser-matrix/JaveyZ.svg" alt="Sauce Test Status"/>
     </a> 
 </p>
 
-# miss
+# MissTime
+
+A virtual-dom library forked from [inferno][1] and inspired by [virtual-dom][2].
+
+
+[1]: https://github.com/infernojs/inferno
+[2]: https://github.com/Matt-Esch/virtual-dom 
 
