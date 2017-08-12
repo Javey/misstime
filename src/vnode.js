@@ -70,7 +70,7 @@ export function createVNode(tag, props, children, className, key, ref) {
             throw new Error(`unknown vNode type: ${tag}`);
     }
 
-    if (props.children) {
+    if ((type & Types.ComponentClass) && props.children) {
         props.children = normalizeChildren(props.children);
     }
 
