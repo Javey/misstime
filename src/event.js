@@ -83,25 +83,37 @@ if ('addEventListener' in document) {
     };
 } else {
     addEventListener = function(dom, name, fn) {
-        dom.attachEvent(`on${name}`, fn);
+        fn.cb = (e) => {
+            e = proxyEvent(e);
+            fn(e);
+        };
+        dom.attachEvent(`on${name}`, fn.cb);
     };
 
     removeEventListener = function(dom, name, fn) {
-        dom.detachEvent(`on${name}`, fn);
+        dom.detachEvent(`on${name}`, fn.cb || fn);
     };
 }
 
 const delegatedEvents = {};
 const unDelegatesEvents = {
     'mouseenter': true,
-    'mouseleave': true
+    'mouseleave': true,
+    'propertychange': true
 };
+
+// change event can not be deletegated in IE8 
+if (browser.isIE8) {
+    unDelegatesEvents.change = true;
+}
 
 export function handleEvent(name, lastEvent, nextEvent, dom) {
     if (name === 'blur') {
         name = 'focusout';
     } else if (name === 'focus') {
         name = 'focusin';
+    } else if (browser.isIE8 && name === 'input') {
+        name = 'propertychange';
     }
 
     if (!unDelegatesEvents[name]) {

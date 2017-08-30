@@ -1,9 +1,5 @@
 'use strict';
 
-function _interopDefault (ex) { return (ex && (typeof ex === 'object') && 'default' in ex) ? ex['default'] : ex; }
-
-var minDocument = _interopDefault(require('min-document'));
-
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) {
   return typeof obj;
 } : function (obj) {
@@ -12,7 +8,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 
 var toString = Object.prototype.toString;
 
-var doc = typeof document === 'undefined' ? minDocument : document;
+var doc = typeof document === 'undefined' ? {} : document;
 
 var isArray = Array.isArray || function (arr) {
     return toString.call(arr) === '[object Array]';
@@ -108,7 +104,10 @@ var skipProps = {
     key: true,
     ref: true,
     children: true,
-    className: true
+    className: true,
+    checked: true,
+    multiple: true,
+    defaultValue: true
 };
 
 var booleanProps = {
@@ -135,7 +134,28 @@ var booleanProps = {
 
 var strictProps = {
     volume: true,
-    defaultChecked: true
+    defaultChecked: true,
+    value: true
+};
+
+var selfClosingTags = {
+    area: true,
+    base: true,
+    br: true,
+    col: true,
+    command: true,
+    embed: true,
+    hr: true,
+    img: true,
+    input: true,
+    keygen: true,
+    link: true,
+    menuitem: true,
+    meta: true,
+    param: true,
+    source: true,
+    track: true,
+    wbr: true
 };
 
 function MountedQueue() {
@@ -143,6 +163,9 @@ function MountedQueue() {
 }
 MountedQueue.prototype.push = function (fn) {
     this.queue.push(fn);
+};
+MountedQueue.prototype.unshift = function (fn) {
+    this.queue.unshift(fn);
 };
 MountedQueue.prototype.trigger = function () {
     var queue = this.queue;
@@ -178,9 +201,16 @@ var Types = {
     ComponentFunction: 8,
     ComponentInstance: 16,
 
-    HtmlComment: 32
+    HtmlComment: 32,
+
+    InputElement: 64,
+    SelectElement: 128,
+    TextareaElement: 256,
+
+    UnescapeText: 512 // for server side render unescape text
 };
-Types.Element = Types.HtmlElement;
+Types.FormElement = Types.InputElement | Types.SelectElement | Types.TextareaElement;
+Types.Element = Types.HtmlElement | Types.FormElement;
 Types.ComponentClassOrInstance = Types.ComponentClass | Types.ComponentInstance;
 Types.TextElement = Types.Text | Types.HtmlComment;
 
@@ -204,7 +234,15 @@ function createVNode(tag, props, children, className, key, ref) {
     props || (props = EMPTY_OBJ);
     switch (typeof tag === 'undefined' ? 'undefined' : _typeof(tag)) {
         case 'string':
-            type = Types.HtmlElement;
+            if (tag === 'input') {
+                type = Types.InputElement;
+            } else if (tag === 'select') {
+                type = Types.SelectElement;
+            } else if (tag === 'textarea') {
+                type = Types.TextareaElement;
+            } else {
+                type = Types.HtmlElement;
+            }
             break;
         case 'function':
             if (tag.prototype.init) {
@@ -214,11 +252,15 @@ function createVNode(tag, props, children, className, key, ref) {
                 // type = Types.ComponentFunction;
             }
             break;
+        case 'object':
+            if (tag.init) {
+                return createComponentInstanceVNode(tag);
+            }
         default:
             throw new Error('unknown vNode type: ' + tag);
     }
 
-    if (props.children) {
+    if (type & Types.ComponentClass && props.children) {
         props.children = normalizeChildren(props.children);
     }
 
@@ -227,6 +269,10 @@ function createVNode(tag, props, children, className, key, ref) {
 
 function createCommentVNode(children) {
     return new VNode(Types.HtmlComment, null, EMPTY_OBJ, children);
+}
+
+function createUnescapeTextVNode(children) {
+    return new VNode(Types.UnescapeText, null, EMPTY_OBJ, children);
 }
 
 function createTextVNode(text) {
@@ -279,7 +325,7 @@ function addChild(vNodes, reference) {
             if (!newVNodes) {
                 newVNodes = vNodes.slice(0, i);
             }
-            newVNodes.push(applyKey(createComponentInstanceVNode(n)), reference);
+            newVNodes.push(applyKey(createComponentInstanceVNode(n), reference));
         } else if (n.type) {
             if (!newVNodes) {
                 newVNodes = vNodes.slice(0, i);
@@ -356,42 +402,73 @@ function proxyEvent(e) {
 var addEventListener = void 0;
 var removeEventListener = void 0;
 if ('addEventListener' in doc) {
-    addEventListener = function addEventListener(name, fn) {
-        doc.addEventListener(name, fn, false);
+    addEventListener = function addEventListener(dom, name, fn) {
+        dom.addEventListener(name, fn, false);
     };
 
-    removeEventListener = function removeEventListener(name, fn) {
-        doc.removeEventListener(name, fn);
+    removeEventListener = function removeEventListener(dom, name, fn) {
+        dom.removeEventListener(name, fn);
     };
 } else {
-    addEventListener = function addEventListener(name, fn) {
-        doc.attachEvent("on" + name, fn);
+    addEventListener = function addEventListener(dom, name, fn) {
+        fn.cb = function (e) {
+            e = proxyEvent(e);
+            fn(e);
+        };
+        dom.attachEvent("on" + name, fn.cb);
     };
 
-    removeEventListener = function removeEventListener(name, fn) {
-        doc.detachEvent("on" + name, fn);
+    removeEventListener = function removeEventListener(dom, name, fn) {
+        dom.detachEvent("on" + name, fn.cb || fn);
     };
 }
 
 var delegatedEvents = {};
+var unDelegatesEvents = {
+    mouseenter: true,
+    mouseleave: true,
+    propertychange: true
+};
+
+// change event can not be deletegated in IE8 
+if (browser.isIE8) {
+    unDelegatesEvents.change = true;
+}
 
 function handleEvent(name, lastEvent, nextEvent, dom) {
-    var delegatedRoots = delegatedEvents[name];
+    if (name === 'blur') {
+        name = 'focusout';
+    } else if (name === 'focus') {
+        name = 'focusin';
+    } else if (browser.isIE8 && name === 'input') {
+        name = 'propertychange';
+    }
 
-    if (nextEvent) {
-        if (!delegatedRoots) {
-            delegatedRoots = { items: new SimpleMap(), docEvent: null };
-            delegatedRoots.docEvent = attachEventToDocument(name, delegatedRoots);
-            delegatedEvents[name] = delegatedRoots;
-        }
-        delegatedRoots.items.set(dom, nextEvent);
-    } else if (delegatedRoots) {
-        var items = delegatedRoots.items;
-        if (items["delete"](dom)) {
-            if (items.size === 0) {
-                removeEventListener(name, delegatedRoots.docEvent);
-                delete delegatedRoots[name];
+    if (!unDelegatesEvents[name]) {
+        var delegatedRoots = delegatedEvents[name];
+
+        if (nextEvent) {
+            if (!delegatedRoots) {
+                delegatedRoots = { items: new SimpleMap(), docEvent: null };
+                delegatedRoots.docEvent = attachEventToDocument(name, delegatedRoots);
+                delegatedEvents[name] = delegatedRoots;
             }
+            delegatedRoots.items.set(dom, nextEvent);
+        } else if (delegatedRoots) {
+            var items = delegatedRoots.items;
+            if (items["delete"](dom)) {
+                if (items.size === 0) {
+                    removeEventListener(doc, name, delegatedRoots.docEvent);
+                    delete delegatedRoots[name];
+                }
+            }
+        }
+    } else {
+        if (lastEvent) {
+            removeEventListener(dom, name, lastEvent);
+        }
+        if (nextEvent) {
+            addEventListener(dom, name, nextEvent);
         }
     }
 }
@@ -424,34 +501,165 @@ function attachEventToDocument(name, delegatedRoots) {
             dispatchEvent(event, event.target, delegatedRoots.items, count, event.type === 'click');
         }
     };
-    addEventListener(name, docEvent);
+    addEventListener(doc, name, docEvent);
     return docEvent;
 }
 
-function render(vNode, parentDom, mountedQueue) {
-    if (isNullOrUndefined(vNode)) return;
-    var isTrigger = false;
-    if (parentDom || !mountedQueue) {
-        mountedQueue = new MountedQueue();
-        isTrigger = true;
+function processSelect(vNode, dom, nextProps, isRender) {
+    var multiple = nextProps.multiple;
+    if (multiple !== dom.multiple) {
+        dom.multiple = multiple;
     }
-    var dom = createElement(vNode, parentDom, mountedQueue);
+    var children = vNode.children;
+
+    if (!isNullOrUndefined(children)) {
+        var value = nextProps.value;
+        if (isRender && isNullOrUndefined(value)) {
+            value = nextProps.defaultValue;
+        }
+
+        var flag = { hasSelected: false };
+        if (isArray(children)) {
+            for (var i = 0; i < children.length; i++) {
+                updateChildOptionGroup(children[i], value, flag);
+            }
+        } else {
+            updateChildOptionGroup(children, value, flag);
+        }
+        if (!flag.hasSelected) {
+            dom.value = '';
+        }
+    }
+}
+
+function updateChildOptionGroup(vNode, value, flag) {
+    var tag = vNode.tag;
+
+    if (tag === 'optgroup') {
+        var children = vNode.children;
+
+        if (isArray(children)) {
+            for (var i = 0; i < children.length; i++) {
+                updateChildOption(children[i], value, flag);
+            }
+        } else {
+            updateChildOption(children, value, flag);
+        }
+    } else {
+        updateChildOption(vNode, value, flag);
+    }
+}
+
+function updateChildOption(vNode, value, flag) {
+    // skip text and comment node
+    if (vNode.type & Types.HtmlElement) {
+        var props = vNode.props;
+        var dom = vNode.dom;
+
+        if (isArray(value) && indexOf(value, props.value) !== -1 || props.value === value) {
+            dom.selected = true;
+            if (!flag.hasSelected) flag.hasSelected = true;
+        } else if (!isNullOrUndefined(value) || !isNullOrUndefined(props.selected)) {
+            var selected = !!props.selected;
+            if (!flag.hasSelected && selected) flag.hasSelected = true;
+            dom.selected = selected;
+        }
+    }
+}
+
+function processInput(vNode, dom, nextProps) {
+    var type = nextProps.type;
+    // const value = nextProps.value;
+    var checked = nextProps.checked;
+    var defaultValue = nextProps.defaultValue;
+    var multiple = nextProps.multiple;
+    var hasValue = nextProps.hasOwnProperty('value');
+    var value = hasValue ? nextProps.value || '' : undefined;
+
+    if (multiple && multiple !== dom.multiple) {
+        dom.multiple = multiple;
+    }
+    if (!isNullOrUndefined(defaultValue) && !hasValue) {
+        dom.defaultValue = defaultValue + '';
+    }
+    if (isCheckedType(type)) {
+        if (hasValue) {
+            dom.value = value;
+        }
+        if (!isNullOrUndefined(checked)) {
+            dom.checked = checked;
+        }
+    } else {
+        if (hasValue && dom.value !== value) {
+            dom.value = value;
+        } else if (!isNullOrUndefined(checked)) {
+            dom.checked = checked;
+        }
+    }
+}
+
+function isCheckedType(type) {
+    return type === 'checkbox' || type === 'radio';
+}
+
+function processTextarea(vNode, dom, nextProps, isRender) {
+    var value = nextProps.value;
+    var domValue = dom.value;
+
+    if (isNullOrUndefined(value)) {
+        if (isRender) {
+            var defaultValue = nextProps.defaultValue;
+            if (!isNullOrUndefined(defaultValue)) {
+                if (defaultValue !== domValue) {
+                    dom.value = defaultValue;
+                }
+            } else if (domValue !== '') {
+                dom.value = '';
+            }
+        }
+    } else {
+        if (domValue !== value) {
+            dom.value = value;
+        }
+    }
+}
+
+function processForm(vNode, dom, nextProps, isRender) {
+    var type = vNode.type;
+    if (type & Types.InputElement) {
+        processInput(vNode, dom, nextProps, isRender);
+    } else if (type & Types.TextareaElement) {
+        processTextarea(vNode, dom, nextProps, isRender);
+    } else if (type & Types.SelectElement) {
+        processSelect(vNode, dom, nextProps, isRender);
+    }
+}
+
+function render(vNode, parentDom, mountedQueue, parentVNode) {
+    if (isNullOrUndefined(vNode)) return;
+    var isTrigger = true;
+    if (mountedQueue) {
+        isTrigger = false;
+    } else {
+        mountedQueue = new MountedQueue();
+    }
+    var dom = createElement(vNode, parentDom, mountedQueue, true /* isRender */, parentVNode);
     if (isTrigger) {
         mountedQueue.trigger();
     }
     return dom;
 }
 
-function createElement(vNode, parentDom, mountedQueue) {
+function createElement(vNode, parentDom, mountedQueue, isRender, parentVNode) {
     var type = vNode.type;
-    if (type & Types.HtmlElement) {
-        return createHtmlElement(vNode, parentDom, mountedQueue);
+    if (type & Types.Element) {
+        return createHtmlElement(vNode, parentDom, mountedQueue, isRender, parentVNode);
     } else if (type & Types.Text) {
         return createTextElement(vNode, parentDom);
     } else if (type & Types.ComponentClassOrInstance) {
-        return createComponentClassOrInstance(vNode, parentDom, mountedQueue);
-    } else if (type & Types.ComponentFunction) {
-        return createComponentFunction(vNode, parentDom, mountedQueue);
+        return createComponentClassOrInstance(vNode, parentDom, mountedQueue, null, isRender, parentVNode);
+        // } else if (type & Types.ComponentFunction) {
+        // return createComponentFunction(vNode, parentDom, mountedQueue, isNotAppendChild, isRender);
         // } else if (type & Types.ComponentInstance) {
         // return createComponentInstance(vNode, parentDom, mountedQueue);
     } else if (type & Types.HtmlComment) {
@@ -461,35 +669,45 @@ function createElement(vNode, parentDom, mountedQueue) {
     }
 }
 
-function createHtmlElement(vNode, parentDom, mountedQueue) {
+function createHtmlElement(vNode, parentDom, mountedQueue, isRender, parentVNode) {
     var dom = doc.createElement(vNode.tag);
     var children = vNode.children;
-    var ref = vNode.ref;
     var props = vNode.props;
     var className = vNode.className;
 
     vNode.dom = dom;
+    vNode.parentVNode = parentVNode;
 
     if (!isNullOrUndefined(children)) {
-        createElements(children, dom, mountedQueue);
+        createElements(children, dom, mountedQueue, isRender, vNode);
     }
 
     if (!isNullOrUndefined(className)) {
         dom.className = className;
     }
 
+    // in IE8, the select value will be set to the first option's value forcely
+    // when it is appended to parent dom. We change its value in processForm does not
+    // work. So processForm after it has be appended to parent dom.
+    var isFormElement = void 0;
     if (props !== EMPTY_OBJ) {
+        isFormElement = (vNode.type & Types.FormElement) > 0;
         for (var prop in props) {
-            patchProp(prop, null, props[prop], dom);
+            patchProp(prop, null, props[prop], dom, isFormElement);
         }
     }
 
+    var ref = vNode.ref;
     if (!isNullOrUndefined(ref)) {
         createRef(dom, ref, mountedQueue);
     }
 
     if (parentDom) {
-        parentDom.appendChild(dom);
+        appendChild(parentDom, dom);
+    }
+
+    if (isFormElement) {
+        processForm(vNode, dom, props, true);
     }
 
     return dom;
@@ -506,11 +724,13 @@ function createTextElement(vNode, parentDom) {
     return dom;
 }
 
-function createComponentClassOrInstance(vNode, parentDom, mountedQueue, lastVNode) {
+function createComponentClassOrInstance(vNode, parentDom, mountedQueue, lastVNode, isRender, parentVNode) {
     var props = vNode.props;
     var instance = vNode.type & Types.ComponentClass ? new vNode.tag(props) : vNode.children;
-    instance.parentDom = null;
+    instance.parentDom = parentDom;
     instance.mountedQueue = mountedQueue;
+    instance.isRender = isRender;
+    instance.parentVNode = parentVNode;
     var dom = instance.init(lastVNode, vNode);
     var ref = vNode.ref;
 
@@ -518,7 +738,8 @@ function createComponentClassOrInstance(vNode, parentDom, mountedQueue, lastVNod
     vNode.children = instance;
 
     if (parentDom) {
-        parentDom.appendChild(dom);
+        appendChild(parentDom, dom);
+        // parentDom.appendChild(dom);
     }
 
     if (typeof instance.mount === 'function') {
@@ -534,35 +755,7 @@ function createComponentClassOrInstance(vNode, parentDom, mountedQueue, lastVNod
     return dom;
 }
 
-function createComponentFunction(vNode, parentDom, mountedQueue) {
-    var props = vNode.props;
-    var ref = vNode.ref;
 
-    createComponentFunctionVNode(vNode);
-
-    var children = vNode.children;
-    var dom = void 0;
-    // support ComponentFunction return an array for macro usage
-    if (isArray(children)) {
-        dom = [];
-        for (var i = 0; i < children.length; i++) {
-            dom.push(createElement(children[i], parentDom, mountedQueue));
-        }
-    } else {
-        dom = createElement(vNode.children, parentDom, mountedQueue);
-    }
-    vNode.dom = dom;
-
-    // if (parentDom) {
-    // parentDom.appendChild(dom);
-    // }
-
-    if (ref) {
-        createRef(dom, ref, mountedQueue);
-    }
-
-    return dom;
-}
 
 function createCommentElement(vNode, parentDom) {
     var dom = doc.createComment(vNode.children);
@@ -575,30 +768,17 @@ function createCommentElement(vNode, parentDom) {
     return dom;
 }
 
-function createComponentFunctionVNode(vNode) {
-    var result = vNode.tag(vNode.props);
-    if (isStringOrNumber(result)) {
-        result = createTextVNode(result);
-    } else if (process.env.NODE_ENV !== 'production') {
-        if (isArray(result)) {
-            throw new Error('ComponentFunction ' + vNode.tag.name + ' returned a invalid vNode');
-        }
-    }
 
-    vNode.children = result;
 
-    return vNode;
-}
-
-function createElements(vNodes, parentDom, mountedQueue) {
+function createElements(vNodes, parentDom, mountedQueue, isRender, parentVNode) {
     if (isStringOrNumber(vNodes)) {
         setTextContent(parentDom, vNodes);
     } else if (isArray(vNodes)) {
         for (var i = 0; i < vNodes.length; i++) {
-            createElement(vNodes[i], parentDom, mountedQueue);
+            createElement(vNodes[i], parentDom, mountedQueue, isRender, parentVNode);
         }
     } else {
-        createElement(vNodes, parentDom, mountedQueue);
+        createElement(vNodes, parentDom, mountedQueue, isRender, parentVNode);
     }
 }
 
@@ -670,7 +850,7 @@ function removeComponentClassOrInstance(vNode, parentDom, nextVNode) {
     var ref = vNode.ref;
 
     if (typeof instance.destroy === 'function') {
-        instance.destroy(vNode, nextVNode);
+        instance.destroy(vNode, nextVNode, parentDom);
     }
 
     if (ref) {
@@ -681,18 +861,50 @@ function removeComponentClassOrInstance(vNode, parentDom, nextVNode) {
     // removeElements(vNode.props.children, null);
 
     if (parentDom) {
-        parentDom.removeChild(vNode.dom);
+        // if (typeof instance.unmount === 'function') {
+        // if (!instance.unmount(vNode, nextVNode, parentDom)) {
+        // parentDom.removeChild(vNode.dom); 
+        // }
+        // } else {
+        // parentDom.removeChild(vNode.dom); 
+        removeChild(parentDom, vNode);
+        // }
+        // parentDom.removeChild(vNode.dom);
     }
 }
 
-function removeAllChildren(dom, vNodes) {
-    setTextContent(dom, '');
-    removeElements(vNodes);
+
+
+function replaceChild(parentDom, lastVNode, nextVNode) {
+    var lastDom = lastVNode.dom;
+    var nextDom = nextVNode.dom;
+    if (!parentDom) parentDom = lastDom.parentNode;
+    if (lastDom._unmount) {
+        lastDom._unmount(lastVNode, parentDom);
+        if (!nextDom.parentNode) {
+            parentDom.appendChild(nextDom);
+        }
+    } else {
+        parentDom.replaceChild(nextDom, lastDom);
+    }
 }
 
-function replaceChild(parentDom, nextDom, lastDom) {
-    if (!parentDom) parentDom = lastDom.parentNode;
-    parentDom.replaceChild(nextDom, lastDom);
+function removeChild(parentDom, vNode) {
+    var dom = vNode.dom;
+    if (dom._unmount) {
+        dom._unmount(vNode, parentDom);
+    } else {
+        parentDom.removeChild(dom);
+    }
+}
+
+function appendChild(parentDom, dom) {
+    // in IE8, when a element has appendChild,
+    // then its parentNode will be HTMLDocument object,
+    // so check the tagName for this case
+    if (!dom.parentNode || !dom.parentNode.tagName) {
+        parentDom.appendChild(dom);
+    }
 }
 
 function createRef(dom, ref, mountedQueue) {
@@ -705,23 +917,30 @@ function createRef(dom, ref, mountedQueue) {
     }
 }
 
-function patch(lastVNode, nextVNode, parentDom) {
-    var mountedQueue = new MountedQueue();
-    var dom = patchVNode(lastVNode, nextVNode, parentDom, mountedQueue);
-    mountedQueue.trigger();
+function patch(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode) {
+    var isTrigger = true;
+    if (mountedQueue) {
+        isTrigger = false;
+    } else {
+        mountedQueue = new MountedQueue();
+    }
+    var dom = patchVNode(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode);
+    if (isTrigger) {
+        mountedQueue.trigger();
+    }
     return dom;
 }
 
-function patchVNode(lastVNode, nextVNode, parentDom, mountedQueue) {
+function patchVNode(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode) {
     if (lastVNode !== nextVNode) {
         var nextType = nextVNode.type;
         var lastType = lastVNode.type;
 
         if (nextType & Types.Element) {
             if (lastType & Types.Element) {
-                patchElement(lastVNode, nextVNode, parentDom, mountedQueue);
+                patchElement(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode);
             } else {
-                replaceElement(lastVNode, nextVNode, parentDom, mountedQueue);
+                replaceElement(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode);
             }
         } else if (nextType & Types.TextElement) {
             if (lastType & Types.TextElement) {
@@ -731,44 +950,44 @@ function patchVNode(lastVNode, nextVNode, parentDom, mountedQueue) {
             }
         } else if (nextType & Types.ComponentClass) {
             if (lastType & Types.ComponentClass) {
-                patchComponentClass(lastVNode, nextVNode, parentDom, mountedQueue);
+                patchComponentClass(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode);
             } else {
-                replaceElement(lastVNode, nextVNode, parentDom, mountedQueue);
+                replaceElement(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode);
             }
-        } else if (nextType & Types.ComponentFunction) {
-            if (lastType & Types.ComponentFunction) {
-                patchComponentFunction(lastVNode, nextVNode, parentDom, mountedQueue);
-            } else {
-                replaceElement(lastVNode, nextVNode, parentDom, mountedQueue);
-            }
+            // } else if (nextType & Types.ComponentFunction) {
+            // if (lastType & Types.ComponentFunction) {
+            // patchComponentFunction(lastVNode, nextVNode, parentDom, mountedQueue);
+            // } else {
+            // replaceElement(lastVNode, nextVNode, parentDom, mountedQueue);
+            // }
         } else if (nextType & Types.ComponentInstance) {
             if (lastType & Types.ComponentInstance) {
-                patchComponentIntance(lastVNode, nextVNode, parentDom, mountedQueue);
+                patchComponentIntance(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode);
             } else {
-                replaceElement(lastVNode, nextVNode, parentDom, mountedQueue);
+                replaceElement(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode);
             }
         }
     }
     return nextVNode.dom;
 }
 
-function patchElement(lastVNode, nextVNode, parentDom, mountedQueue) {
+function patchElement(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode) {
     var dom = lastVNode.dom;
     var lastProps = lastVNode.props;
     var nextProps = nextVNode.props;
     var lastChildren = lastVNode.children;
     var nextChildren = nextVNode.children;
-    var nextRef = nextVNode.ref;
     var lastClassName = lastVNode.className;
     var nextClassName = nextVNode.className;
 
     nextVNode.dom = dom;
+    nextVNode.parentVNode = parentVNode;
 
-    if (lastVNode.tag !== nextVNode.tag) {
-        replaceElement(lastVNode, nextVNode, parentDom, mountedQueue);
+    if (lastVNode.tag !== nextVNode.tag || lastVNode.key !== nextVNode.key) {
+        replaceElement(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode);
     } else {
         if (lastChildren !== nextChildren) {
-            patchChildren(lastChildren, nextChildren, dom, mountedQueue);
+            patchChildren(lastChildren, nextChildren, dom, mountedQueue, nextVNode);
         }
 
         if (lastProps !== nextProps) {
@@ -783,13 +1002,14 @@ function patchElement(lastVNode, nextVNode, parentDom, mountedQueue) {
             }
         }
 
+        var nextRef = nextVNode.ref;
         if (!isNullOrUndefined(nextRef) && lastVNode.ref !== nextRef) {
             createRef(dom, nextRef, mountedQueue);
         }
     }
 }
 
-function patchComponentClass(lastVNode, nextVNode, parentDom, mountedQueue) {
+function patchComponentClass(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode) {
     var lastTag = lastVNode.tag;
     var nextTag = nextVNode.tag;
     var dom = lastVNode.dom;
@@ -798,21 +1018,38 @@ function patchComponentClass(lastVNode, nextVNode, parentDom, mountedQueue) {
     var newDom = void 0;
 
     if (lastTag !== nextTag || lastVNode.key !== nextVNode.key) {
-        removeComponentClassOrInstance(lastVNode, null, nextVNode);
-        newDom = createComponentClassOrInstance(nextVNode, null, mountedQueue, lastVNode);
+        // we should call this remove function in component's init method
+        // because it should be destroyed until async component has rendered
+        // removeComponentClassOrInstance(lastVNode, null, nextVNode);
+        newDom = createComponentClassOrInstance(nextVNode, parentDom, mountedQueue, lastVNode, false, parentVNode);
     } else {
         instance = lastVNode.children;
+        instance.mountedQueue = mountedQueue;
+        instance.isRender = false;
+        instance.parentVNode = parentVNode;
         newDom = instance.update(lastVNode, nextVNode);
         nextVNode.dom = newDom;
         nextVNode.children = instance;
+        nextVNode.parentVNode = parentVNode;
+
+        // for intact.js, the dom will not be removed and
+        // the component will not be destoryed, so the ref
+        // function need be called in update method.
+        var ref = nextVNode.ref;
+        if (typeof ref === 'function') {
+            ref(instance);
+        }
     }
 
-    if (dom !== newDom) {
-        replaceChild(parentDom, newDom, dom);
+    // perhaps the dom has be replaced
+    if (dom !== newDom && dom.parentNode &&
+    // when dom has be replaced, its parentNode maybe be fragment in IE8
+    dom.parentNode.nodeName !== '#document-fragment') {
+        replaceChild(parentDom, lastVNode, nextVNode);
     }
 }
 
-function patchComponentIntance(lastVNode, nextVNode, parentDom, mountedQueue) {
+function patchComponentIntance(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode) {
     var lastInstance = lastVNode.children;
     var nextInstance = nextVNode.children;
     var dom = lastVNode.dom;
@@ -820,65 +1057,70 @@ function patchComponentIntance(lastVNode, nextVNode, parentDom, mountedQueue) {
     var newDom = void 0;
 
     if (lastInstance !== nextInstance) {
-        removeComponentClassOrInstance(lastVNode, null, nextVNode);
-        newDom = createComponentClassOrInstance(nextVNode, null, mountedQueue, lastVNode);
+        // removeComponentClassOrInstance(lastVNode, null, nextVNode);
+        newDom = createComponentClassOrInstance(nextVNode, parentDom, mountedQueue, lastVNode, false, parentVNode);
     } else {
+        lastInstance.mountedQueue = mountedQueue;
+        lastInstance.isRender = false;
+        lastInstance.parentVNode = parentVNode;
         newDom = lastInstance.update(lastVNode, nextVNode);
         nextVNode.dom = newDom;
+        nextVNode.parentVNode = parentVNode;
+
+        var ref = nextVNode.ref;
+        if (typeof ref === 'function') {
+            ref(instance);
+        }
     }
 
-    if (dom !== newDom) {
-        replaceChild(parentDom, newDom, dom);
-    }
-}
-
-function patchComponentFunction(lastVNode, nextVNode, parentDom, mountedQueue) {
-    var lastTag = lastVNode.tag;
-    var nextTag = nextVNode.tag;
-
-    if (lastVNode.key !== nextVNode.key) {
-        removeElements(lastVNode.children, parentDom);
-        createComponentFunction(nextVNode, parentDom, mountedQueue);
-    } else {
-        nextVNode.dom = lastVNode.dom;
-        createComponentFunctionVNode(nextVNode);
-        patchChildren(lastVNode.children, nextVNode.children, parentDom, mountedQueue);
+    if (dom !== newDom && dom.parentNode &&
+    // when dom has be replaced, its parentNode maybe be fragment in IE8
+    dom.parentNode.nodeName !== '#document-fragment') {
+        replaceChild(parentDom, lastVNode, nextVNode);
     }
 }
 
-function patchChildren(lastChildren, nextChildren, parentDom, mountedQueue) {
+function patchChildren(lastChildren, nextChildren, parentDom, mountedQueue, parentVNode) {
     if (isNullOrUndefined(lastChildren)) {
         if (!isNullOrUndefined(nextChildren)) {
-            createElements(nextChildren, parentDom, mountedQueue);
+            createElements(nextChildren, parentDom, mountedQueue, false, parentVNode);
         }
     } else if (isNullOrUndefined(nextChildren)) {
-        removeElements(lastChildren, parentDom);
+        if (isStringOrNumber(lastChildren)) {
+            setTextContent(parentDom, '');
+        } else {
+            removeElements(lastChildren, parentDom);
+        }
     } else if (isStringOrNumber(nextChildren)) {
         if (isStringOrNumber(lastChildren)) {
-            parentDom.firstChild.nodeValue = nextChildren;
+            setTextContent(parentDom, nextChildren);
         } else {
             removeElements(lastChildren, parentDom);
             setTextContent(parentDom, nextChildren);
         }
     } else if (isArray(lastChildren)) {
         if (isArray(nextChildren)) {
-            patchChildrenByKey(lastChildren, nextChildren, parentDom, mountedQueue);
+            patchChildrenByKey(lastChildren, nextChildren, parentDom, mountedQueue, parentVNode);
         } else {
             removeElements(lastChildren, parentDom);
-            createElement(nextChildren, parentDom, mountedQueue);
+            createElement(nextChildren, parentDom, mountedQueue, false, parentVNode);
         }
     } else if (isArray(nextChildren)) {
-        removeElement(lastChildren, parentDom);
-        createElements(nextChildren, parentDom, mountedQueue);
+        if (isStringOrNumber(lastChildren)) {
+            setTextContent(parentDom, '');
+        } else {
+            removeElement(lastChildren, parentDom);
+        }
+        createElements(nextChildren, parentDom, mountedQueue, false, parentVNode);
     } else if (isStringOrNumber(lastChildren)) {
         setTextContent(parentDom, '');
-        createElement(nextChildren, parentDom, mountedQueue);
+        createElement(nextChildren, parentDom, mountedQueue, false, parentVNode);
     } else {
-        patchVNode(lastChildren, nextChildren, parentDom, mountedQueue);
+        patchVNode(lastChildren, nextChildren, parentDom, mountedQueue, parentVNode);
     }
 }
 
-function patchChildrenByKey(a, b, dom, mountedQueue) {
+function patchChildrenByKey(a, b, dom, mountedQueue, parentVNode) {
     var aLength = a.length;
     var bLength = b.length;
     var aEnd = aLength - 1;
@@ -899,7 +1141,7 @@ function patchChildrenByKey(a, b, dom, mountedQueue) {
 
     outer: while (true) {
         while (aStartNode.key === bStartNode.key) {
-            patchVNode(aStartNode, bStartNode, dom, mountedQueue);
+            patchVNode(aStartNode, bStartNode, dom, mountedQueue, parentVNode);
             ++aStart;
             ++bStart;
             if (aStart > aEnd || bStart > bEnd) {
@@ -909,7 +1151,7 @@ function patchChildrenByKey(a, b, dom, mountedQueue) {
             bStartNode = b[bStart];
         }
         while (aEndNode.key === bEndNode.key) {
-            patchVNode(aEndNode, bEndNode, dom, mountedQueue);
+            patchVNode(aEndNode, bEndNode, dom, mountedQueue, parentVNode);
             --aEnd;
             --bEnd;
             if (aEnd < aStart || bEnd < bStart) {
@@ -920,7 +1162,7 @@ function patchChildrenByKey(a, b, dom, mountedQueue) {
         }
 
         if (aEndNode.key === bStartNode.key) {
-            patchVNode(aEndNode, bStartNode, dom, mountedQueue);
+            patchVNode(aEndNode, bStartNode, dom, mountedQueue, parentVNode);
             dom.insertBefore(bStartNode.dom, aStartNode.dom);
             --aEnd;
             ++bStart;
@@ -930,7 +1172,7 @@ function patchChildrenByKey(a, b, dom, mountedQueue) {
         }
 
         if (aStartNode.key === bEndNode.key) {
-            patchVNode(aStartNode, bEndNode, dom, mountedQueue);
+            patchVNode(aStartNode, bEndNode, dom, mountedQueue, parentVNode);
             insertOrAppend(bEnd, bLength, bEndNode.dom, b, dom);
             ++aStart;
             --bEnd;
@@ -943,7 +1185,8 @@ function patchChildrenByKey(a, b, dom, mountedQueue) {
 
     if (aStart > aEnd) {
         while (bStart <= bEnd) {
-            insertOrAppend(bEnd, bLength, createElement(b[bStart], null, mountedQueue), b, dom);
+            insertOrAppend(bEnd, bLength, createElement(b[bStart], null, mountedQueue, false, parentVNode), b, dom, true /* detectParent: for animate, if the parentNode exists, then do nothing*/
+            );
             ++bStart;
         }
     } else if (bStart > bEnd) {
@@ -975,7 +1218,7 @@ function patchChildrenByKey(a, b, dom, mountedQueue) {
                             } else {
                                 pos = j;
                             }
-                            patchVNode(aNode, bNode, dom, mountedQueue);
+                            patchVNode(aNode, bNode, dom, mountedQueue, parentVNode);
                             ++patched;
                             a[i] = null;
                             break;
@@ -1000,7 +1243,7 @@ function patchChildrenByKey(a, b, dom, mountedQueue) {
                         } else {
                             pos = j;
                         }
-                        patchVNode(aNode, bNode, dom, mountedQueue);
+                        patchVNode(aNode, bNode, dom, mountedQueue, parentVNode);
                         ++patched;
                         a[i] = null;
                     }
@@ -1008,9 +1251,11 @@ function patchChildrenByKey(a, b, dom, mountedQueue) {
             }
         }
         if (aLength === a.length && patched === 0) {
-            removeAllChildren(dom, a);
+            // removeAllChildren(dom, a);
+            // children maybe have animation
+            removeElements(a, dom);
             while (bStart < bLength) {
-                createElement(b[bStart], dom, mountedQueue);
+                createElement(b[bStart], dom, mountedQueue, false, parentVNode);
                 ++bStart;
             }
         } else {
@@ -1022,7 +1267,7 @@ function patchChildrenByKey(a, b, dom, mountedQueue) {
                 for (i = bLength - 1; i >= 0; i--) {
                     if (sources[i] === -1) {
                         pos = i + bStart;
-                        insertOrAppend(pos, b.length, createElement(b[pos], null, mountedQueue), b, dom);
+                        insertOrAppend(pos, b.length, createElement(b[pos], null, mountedQueue, false, parentVNode), b, dom);
                     } else {
                         if (j < 0 || i !== seq[j]) {
                             pos = i + bStart;
@@ -1036,7 +1281,7 @@ function patchChildrenByKey(a, b, dom, mountedQueue) {
                 for (i = bLength - 1; i >= 0; i--) {
                     if (sources[i] === -1) {
                         pos = i + bStart;
-                        insertOrAppend(pos, b.length, createElement(b[pos], null, mountedQueue), b, dom);
+                        insertOrAppend(pos, b.length, createElement(b[pos], null, mountedQueue, false, parentVNode), b, dom, true);
                     }
                 }
             }
@@ -1098,20 +1343,23 @@ function lisAlgorithm(arr) {
     return result;
 }
 
-function insertOrAppend(pos, length, newDom, nodes, dom) {
+function insertOrAppend(pos, length, newDom, nodes, dom, detectParent) {
     var nextPos = pos + 1;
+    // if (detectParent && newDom.parentNode) {
+    // return;
+    // } else
     if (nextPos < length) {
         dom.insertBefore(newDom, nodes[nextPos].dom);
     } else {
         dom.appendChild(newDom);
+        // appendChild(dom, newDom);
     }
 }
 
-function replaceElement(lastVNode, nextVNode, parentDom, mountedQueue) {
-    if (!parentDom) parentDom = lastVNode.dom.parentNode;
+function replaceElement(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode) {
     removeElement(lastVNode, null);
-    createElement(nextVNode, null, mountedQueue);
-    parentDom.replaceChild(nextVNode.dom, lastVNode.dom);
+    createElement(nextVNode, null, mountedQueue, false, parentVNode);
+    replaceChild(parentDom, lastVNode, nextVNode);
 }
 
 function patchText(lastVNode, nextVNode, parentDom) {
@@ -1129,8 +1377,12 @@ function patchProps(lastVNode, nextVNode) {
     var dom = nextVNode.dom;
     var prop = void 0;
     if (nextProps !== EMPTY_OBJ) {
+        var isFormElement = (nextVNode.type & Types.FormElement) > 0;
         for (prop in nextProps) {
-            patchProp(prop, lastProps[prop], nextProps[prop], dom);
+            patchProp(prop, lastProps[prop], nextProps[prop], dom, isFormElement);
+        }
+        if (isFormElement) {
+            processForm(nextVNode, dom, nextProps, false);
         }
     }
     if (lastProps !== EMPTY_OBJ) {
@@ -1142,16 +1394,22 @@ function patchProps(lastVNode, nextVNode) {
     }
 }
 
-function patchProp(prop, lastValue, nextValue, dom) {
+function patchProp(prop, lastValue, nextValue, dom, isFormElement) {
     if (lastValue !== nextValue) {
-        if (skipProps[prop]) {
+        if (skipProps[prop] || isFormElement && prop === 'value') {
             return;
         } else if (booleanProps[prop]) {
             dom[prop] = !!nextValue;
         } else if (strictProps[prop]) {
             var value = isNullOrUndefined(nextValue) ? '' : nextValue;
-            if (dom[prop] !== value) {
+            // IE8 the value of option is equal to its text as default
+            // so set it forcely
+            if (dom[prop] !== value || browser.isIE8) {
                 dom[prop] = value;
+            }
+            // add a private property _value for select an object
+            if (prop === 'value') {
+                dom._value = value;
             }
         } else if (isNullOrUndefined(nextValue)) {
             removeProp(prop, lastValue, dom);
@@ -1262,9 +1520,10 @@ var patchDataset = browser.isIE ? function patchDataset(prop, lastValue, nextVal
 } : patchObject;
 
 var _cache = {};
+var uppercasePattern = /[A-Z]/g;
 function kebabCase(word) {
     if (!_cache[word]) {
-        _cache[word] = word.replace(/[A-Z]/g, function (item) {
+        _cache[word] = word.replace(uppercasePattern, function (item) {
             return '-' + item.toLowerCase();
         });
     }
@@ -1335,9 +1594,437 @@ function patchStyle(lastValue, nextValue, dom) {
     }
 }
 
+function toString$1(vNode, parent, disableSplitText, firstChild) {
+    var type = vNode.type;
+    var tag = vNode.tag;
+    var props = vNode.props;
+    var children = vNode.children;
+
+    var html = void 0;
+    if (type & Types.ComponentClass) {
+        var instance = new tag(props);
+        html = instance.toString();
+    } else if (type & Types.ComponentInstance) {
+        html = vNode.children.toString();
+    } else if (type & Types.Element) {
+        var innerHTML = void 0;
+        html = '<' + tag;
+
+        if (!isNullOrUndefined(vNode.className)) {
+            html += ' class="' + escapeText(vNode.className) + '"';
+        }
+
+        if (props !== EMPTY_OBJ) {
+            for (var prop in props) {
+                var value = props[prop];
+
+                if (prop === 'innerHTML') {
+                    innerHTML = value;
+                } else if (prop === 'style') {
+                    html += ' style="' + renderStylesToString(value) + '"';
+                } else if (prop === 'children' || prop === 'className' || prop === 'key' || prop === 'ref') {
+                    // ignore
+                } else if (prop === 'defaultValue') {
+                    if (isNullOrUndefined(props.value)) {
+                        html += ' value="' + escapeText(value) + '"';
+                    }
+                } else if (prop === 'defaultChecked') {
+                    if (isNullOrUndefined(props.checked) && value === true) {
+                        html += ' checked';
+                    }
+                } else if (prop === 'attributes') {
+                    html += renderAttributesToString(value);
+                } else if (prop === 'dataset') {
+                    html += renderDatasetToString(value);
+                } else if (tag === 'option' && prop === 'value') {
+                    html += renderAttributeToString(prop, value);
+                    if (parent && value === parent.props.value) {
+                        html += ' selected';
+                    }
+                } else {
+                    html += renderAttributeToString(prop, value);
+                }
+            }
+        }
+
+        if (selfClosingTags[tag]) {
+            html += ' />';
+        } else {
+            html += '>';
+            if (innerHTML) {
+                html += innerHTML;
+            } else if (!isNullOrUndefined(children)) {
+                if (isString(children)) {
+                    html += children === '' ? ' ' : escapeText(children);
+                } else if (isNumber(children)) {
+                    html += children;
+                } else if (isArray(children)) {
+                    var index = -1;
+                    for (var i = 0; i < children.length; i++) {
+                        var child = children[i];
+                        if (isString(child)) {
+                            html += child === '' ? ' ' : escapeText(child);
+                        } else if (isNumber(child)) {
+                            html += child;
+                        } else if (!isNullOrUndefined(child)) {
+                            if (!(child.type & Types.Text)) {
+                                index = -1;
+                            } else {
+                                index++;
+                            }
+                            html += toString$1(child, vNode, disableSplitText, index === 0);
+                        }
+                    }
+                } else {
+                    html += toString$1(children, vNode, true);
+                }
+            }
+
+            html += '</' + tag + '>';
+        }
+    } else if (type & Types.Text) {
+        html = (firstChild || disableSplitText ? '' : '<!---->') + (children === '' ? ' ' : escapeText(children));
+    } else if (type & Types.HtmlComment) {
+        html = '<!--' + children + '-->';
+    } else if (type & Types.UnescapeText) {
+        html = isNullOrUndefined(children) ? '' : children;
+    } else {
+        throw new Error('Unknown vNode: ' + vNode);
+    }
+
+    return html;
+}
+
+function escapeText(text) {
+    var result = text;
+    var escapeString = "";
+    var start = 0;
+    var i = void 0;
+    for (i = 0; i < text.length; i++) {
+        switch (text.charCodeAt(i)) {
+            case 34:
+                // "
+                escapeString = "&quot;";
+                break;
+            case 39:
+                // \
+                escapeString = "&#039;";
+                break;
+            case 38:
+                // &
+                escapeString = "&amp;";
+                break;
+            case 60:
+                // <
+                escapeString = "&lt;";
+                break;
+            case 62:
+                // >
+                escapeString = "&gt;";
+                break;
+            default:
+                continue;
+        }
+        if (start) {
+            result += text.slice(start, i);
+        } else {
+            result = text.slice(start, i);
+        }
+        result += escapeString;
+        start = i + 1;
+    }
+    if (start && i !== start) {
+        return result + text.slice(start, i);
+    }
+    return result;
+}
+
+function isString(o) {
+    return typeof o === 'string';
+}
+
+function isNumber(o) {
+    return typeof o === 'number';
+}
+
+function renderStylesToString(styles) {
+    if (isStringOrNumber(styles)) {
+        return styles;
+    } else {
+        var renderedString = "";
+        for (var styleName in styles) {
+            var value = styles[styleName];
+
+            if (isStringOrNumber(value)) {
+                renderedString += kebabCase(styleName) + ':' + value + ';';
+            }
+        }
+        return renderedString;
+    }
+}
+
+function renderDatasetToString(dataset) {
+    var renderedString = '';
+    for (var key in dataset) {
+        var dataKey = 'data-' + kebabCase(key);
+        var value = dataset[key];
+        if (isString(value)) {
+            renderedString += ' ' + dataKey + '="' + escapeText(value) + '"';
+        } else if (isNumber(value)) {
+            renderedString += ' ' + dataKey + '="' + value + '"';
+        } else if (value === true) {
+            renderedString += ' ' + dataKey + '="true"';
+        }
+    }
+    return renderedString;
+}
+
+function renderAttributesToString(attributes) {
+    var renderedString = '';
+    for (var key in attributes) {
+        renderedString += renderAttributeToString(key, attributes[key]);
+    }
+    return renderedString;
+}
+
+function renderAttributeToString(key, value) {
+    if (isString(value)) {
+        return ' ' + key + '="' + escapeText(value) + '"';
+    } else if (isNumber(value)) {
+        return ' ' + key + '="' + value + '"';
+    } else if (value === true) {
+        return ' ' + key;
+    } else {
+        return '';
+    }
+}
+
+function hydrateRoot(vNode, parentDom, mountedQueue) {
+    if (!isNullOrUndefined(parentDom)) {
+        var dom = parentDom.firstChild;
+        var newDom = hydrate(vNode, dom, mountedQueue, parentDom, null);
+        dom = parentDom.firstChild;
+        if (dom !== null) {
+            // should only one entry
+            while (dom = dom.nextSibling) {
+                parentDom.removeChild(dom);
+            }
+        }
+        return newDom;
+    }
+    return null;
+}
+
+function hydrate(vNode, dom, mountedQueue, parentDom, parentVNode) {
+    if (dom !== null) {
+        var isTrigger = true;
+        if (mountedQueue) {
+            isTrigger = false;
+        } else {
+            mountedQueue = new MountedQueue();
+        }
+        dom = hydrateElement(vNode, dom, mountedQueue, parentDom, parentVNode);
+        if (isTrigger) {
+            mountedQueue.trigger();
+        }
+    }
+    return dom;
+}
+
+function hydrateElement(vNode, dom, mountedQueue, parentDom, parentVNode) {
+    var type = vNode.type;
+
+    if (type & Types.Element) {
+        return hydrateHtmlElement(vNode, dom, mountedQueue, parentDom, parentVNode);
+    } else if (type & Types.Text) {
+        return hydrateText(vNode, dom);
+    } else if (type & Types.HtmlComment) {
+        return hydrateComment(vNode, dom);
+    } else if (type & Types.ComponentClassOrInstance) {
+        return hydrateComponentClassOrInstance(vNode, dom, mountedQueue, parentDom, parentVNode);
+    }
+}
+
+function hydrateComponentClassOrInstance(vNode, dom, mountedQueue, parentDom, parentVNode) {
+    var props = vNode.props;
+    var instance = vNode.type & Types.ComponentClass ? new vNode.tag(props) : vNode.children;
+    instance.parentDom = parentDom;
+    instance.mountedQueue = mountedQueue;
+    instance.isRender = true;
+    instance.parentVNode = parentVNode;
+    var newDom = instance.hydrate(vNode, dom);
+
+    vNode.dom = newDom;
+    vNode.children = instance;
+
+    if (typeof instance.mount === 'function') {
+        mountedQueue.push(function () {
+            return instance.mount(null, vNode);
+        });
+    }
+
+    var ref = vNode.ref;
+    if (typeof ref === 'function') {
+        ref(instance);
+    }
+
+    if (dom !== newDom && dom.parentNode) {
+        dom.parentNode.replaceChild(newDom, dom);
+    }
+
+    return dom;
+}
+
+function hydrateComment(vNode, dom) {
+    if (dom.nodeType !== 8) {
+        var newDom = createCommentElement(vNode, null);
+        dom.parentNode.replaceChild(newDom, dom);
+        return newDom;
+    }
+    var comment = vNode.children;
+    if (dom.data !== comment) {
+        dom.data = comment;
+    }
+    vNode.dom = dom;
+    return dom;
+}
+
+function hydrateText(vNode, dom) {
+    if (dom.nodeType !== 3) {
+        var newDom = createTextElement(vNode, null);
+        dom.parentNode.replaceChild(newDom, dom);
+
+        return newDom;
+    }
+
+    var text = vNode.children;
+    if (dom.nodeValue !== text) {
+        dom.nodeValue = text;
+    }
+    vNode.dom = dom;
+
+    return dom;
+}
+
+function hydrateHtmlElement(vNode, dom, mountedQueue, parentDom, parentVNode) {
+    var children = vNode.children;
+    var props = vNode.props;
+    var className = vNode.className;
+    var type = vNode.type;
+    var ref = vNode.ref;
+
+    vNode.parentVNode = parentVNode;
+
+    if (dom.nodeType !== 1 || dom.tagName.toLowerCase() !== vNode.tag) {
+        warning('Server-side markup doesn\'t match client-side markup');
+        var newDom = createElement(vNode, null, mountedQueue, parentDom, parentVNode);
+        dom.parentNode.replaceChild(newDom, dom);
+
+        return newDom;
+    }
+
+    vNode.dom = dom;
+    if (!isNullOrUndefined(children)) {
+        hydrateChildren(children, dom, mountedQueue, vNode);
+    } else if (dom.firstChild !== null) {
+        setTextContent(dom, '');
+    }
+
+    if (props !== EMPTY_OBJ) {
+        var isFormElement = (type & Types.FormElement) > 0;
+        for (var prop in props) {
+            patchProp(prop, null, props[prop], dom, isFormElement);
+        }
+        if (isFormElement) {
+            processForm(vNode, dom, props, true);
+        }
+    }
+
+    if (!isNullOrUndefined(className)) {
+        dom.className = className;
+    } else if (dom.className !== '') {
+        dom.removeAttribute('class');
+    }
+
+    if (ref) {
+        createRef(dom, ref, mountedQueue);
+    }
+
+    return dom;
+}
+
+function hydrateChildren(children, parentDom, mountedQueue, parentVNode) {
+    normalizeChildren$1(parentDom);
+    var dom = parentDom.firstChild;
+
+    if (isStringOrNumber(children)) {
+        if (dom !== null && dom.nodeType === 3) {
+            if (dom.nodeValue !== children) {
+                dom.nodeValue = children;
+            }
+        } else if (children === '') {
+            parentDom.appendChild(document.createTextNode(''));
+        } else {
+            setTextContent(parentDom, children);
+        }
+        if (dom !== null) {
+            dom = dom.nextSibling;
+        }
+    } else if (isArray(children)) {
+        for (var i = 0; i < children.length; i++) {
+            var child = children[i];
+
+            if (!isNullOrUndefined(child)) {
+                if (dom !== null) {
+                    var nextSibling = dom.nextSibling;
+                    hydrateElement(child, dom, mountedQueue, parentDom, parentVNode);
+                    dom = nextSibling;
+                } else {
+                    createElement(child, parentDom, mountedQueue, true, parentVNode);
+                }
+            }
+        }
+    } else {
+        if (dom !== null) {
+            hydrateElement(children, dom, mountedQueue, parentDom, parentVNode);
+        } else {
+            createElement(children, parentDom, mountedQueue, true, parentVNode);
+        }
+    }
+
+    // clear any other DOM nodes, there should be on a single entry for the root
+    // while (dom) {
+    // const nextSibling = dom.nextSibling;
+    // parentDom.removeChild(dom);
+    // dom = nextSibling;
+    // }
+}
+
+function normalizeChildren$1(parentDom) {
+    var dom = parentDom.firstChild;
+
+    while (dom) {
+        if (dom.nodeType === 8 && dom.data === '') {
+            var lastDom = dom.previousSibling;
+            parentDom.removeChild(dom);
+            dom = lastDom || parentDom.firstChild;
+        } else {
+            dom = dom.nextSibling;
+        }
+    }
+}
+
+var warning = (typeof console === 'undefined' ? 'undefined' : _typeof(console)) === 'object' ? function (message) {
+    console.warn(message);
+} : function () {};
+
 exports.h = createVNode;
 exports.patch = patch;
 exports.render = render;
 exports.hc = createCommentVNode;
+exports.hu = createUnescapeTextVNode;
 exports.remove = removeElement;
 exports.MountedQueue = MountedQueue;
+exports.renderString = toString$1;
+exports.hydrateRoot = hydrateRoot;
+exports.hydrate = hydrate;

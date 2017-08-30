@@ -147,7 +147,10 @@ function patchComponentClass(lastVNode, nextVNode, parentDom, mountedQueue, pare
     }
 
     // perhaps the dom has be replaced
-    if (dom !== newDom && dom.parentNode) {
+    if (dom !== newDom && dom.parentNode &&
+        // when dom has be replaced, its parentNode maybe be fragment in IE8
+        dom.parentNode.nodeName !== '#document-fragment'
+    ) {
         replaceChild(parentDom, lastVNode, nextVNode);
     }
 }
@@ -176,7 +179,10 @@ function patchComponentIntance(lastVNode, nextVNode, parentDom, mountedQueue, pa
         }
     }
 
-    if (dom !== newDom && dom.parentNode) {
+    if (dom !== newDom && dom.parentNode && 
+        // when dom has be replaced, its parentNode maybe be fragment in IE8
+        dom.parentNode.nodeName !== '#document-fragment'
+    ) {
         replaceChild(parentDom, lastVNode, nextVNode);
     }
 }
@@ -529,7 +535,9 @@ export function patchProp(prop, lastValue, nextValue, dom, isFormElement) {
             dom[prop] = !!nextValue;
         } else if (strictProps[prop]) {
             const value = isNullOrUndefined(nextValue) ? '' : nextValue;
-            if (dom[prop] !== value) {
+            // IE8 the value of option is equal to its text as default
+            // so set it forcely
+            if (dom[prop] !== value || browser.isIE8) {
                 dom[prop] = value;
             }
             // add a private property _value for select an object
