@@ -4,11 +4,11 @@ import {handleEvent} from './event';
 import {
     MountedQueue, isArray, isStringOrNumber,
     isNullOrUndefined, isEventProp, doc as document,
-    setTextContent
+    setTextContent, svgNS
 } from './utils';
 import {processForm} from './wrappers/process';
 
-export function render(vNode, parentDom, mountedQueue, parentVNode) {
+export function render(vNode, parentDom, mountedQueue, parentVNode, isSVG) {
     if (isNullOrUndefined(vNode)) return;
     let isTrigger = true;
     if (mountedQueue) {
@@ -16,21 +16,21 @@ export function render(vNode, parentDom, mountedQueue, parentVNode) {
     } else {
         mountedQueue = new MountedQueue();
     }
-    const dom = createElement(vNode, parentDom, mountedQueue, true /* isRender */, parentVNode);
+    const dom = createElement(vNode, parentDom, mountedQueue, true /* isRender */, parentVNode, isSVG);
     if (isTrigger) {
         mountedQueue.trigger();
     }
     return dom;
 }
 
-export function createElement(vNode, parentDom, mountedQueue, isRender, parentVNode) {
+export function createElement(vNode, parentDom, mountedQueue, isRender, parentVNode, isSVG) {
     const type = vNode.type;
     if (type & Types.Element) {
-        return createHtmlElement(vNode, parentDom, mountedQueue, isRender, parentVNode);
+        return createHtmlElement(vNode, parentDom, mountedQueue, isRender, parentVNode, isSVG);
     } else if (type & Types.Text) {
         return createTextElement(vNode, parentDom);
     } else if (type & Types.ComponentClassOrInstance) {
-        return createComponentClassOrInstance(vNode, parentDom, mountedQueue, null, isRender, parentVNode);
+        return createComponentClassOrInstance(vNode, parentDom, mountedQueue, null, isRender, parentVNode, isSVG);
     // } else if (type & Types.ComponentFunction) {
         // return createComponentFunction(vNode, parentDom, mountedQueue, isNotAppendChild, isRender);
     // } else if (type & Types.ComponentInstance) {
@@ -42,8 +42,12 @@ export function createElement(vNode, parentDom, mountedQueue, isRender, parentVN
     }
 }
 
-export function createHtmlElement(vNode, parentDom, mountedQueue, isRender, parentVNode) {
-    const dom = document.createElement(vNode.tag);
+export function createHtmlElement(vNode, parentDom, mountedQueue, isRender, parentVNode, isSVG) {
+    const type = vNode.type;
+
+    isSVG = isSVG || (type & Types.SvgElement) > 0;
+
+    const dom = documentCreateElement(vNode.tag, isSVG);
     const children = vNode.children;
     const props = vNode.props;
     const className = vNode.className;
@@ -52,11 +56,17 @@ export function createHtmlElement(vNode, parentDom, mountedQueue, isRender, pare
     vNode.parentVNode = parentVNode;
 
     if (!isNullOrUndefined(children)) {
-        createElements(children, dom, mountedQueue, isRender, vNode);
+        createElements(children, dom, mountedQueue, isRender, vNode,
+            isSVG === true && vNode.tag !== 'foreignObject'
+        );
     }
 
     if (!isNullOrUndefined(className)) {
-        dom.className = className;
+        if (isSVG) {
+            dom.setAttribute('class', className);
+        } else {
+            dom.className = className;
+        }
     }
 
     // in IE8, the select value will be set to the first option's value forcely
@@ -66,7 +76,7 @@ export function createHtmlElement(vNode, parentDom, mountedQueue, isRender, pare
     if (props !== EMPTY_OBJ) {
         isFormElement = (vNode.type & Types.FormElement) > 0;
         for (let prop in props) {
-            patchProp(prop, null, props[prop], dom, isFormElement);
+            patchProp(prop, null, props[prop], dom, isFormElement, isSVG);
         }
     }
 
@@ -97,7 +107,7 @@ export function createTextElement(vNode, parentDom) {
     return dom;
 }
 
-export function createComponentClassOrInstance(vNode, parentDom, mountedQueue, lastVNode, isRender, parentVNode) {
+export function createComponentClassOrInstance(vNode, parentDom, mountedQueue, lastVNode, isRender, parentVNode, isSVG) {
     const props = vNode.props;
     const instance = vNode.type & Types.ComponentClass ?
         new vNode.tag(props) : vNode.children;
@@ -105,6 +115,7 @@ export function createComponentClassOrInstance(vNode, parentDom, mountedQueue, l
     instance.mountedQueue = mountedQueue;
     instance.isRender = isRender;
     instance.parentVNode = parentVNode;
+    instance.isSVG = isSVG;
     const dom = instance.init(lastVNode, vNode);
     const ref = vNode.ref;
 
@@ -183,15 +194,15 @@ export function createComponentFunctionVNode(vNode) {
     return vNode;
 }
 
-export function createElements(vNodes, parentDom, mountedQueue, isRender, parentVNode) {
+export function createElements(vNodes, parentDom, mountedQueue, isRender, parentVNode, isSVG) {
     if (isStringOrNumber(vNodes)) {
         setTextContent(parentDom, vNodes);
     } else if (isArray(vNodes)) {
         for (let i = 0; i < vNodes.length; i++) {
-            createElement(vNodes[i], parentDom, mountedQueue, isRender, parentVNode);
+            createElement(vNodes[i], parentDom, mountedQueue, isRender, parentVNode, isSVG);
         }
     } else {
-        createElement(vNodes, parentDom, mountedQueue, isRender, parentVNode);
+        createElement(vNodes, parentDom, mountedQueue, isRender, parentVNode, isSVG);
     }
 }
 
@@ -328,5 +339,13 @@ export function createRef(dom, ref, mountedQueue) {
         mountedQueue.push(() => ref(dom));
     } else {
         throw new Error(`ref must be a function, but got "${JSON.stringify(ref)}"`);
+    }
+}
+
+export function documentCreateElement(tag, isSVG) {
+    if (isSVG === true) {
+        return document.createElementNS(svgNS, tag);
+    } else {
+        return document.createElement(tag);
     }
 }

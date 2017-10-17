@@ -186,3 +186,19 @@ export const setTextContent = browser.isIE8 ? function(dom, text) {
     dom.textContent = text;
 };
 
+export const svgNS = "http://www.w3.org/2000/svg";
+export const xlinkNS = "http://www.w3.org/1999/xlink";
+export const xmlNS = "http://www.w3.org/XML/1998/namespace";
+
+export const namespaces = {
+    'xlink:href': xlinkNS,
+    'xlink:arcrole': xlinkNS,
+    'xlink:actuate': xlinkNS,
+    'xlink:show': xlinkNS,
+    'xlink:role': xlinkNS,
+    'xlink:title': xlinkNS,
+    'xlink:type': xlinkNS,
+    'xml:base': xmlNS,
+    'xml:lang': xmlNS,
+    'xml:space': xmlNS,
+};

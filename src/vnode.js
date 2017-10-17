@@ -16,11 +16,12 @@ export const Types = {
     InputElement: 1 << 6,
     SelectElement: 1 << 7,
     TextareaElement: 1 << 8,
+    SvgElement: 1 << 9,
 
-    UnescapeText: 1 << 9 // for server side render unescape text
+    UnescapeText: 1 << 10 // for server side render unescape text
 };
 Types.FormElement = Types.InputElement | Types.SelectElement | Types.TextareaElement;
-Types.Element = Types.HtmlElement | Types.FormElement;
+Types.Element = Types.HtmlElement | Types.FormElement | Types.SvgElement;
 Types.ComponentClassOrInstance = Types.ComponentClass | Types.ComponentInstance;
 Types.TextElement = Types.Text | Types.HtmlComment;
 
@@ -50,6 +51,8 @@ export function createVNode(tag, props, children, className, key, ref) {
                 type = Types.SelectElement;
             } else if (tag === 'textarea') {
                 type = Types.TextareaElement;
+            } else if (tag === 'svg') {
+                type = Types.SvgElement;
             } else {
                 type = Types.HtmlElement;
             }

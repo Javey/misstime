@@ -27,7 +27,7 @@ describe('Render', () => {
     });
 
     afterEach(() => {
-        document.body.removeChild(container);
+        // document.body.removeChild(container);
     });
 
     function reset() {
@@ -585,6 +585,13 @@ describe('Render', () => {
             mountedQueue.trigger();
 
             assert.strictEqual(mount.callCount, 1);
+        });
+    });
+
+    describe('SVG', () => {
+        it('render svg', () => {
+            const vNode = h('svg');
+            r(vNode);
         });
     });
 });

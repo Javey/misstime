@@ -11,7 +11,7 @@ import {processForm} from './wrappers/process';
 export function hydrateRoot(vNode, parentDom, mountedQueue) {
     if (!isNullOrUndefined(parentDom)) {
         let dom = parentDom.firstChild;
-        let newDom = hydrate(vNode, dom, mountedQueue, parentDom, null);
+        let newDom = hydrate(vNode, dom, mountedQueue, parentDom, null, false);
         dom = parentDom.firstChild;
         if (dom !== null) {
             // should only one entry
@@ -24,7 +24,7 @@ export function hydrateRoot(vNode, parentDom, mountedQueue) {
     return null;
 }
 
-export function hydrate(vNode, dom, mountedQueue, parentDom, parentVNode) {
+export function hydrate(vNode, dom, mountedQueue, parentDom, parentVNode, isSVG) {
     if (dom !== null) {
         let isTrigger = true;
         if (mountedQueue) {
@@ -32,7 +32,7 @@ export function hydrate(vNode, dom, mountedQueue, parentDom, parentVNode) {
         } else {
             mountedQueue = new MountedQueue();
         }
-        dom = hydrateElement(vNode, dom, mountedQueue, parentDom, parentVNode);
+        dom = hydrateElement(vNode, dom, mountedQueue, parentDom, parentVNode, isSVG);
         if (isTrigger) {
             mountedQueue.trigger();
         }
@@ -40,21 +40,21 @@ export function hydrate(vNode, dom, mountedQueue, parentDom, parentVNode) {
     return dom;
 }
 
-export function hydrateElement(vNode, dom, mountedQueue, parentDom, parentVNode) {
+export function hydrateElement(vNode, dom, mountedQueue, parentDom, parentVNode, isSVG) {
     const type = vNode.type;
     
     if (type & Types.Element) {
-        return hydrateHtmlElement(vNode, dom, mountedQueue, parentDom, parentVNode);
+        return hydrateHtmlElement(vNode, dom, mountedQueue, parentDom, parentVNode, isSVG);
     } else if (type & Types.Text) {
         return hydrateText(vNode, dom);
     } else if (type & Types.HtmlComment) {
         return hydrateComment(vNode, dom);
     } else if (type & Types.ComponentClassOrInstance) {
-        return hydrateComponentClassOrInstance(vNode, dom, mountedQueue, parentDom, parentVNode);
+        return hydrateComponentClassOrInstance(vNode, dom, mountedQueue, parentDom, parentVNode, isSVG);
     }
 }
 
-function hydrateComponentClassOrInstance(vNode, dom, mountedQueue, parentDom, parentVNode) {
+function hydrateComponentClassOrInstance(vNode, dom, mountedQueue, parentDom, parentVNode, isSVG) {
     const props = vNode.props;
     const instance = vNode.type & Types.ComponentClass ?
         new vNode.tag(props) : vNode.children;
@@ -62,6 +62,7 @@ function hydrateComponentClassOrInstance(vNode, dom, mountedQueue, parentDom, pa
     instance.mountedQueue = mountedQueue;
     instance.isRender = true;
     instance.parentVNode = parentVNode;
+    instance.isSVG = isSVG;
     let newDom = instance.hydrate(vNode, dom);
 
     vNode.dom = newDom;
@@ -114,7 +115,7 @@ function hydrateText(vNode, dom) {
     return dom;
 }
 
-function hydrateHtmlElement(vNode, dom, mountedQueue, parentDom, parentVNode) {
+function hydrateHtmlElement(vNode, dom, mountedQueue, parentDom, parentVNode, isSVG) {
     const children = vNode.children;
     const props = vNode.props;
     const className = vNode.className;
@@ -122,10 +123,11 @@ function hydrateHtmlElement(vNode, dom, mountedQueue, parentDom, parentVNode) {
     const ref = vNode.ref;
 
     vNode.parentVNode = parentVNode;
+    isSVG = isSVG || (type & Types.SvgElement) > 0;
 
     if (dom.nodeType !== 1 || dom.tagName.toLowerCase() !== vNode.tag) {
         warning('Server-side markup doesn\'t match client-side markup');
-        const newDom = createElement(vNode, null, mountedQueue, parentDom, parentVNode);
+        const newDom = createElement(vNode, null, mountedQueue, parentDom, parentVNode, isSVG);
         dom.parentNode.replaceChild(newDom, dom);
 
         return newDom;
@@ -133,7 +135,7 @@ function hydrateHtmlElement(vNode, dom, mountedQueue, parentDom, parentVNode) {
 
     vNode.dom = dom;
     if (!isNullOrUndefined(children)) {
-        hydrateChildren(children, dom, mountedQueue, vNode);
+        hydrateChildren(children, dom, mountedQueue, vNode, isSVG);
     } else if (dom.firstChild !== null) {
         setTextContent(dom, '');
     }
@@ -141,7 +143,7 @@ function hydrateHtmlElement(vNode, dom, mountedQueue, parentDom, parentVNode) {
     if (props !== EMPTY_OBJ) {
         const isFormElement = (type & Types.FormElement) > 0;
         for (let prop in props) {
-            patchProp(prop, null, props[prop], dom, isFormElement);
+            patchProp(prop, null, props[prop], dom, isFormElement, isSVG);
         }
         if (isFormElement) {
             processForm(vNode, dom, props, true);
@@ -149,7 +151,11 @@ function hydrateHtmlElement(vNode, dom, mountedQueue, parentDom, parentVNode) {
     }
 
     if (!isNullOrUndefined(className)) {
-        dom.className = className;
+        if (isSVG) {
+            dom.setAttribute('class', className);
+        } else {
+            dom.className = className;
+        }
     } else if (dom.className !== '') {
         dom.removeAttribute('class');
     }
@@ -161,7 +167,7 @@ function hydrateHtmlElement(vNode, dom, mountedQueue, parentDom, parentVNode) {
     return dom;
 }
 
-function hydrateChildren(children, parentDom, mountedQueue, parentVNode) {
+function hydrateChildren(children, parentDom, mountedQueue, parentVNode, isSVG) {
     normalizeChildren(parentDom);
     let dom = parentDom.firstChild;
 
@@ -185,18 +191,18 @@ function hydrateChildren(children, parentDom, mountedQueue, parentVNode) {
             if (!isNullOrUndefined(child)) {
                 if (dom !== null) {
                     const nextSibling = dom.nextSibling;
-                    hydrateElement(child, dom, mountedQueue, parentDom, parentVNode);
+                    hydrateElement(child, dom, mountedQueue, parentDom, parentVNode, isSVG);
                     dom = nextSibling;
                 } else {
-                    createElement(child, parentDom, mountedQueue, true, parentVNode);
+                    createElement(child, parentDom, mountedQueue, true, parentVNode, isSVG);
                 }
             }
         }
     } else {
         if (dom !== null) {
-            hydrateElement(children, dom, mountedQueue, parentDom, parentVNode);
+            hydrateElement(children, dom, mountedQueue, parentDom, parentVNode, isSVG);
         } else {
-            createElement(children, parentDom, mountedQueue, true, parentVNode);
+            createElement(children, parentDom, mountedQueue, true, parentVNode, isSVG);
         }
     }
 
