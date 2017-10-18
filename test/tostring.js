@@ -133,4 +133,11 @@ describe('toString', () => {
             '<span class="test"><i></i></span>'
         );
     });
+
+    it('render svg to string', () => {
+        eql(
+            h('svg', null, h('circle', {cx: 50, cy: 50, r: 50, fill: 'red'})),
+            '<svg><circle cx="50" cy="50" r="50" fill="red"></circle></svg>'
+        );
+    });
 });

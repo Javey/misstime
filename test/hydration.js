@@ -107,4 +107,16 @@ describe('hydrate', () => {
         }));
         eqlHtml(container, '<span class="hello"><b></b></span>');
     });
+
+    it('hydrate svg', () => {
+        const vNode = h('svg', null, h('circle', {cx: 50, cy: 50, r: 50, fill: 'red'}));
+        hy(vNode);
+        sEql(vNode.dom, container.firstChild);
+
+        patch(vNode, h('svg', null, h('circle', {cx: 50, cy: 50, r: 50, fill: 'blue'})));
+        eqlHtml(
+            container,
+            '<svg><circle cx="50" cy="50" r="50" fill="blue"></circle></svg>'
+        );
+    });
 });

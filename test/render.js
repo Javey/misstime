@@ -1,7 +1,7 @@
 import {h, hc, render} from '../src';
 import assert from 'assert';
 import {innerHTML, eqlHtml, dispatchEvent} from './utils';
-import {MountedQueue} from '../src/utils';
+import {MountedQueue, svgNS} from '../src/utils';
 
 class ClassComponent {
     constructor(props) {
@@ -27,7 +27,7 @@ describe('Render', () => {
     });
 
     afterEach(() => {
-        // document.body.removeChild(container);
+        document.body.removeChild(container);
     });
 
     function reset() {
@@ -590,8 +590,76 @@ describe('Render', () => {
 
     describe('SVG', () => {
         it('render svg', () => {
-            const vNode = h('svg');
+            const vNode = h('svg', null, h('circle', {
+                cx: 100,
+                cy: 50,
+                r: 40,
+                stroke: 'black',
+                'stroke-width': 2,
+                fill: 'red'
+            }));
             r(vNode);
+            assert.strictEqual(container.firstChild.namespaceURI, svgNS);
+            assert.strictEqual(container.firstChild.firstChild.namespaceURI, svgNS);
         });
+
+        it('render svg component', () => {
+            class SvgComponent {
+                constructor(props) {
+                    this.props = props;
+                }
+
+                init() {
+                    return render(h('circle', {
+                        cx: 50,
+                        cy: 50,
+                        r: 50,
+                        fill: 'red'
+                    }), null, null, null, this.isSVG);
+                }
+            }
+            r(h('svg', null, h(SvgComponent)));
+            assert.strictEqual(container.firstChild.firstChild.namespaceURI, svgNS);
+        });
+
+        it('svg set event', (done) => {
+            const vNode = h('svg', null, h('circle', {
+                cx: 100,
+                cy: 50,
+                r: 40,
+                stroke: 'black',
+                'stroke-width': 2,
+                fill: 'red'
+            }, h('set', {
+                attributeName: 'fill',
+                to: 'blue',
+                begin: 'click'
+            })));
+            r(vNode);
+            dispatchEvent(container.firstChild.firstChild, 'click');
+            setTimeout(() => {
+                assert.strictEqual(
+                    getComputedStyle(container.firstChild.firstChild).fill,
+                    'rgb(0, 0, 255)'
+                );
+                done();
+            });
+        });
+
+        it('attach event listener', () => {
+            const fn = sinon.spy();
+            const vNode = h('svg', {'ev-click': fn});
+            r(vNode);
+            dispatchEvent(container.firstChild, 'click');
+            assert.strictEqual(fn.callCount, 1);
+            assert.strictEqual(fn.args[0].length, 1);
+            assert.strictEqual(fn.args[0][0].type, 'click');
+            assert.strictEqual(fn.args[0][0].target, container.firstChild);
+            assert.strictEqual(fn.args[0][0].currentTarget, container.firstChild);
+
+            dispatchEvent(container.firstChild, 'click');
+            assert.strictEqual(fn.callCount, 2);
+        });
+
     });
 });

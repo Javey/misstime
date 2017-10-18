@@ -1126,4 +1126,14 @@ describe('Patch', () => {
             sEql(cp.destroy.callCount, 1);
         });
     });
+
+    describe('SVG', () => {
+        it('patch svg', () => {
+            p(
+                h('svg', null, h('circle', {cx: 50, cy: 50, r: 50, fill: 'red'})),
+                h('svg', null, h('circle', {cx: 50, cy: 50, r: 50, fill: 'blue'})),
+            );
+            sEql(container.firstChild.firstChild.getAttribute('fill'), 'blue');
+        });        
+    });
 });
