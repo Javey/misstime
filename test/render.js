@@ -229,7 +229,14 @@ describe('Render', () => {
             }, h(Component))),
             '<div><span class="test"><span></span></span></div>'
         );
-
+        eql(
+            h('div', null, h(Component, null, 'a')),
+            '<div><span>a</span></div>'
+        );
+        eql(
+            h('div', null, h(Component)),
+            '<div><span></span></div>'
+        );
     });
 
     it('render class component in function component', () => {

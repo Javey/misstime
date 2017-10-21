@@ -1,6 +1,6 @@
 const webpack = require('webpack');
 
-process.env.NODE_ENV = 'production';
+process.env.NODE_ENV = 'development';
 
 module.exports = function(config) {
     config.set({
