@@ -74,10 +74,10 @@ export function createVNode(tag, props, children, className, key, ref) {
     }
 
     if (type & Types.ComponentClass) {
-        if (!isNullOrUndefined(props.children)) {
-            children = normalizeChildren(props.children);
-        } else {
+        if (!isNullOrUndefined(children)) {
             children = normalizeChildren(children);
+        } else if (!isNullOrUndefined(props.children)) {
+            children = normalizeChildren(props.children);
         }
         props.children = children;
     } else {
