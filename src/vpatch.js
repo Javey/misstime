@@ -531,7 +531,11 @@ export function patchProps(lastVNode, nextVNode, isSVG) {
     }
     if (lastProps !== EMPTY_OBJ) {
         for (prop in lastProps) {
-            if (!(prop in nextProps)) {
+            if (
+                !skipProps[prop] &&
+                isNullOrUndefined(nextProps[prop]) &&
+                !isNullOrUndefined(lastProps[prop])
+            ) {
                 removeProp(prop, lastProps[prop], dom);
             } 
         }
