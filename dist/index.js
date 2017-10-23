@@ -601,7 +601,7 @@ function processInput(vNode, dom, nextProps) {
     var defaultValue = nextProps.defaultValue;
     var multiple = nextProps.multiple;
     var hasValue = nextProps.hasOwnProperty('value');
-    var value = hasValue ? nextProps.value || '' : undefined;
+    var value = hasValue ? nextProps.value : undefined;
 
     if (multiple && multiple !== dom.multiple) {
         dom.multiple = multiple;
@@ -1473,7 +1473,7 @@ function patchProp(prop, lastValue, nextValue, dom, isFormElement, isSVG) {
             if (dom[prop] !== value || browser.isIE8) {
                 dom[prop] = value;
             }
-            // add a private property _value for select an object
+            // add a private property _value for selecting an non-string value 
             if (prop === 'value') {
                 dom._value = value;
             }
