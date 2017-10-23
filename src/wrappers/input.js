@@ -7,7 +7,7 @@ export function processInput(vNode, dom, nextProps) {
     const defaultValue = nextProps.defaultValue;
     const multiple = nextProps.multiple;
     const hasValue = nextProps.hasOwnProperty('value');
-    const value = hasValue ? (nextProps.value || '') : undefined;
+    const value = hasValue ? nextProps.value : undefined;
 
     if (multiple && multiple !== dom.multiple) {
         dom.multiple = multiple;

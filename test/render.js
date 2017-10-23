@@ -351,6 +351,23 @@ describe('Render', () => {
         assert.strictEqual(o.i === i, true);
     });
 
+    it('render input', () => {
+        r(h('input', {value: 0}));
+        assert.strictEqual(container.firstChild.value, '0');
+
+        r(h('input', {value: true}));
+        assert.strictEqual(container.firstChild.value, 'true');
+
+        r(h('input', {value: false}));
+        assert.strictEqual(container.firstChild.value, 'false');
+
+        r(h('input', {value: ''}));
+        assert.strictEqual(container.firstChild.value, '');
+
+        r(h('input', {value: '1'}));
+        assert.strictEqual(container.firstChild.value, '1');
+    });
+
     it('render single select element', () => {
         eql(
             h('select', {value: ''}, [
