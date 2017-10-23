@@ -1,7 +1,7 @@
 import {hydrateRoot} from '../src/hydration';
 import {h, hc, renderString, patch, hydrate} from '../src';
 import assert from 'assert';
-import {eqlHtml} from './utils';
+import {eqlHtml, isIE8} from './utils';
 
 function sEql(a, b) {
     assert.strictEqual(a, b);
@@ -109,6 +109,8 @@ describe('hydrate', () => {
     });
 
     it('hydrate svg', () => {
+        if (isIE8) return;
+
         const vNode = h('svg', null, h('circle', {cx: 50, cy: 50, r: 50, fill: 'red'}));
         hy(vNode);
         sEql(vNode.dom, container.firstChild);

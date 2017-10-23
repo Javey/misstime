@@ -1128,6 +1128,8 @@ describe('Patch', () => {
     });
 
     describe('SVG', () => {
+        if (isIE8) return;
+
         it('patch svg', () => {
             p(
                 h('svg', null, h('circle', {cx: 50, cy: 50, r: 50, fill: 'red'})),

@@ -1,6 +1,6 @@
 import {h, hc, render} from '../src';
 import assert from 'assert';
-import {innerHTML, eqlHtml, dispatchEvent} from './utils';
+import {innerHTML, eqlHtml, dispatchEvent, isIE8} from './utils';
 import {MountedQueue, svgNS} from '../src/utils';
 
 class ClassComponent {
@@ -627,6 +627,8 @@ describe('Render', () => {
     });
 
     describe('SVG', () => {
+        if (isIE8) return;
+
         it('render svg', () => {
             const vNode = h('svg', null, h('circle', {
                 cx: 100,
