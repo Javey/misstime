@@ -319,6 +319,24 @@ describe('Patch', () => {
         assert.strictEqual(container.firstChild.p, undefined);
     });
 
+    it('patch input', () => {
+        eql(
+            h('input', {type: 'text'}),
+            h('input', {type: 'password'}),
+            '<input type="password">'
+        );
+        eql(
+            h('input', {type: 'password'}),
+            h('input'),
+            '<input>'
+        );
+        p(
+            h('input', {value: 'a'}),
+            h('input', {value: null}),
+        );
+        assert.strictEqual(container.firstChild.value, '');
+    });
+
     it('patch select', () => {
         eql(
             h('select', null, [

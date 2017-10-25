@@ -387,6 +387,12 @@ describe('Render', () => {
 
         r(h('input', {value: '1'}));
         assert.strictEqual(container.firstChild.value, '1');
+
+        r(h('input', {value: undefined}));
+        assert.strictEqual(container.firstChild.value, '');
+
+        r(h('input', {value: null}));
+        assert.strictEqual(container.firstChild.value, '');
     });
 
     it('render single select element', () => {
