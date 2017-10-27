@@ -12,12 +12,12 @@ export function hydrateRoot(vNode, parentDom, mountedQueue) {
     if (!isNullOrUndefined(parentDom)) {
         let dom = parentDom.firstChild;
         let newDom = hydrate(vNode, dom, mountedQueue, parentDom, null, false);
-        dom = parentDom.firstChild;
-        if (dom !== null) {
-            // should only one entry
-            while (dom = dom.nextSibling) {
-                parentDom.removeChild(dom);
-            }
+        dom = dom.nextSibling;
+        // should only one entry
+        while (dom) {
+            let next = dom.nextSibling;
+            parentDom.removeChild(dom);
+            dom = next;
         }
         return newDom;
     }

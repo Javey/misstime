@@ -1,5 +1,5 @@
 import {hydrateRoot} from '../src/hydration';
-import {h, hc, renderString, patch, hydrate} from '../src';
+import {h, hc, renderString, patch, hydrate, render} from '../src';
 import assert from 'assert';
 import {eqlHtml, isIE8} from './utils';
 
@@ -120,5 +120,15 @@ describe('hydrate', () => {
             container,
             '<svg><circle cx="50" cy="50" r="50" fill="blue"></circle></svg>'
         );
+    });
+
+    it('should remove redundant elements', () => {
+        const vNode = h('div');
+        container.innerHTML = renderString(vNode);
+        container.appendChild(render(vNode));
+        container.appendChild(render(vNode));
+        sEql(container.children.length, 3);
+        hydrateRoot(vNode, container);
+        sEql(container.children.length, 1);
     });
 });

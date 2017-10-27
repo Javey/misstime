@@ -285,15 +285,7 @@ export function removeComponentClassOrInstance(vNode, parentDom, nextVNode) {
     // removeElements(vNode.props.children, null);
 
     if (parentDom) {
-        // if (typeof instance.unmount === 'function') {
-            // if (!instance.unmount(vNode, nextVNode, parentDom)) {
-                // parentDom.removeChild(vNode.dom); 
-            // }
-        // } else {
-            // parentDom.removeChild(vNode.dom); 
-            removeChild(parentDom, vNode);
-        // }
-        // parentDom.removeChild(vNode.dom);
+        removeChild(parentDom, vNode);
     }
 }
 
