@@ -501,7 +501,7 @@ function insertOrAppend(pos, length, newDom, nodes, dom, detectParent) {
 }
 
 function replaceElement(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG) {
-    removeElement(lastVNode, null);
+    removeElement(lastVNode, null, nextVNode);
     createElement(nextVNode, null, mountedQueue, false, parentVNode, isSVG);
     replaceChild(parentDom, lastVNode, nextVNode);
 }

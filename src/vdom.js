@@ -218,14 +218,14 @@ export function removeElements(vNodes, parentDom) {
     }
 }
 
-export function removeElement(vNode, parentDom) {
+export function removeElement(vNode, parentDom, nextVNode) {
     const type = vNode.type;
     if (type & Types.Element) {
         return removeHtmlElement(vNode, parentDom);
     } else if (type & Types.TextElement) {
         return removeText(vNode, parentDom);
     } else if (type & Types.ComponentClassOrInstance) {
-        return removeComponentClassOrInstance(vNode, parentDom);
+        return removeComponentClassOrInstance(vNode, parentDom, nextVNode);
     } else if (type & Types.ComponentFunction) {
         return removeComponentFunction(vNode, parentDom);
     }
