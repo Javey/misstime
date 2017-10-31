@@ -297,7 +297,9 @@ export function removeAllChildren(dom, vNodes) {
 export function replaceChild(parentDom, lastVNode, nextVNode) {
     const lastDom = lastVNode.dom;
     const nextDom = nextVNode.dom;
-    if (!parentDom) parentDom = lastDom.parentNode;
+    const parentNode = lastDom.parentNode;
+    // maybe the lastDom has be moved
+    if (!parentDom || parentNode !== parentDom) parentDom = parentNode;
     if (lastDom._unmount) {
         lastDom._unmount(lastVNode, parentDom);
         if (!nextDom.parentNode) {
