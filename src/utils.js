@@ -174,13 +174,19 @@ MountedQueue.prototype.trigger = function() {
 
 export const browser = {};
 if (typeof navigator !== 'undefined') {
-    const ua = navigator.userAgent;
-    const index = ua.indexOf('MSIE ');
+    const ua = navigator.userAgent.toLowerCase();
+    const index = ua.indexOf('msie ');
     if (~index) {
         browser.isIE = true;
         const version = parseInt(ua.substring(index + 5, ua.indexOf('.', index)), 10);
         browser.version = version;
         browser.isIE8 = version === 8;
+    } else if (~ua.indexOf('safari')) {
+        if (~ua.indexOf('chrome')) {
+            browser.isChrome = true;
+        } else {
+            browser.isSafari = true;
+        }
     }
 }
 

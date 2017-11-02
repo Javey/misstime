@@ -618,7 +618,7 @@ function removeProp(prop, lastValue, dom) {
     }
 }
 
-const removeDataset = browser.isIE ? 
+const removeDataset = browser.isIE || browser.isSafari ? 
     function(lastValue, dom) {
         for (let key in lastValue) {
             dom.removeAttribute(`data-${kebabCase(key)}`);

@@ -1,5 +1,5 @@
 import assert from 'assert';
-import {browser} from '../src/utils';
+import {browser, isArray, indexOf} from '../src/utils';
 
 export function innerHTML(obj, convertToLowerCase = true) {
     var zz = obj.innerHTML != null ? String(obj.innerHTML) : obj
@@ -43,7 +43,11 @@ export function innerHTML(obj, convertToLowerCase = true) {
 export const isIE8 = browser.isIE8;
 
 export function eqlHtml(container, html, ie8Html) {
-    assert.strictEqual(innerHTML(container), isIE8 & ie8Html !== undefined ? ie8Html : html);
+    if (!isArray(html)) {
+        assert.strictEqual(innerHTML(container), isIE8 & ie8Html !== undefined ? ie8Html : html);
+    } else {
+        assert.strictEqual(indexOf(html, innerHTML(container)) > -1, true);
+    }
 }
 
 export function dispatchEvent(target, eventName) {
