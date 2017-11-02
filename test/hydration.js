@@ -118,7 +118,10 @@ describe('hydrate', () => {
         patch(vNode, h('svg', null, h('circle', {cx: 50, cy: 50, r: 50, fill: 'blue'})));
         eqlHtml(
             container,
-            '<svg><circle cx="50" cy="50" r="50" fill="blue"></circle></svg>'
+            [
+                '<svg><circle cx="50" cy="50" r="50" fill="blue"></circle></svg>',
+                '<svg xmlns="http://www.w3.org/2000/svg"><circle fill="blue" cx="50" cy="50" r="50" /></svg>',
+            ]
         );
     });
 
