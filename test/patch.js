@@ -320,6 +320,14 @@ describe('Patch', () => {
     });
 
     it('patch input', () => {
+        p(
+            h('input', {value: 'a'}),
+            h('input', {value: null}),
+        );
+        assert.strictEqual(container.firstChild.value, '');
+
+        // ie8 does not support change type for input
+        if (isIE8) return;
         eql(
             h('input', {type: 'text'}),
             h('input', {type: 'password'}),
@@ -330,11 +338,6 @@ describe('Patch', () => {
             h('input'),
             '<input>'
         );
-        p(
-            h('input', {value: 'a'}),
-            h('input', {value: null}),
-        );
-        assert.strictEqual(container.firstChild.value, '');
     });
 
     it('patch select', () => {
