@@ -14,7 +14,7 @@ import {
     appendChild
 } from './vdom';
 import {isObject, isArray, isNullOrUndefined, 
-    skipProps, MountedQueue, isEventProp, 
+    isSkipProp, MountedQueue, isEventProp, 
     booleanProps, strictProps,
     browser, setTextContent, isStringOrNumber,
     namespaces
@@ -532,7 +532,7 @@ export function patchProps(lastVNode, nextVNode, isSVG) {
     if (lastProps !== EMPTY_OBJ) {
         for (prop in lastProps) {
             if (
-                !skipProps[prop] &&
+                !isSkipProp(prop) &&
                 isNullOrUndefined(nextProps[prop]) &&
                 !isNullOrUndefined(lastProps[prop])
             ) {
@@ -544,7 +544,7 @@ export function patchProps(lastVNode, nextVNode, isSVG) {
 
 export function patchProp(prop, lastValue, nextValue, dom, isFormElement, isSVG) {
     if (lastValue !== nextValue) {
-        if (skipProps[prop] || isFormElement && prop === 'value') {
+        if (isSkipProp(prop) || isFormElement && prop === 'value') {
             return;
         } else if (booleanProps[prop]) {
             dom[prop] = !!nextValue;

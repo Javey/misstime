@@ -92,7 +92,6 @@ export const SimpleMap = typeof Map === 'function' ? Map : (function() {
     return SimpleMap;
 })();
 
-
 export const skipProps = {
     key: true,
     ref: true,
@@ -102,6 +101,11 @@ export const skipProps = {
     multiple: true,
     defaultValue: true,
 };
+
+export function isSkipProp(prop) {
+    // treat prop which start with '_' as private prop, so skip it
+    return skipProps[prop] || prop[0] === '_';
+}
 
 export const booleanProps = {
     muted: true,
