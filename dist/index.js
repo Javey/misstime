@@ -110,6 +110,11 @@ var skipProps = {
     defaultValue: true
 };
 
+function isSkipProp(prop) {
+    // treat prop which start with '_' as private prop, so skip it
+    return skipProps[prop] || prop[0] === '_';
+}
+
 var booleanProps = {
     muted: true,
     scoped: true,
@@ -1446,7 +1451,7 @@ function patchProps(lastVNode, nextVNode, isSVG) {
     }
     if (lastProps !== EMPTY_OBJ) {
         for (prop in lastProps) {
-            if (!skipProps[prop] && isNullOrUndefined(nextProps[prop]) && !isNullOrUndefined(lastProps[prop])) {
+            if (!isSkipProp(prop) && isNullOrUndefined(nextProps[prop]) && !isNullOrUndefined(lastProps[prop])) {
                 removeProp(prop, lastProps[prop], dom);
             }
         }
@@ -1455,7 +1460,7 @@ function patchProps(lastVNode, nextVNode, isSVG) {
 
 function patchProp(prop, lastValue, nextValue, dom, isFormElement, isSVG) {
     if (lastValue !== nextValue) {
-        if (skipProps[prop] || isFormElement && prop === 'value') {
+        if (isSkipProp(prop) || isFormElement && prop === 'value') {
             return;
         } else if (booleanProps[prop]) {
             dom[prop] = !!nextValue;
