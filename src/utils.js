@@ -181,6 +181,8 @@ if (typeof navigator !== 'undefined') {
         const version = parseInt(ua.substring(index + 5, ua.indexOf('.', index)), 10);
         browser.version = version;
         browser.isIE8 = version === 8;
+    } else if (~ua.indexOf('edge')) {
+        browser.isEdge = true;
     } else if (~ua.indexOf('safari')) {
         if (~ua.indexOf('chrome')) {
             browser.isChrome = true;
