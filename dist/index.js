@@ -131,10 +131,11 @@ var booleanProps = {
     seamless: true,
     reversed: true,
     allowfullscreen: true,
-    novalidate: true,
+    noValidate: true,
     hidden: true,
-    autoFocus: true,
-    selected: true
+    autofocus: true,
+    selected: true,
+    indeterminate: true
 };
 
 var strictProps = {
@@ -182,13 +183,21 @@ MountedQueue.prototype.trigger = function () {
 
 var browser = {};
 if (typeof navigator !== 'undefined') {
-    var ua = navigator.userAgent;
-    var index = ua.indexOf('MSIE ');
+    var ua = navigator.userAgent.toLowerCase();
+    var index = ua.indexOf('msie ');
     if (~index) {
         browser.isIE = true;
         var version = parseInt(ua.substring(index + 5, ua.indexOf('.', index)), 10);
         browser.version = version;
         browser.isIE8 = version === 8;
+    } else if (~ua.indexOf('edge')) {
+        browser.isEdge = true;
+    } else if (~ua.indexOf('safari')) {
+        if (~ua.indexOf('chrome')) {
+            browser.isChrome = true;
+        } else {
+            browser.isSafari = true;
+        }
     }
 }
 
@@ -1534,7 +1543,7 @@ function removeProp(prop, lastValue, dom) {
     }
 }
 
-var removeDataset = browser.isIE ? function (lastValue, dom) {
+var removeDataset = browser.isIE || browser.isSafari ? function (lastValue, dom) {
     for (var key in lastValue) {
         dom.removeAttribute('data-' + kebabCase(key));
     }
