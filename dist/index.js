@@ -785,6 +785,7 @@ function createComponentClassOrInstance(vNode, parentDom, mountedQueue, lastVNod
 
     vNode.dom = dom;
     vNode.children = instance;
+    vNode.parentVNode = parentVNode;
 
     if (parentDom) {
         appendChild(parentDom, dom);
@@ -1934,6 +1935,7 @@ function hydrateComponentClassOrInstance(vNode, dom, mountedQueue, parentDom, pa
 
     vNode.dom = newDom;
     vNode.children = instance;
+    vNode.parentVNode = parentVNode;
 
     if (typeof instance.mount === 'function') {
         mountedQueue.push(function () {
