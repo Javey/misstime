@@ -121,6 +121,7 @@ export function createComponentClassOrInstance(vNode, parentDom, mountedQueue, l
 
     vNode.dom = dom;
     vNode.children = instance;
+    vNode.parentVNode = parentVNode;
 
     if (parentDom) {
         appendChild(parentDom, dom);

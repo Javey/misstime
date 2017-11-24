@@ -67,6 +67,7 @@ function hydrateComponentClassOrInstance(vNode, dom, mountedQueue, parentDom, pa
 
     vNode.dom = newDom;
     vNode.children = instance;
+    vNode.parentVNode = parentVNode;
 
     if (typeof instance.mount === 'function') {
         mountedQueue.push(() => instance.mount(null, vNode));
