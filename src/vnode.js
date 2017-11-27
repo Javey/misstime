@@ -127,6 +127,8 @@ function normalizeChildren(vNodes) {
 function applyKey(vNode, reference) {
     if (isNullOrUndefined(vNode.key)) {
         vNode.key = `.$${reference.index++}`;
+    } else if (vNode.key[0] === '.') {
+        vNode.key = `.$${reference.index++}${vNode.key}`;
     }
     return vNode;
 }
