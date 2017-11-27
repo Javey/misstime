@@ -141,7 +141,8 @@ var booleanProps = {
 var strictProps = {
     volume: true,
     defaultChecked: true,
-    value: true
+    value: true,
+    htmlFor: true
 };
 
 var selfClosingTags = {

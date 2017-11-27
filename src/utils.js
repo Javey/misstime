@@ -134,6 +134,7 @@ export const strictProps = {
     volume: true,
     defaultChecked: true,
     value: true,
+    htmlFor: true,
 };
 
 export const selfClosingTags = {
