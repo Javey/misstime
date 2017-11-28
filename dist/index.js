@@ -298,10 +298,12 @@ function createVNode(tag, props, children, className, key, ref) {
     if (type & Types.ComponentClass) {
         if (!isNullOrUndefined(children)) {
             if (props === EMPTY_OBJ) props = {};
-            props.children = normalizeChildren(children);
-        } else if (!isNullOrUndefined(props.children)) {
-            props.children = normalizeChildren(props.children);
+            // props.children = normalizeChildren(children);
+            props.children = children;
         }
+        // else if (!isNullOrUndefined(props.children)) {
+        // props.children = normalizeChildren(props.children);
+        // }
     } else {
         children = normalizeChildren(children);
     }
@@ -339,7 +341,9 @@ function normalizeChildren(vNodes) {
 }
 
 function applyKey(vNode, reference) {
-    if (isNullOrUndefined(vNode.key)) {
+    // start with '.' means the vNode has been set key by index
+    // we will reset the key when it coomes back again
+    if (isNullOrUndefined(vNode.key) || vNode.key[0] === '.') {
         vNode.key = '.$' + reference.index++;
     }
     return vNode;
