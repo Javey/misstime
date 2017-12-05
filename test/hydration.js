@@ -44,7 +44,7 @@ describe('hydrate', () => {
     });
 
     afterEach(() => {
-        document.body.removeChild(container);
+        // document.body.removeChild(container);
     });
 
     function hy(vNode) {
@@ -133,5 +133,11 @@ describe('hydrate', () => {
         sEql(container.children.length, 3);
         hydrateRoot(vNode, container);
         sEql(container.children.length, 1);
+    });
+
+    it('hydrate empty root', () => {
+        const vNode = h('div');
+        hydrateRoot(vNode, container);
+        sEql(container.firstChild, vNode.dom);
     });
 });
