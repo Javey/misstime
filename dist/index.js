@@ -1885,6 +1885,9 @@ function renderAttributeToString(key, value) {
 function hydrateRoot(vNode, parentDom, mountedQueue) {
     if (!isNullOrUndefined(parentDom)) {
         var dom = parentDom.firstChild;
+        if (isNullOrUndefined(dom)) {
+            return render(vNode, parentDom, mountedQueue, null, false);
+        }
         var newDom = hydrate(vNode, dom, mountedQueue, parentDom, null, false);
         dom = dom.nextSibling;
         // should only one entry
