@@ -44,7 +44,7 @@ describe('hydrate', () => {
     });
 
     afterEach(() => {
-        // document.body.removeChild(container);
+        document.body.removeChild(container);
     });
 
     function hy(vNode) {
