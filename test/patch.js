@@ -282,6 +282,29 @@ describe('Patch', () => {
         );
     });
 
+    it('patch innerHTML', () => {
+        eql(
+            h('div', {innerHTML: 'a'}),
+            h('div', {innerHTML: 'b'}),
+            '<div>b</div>'
+        );
+        eql(
+            h('div'),
+            h('div', {innerHTML: 'b'}),
+            '<div>b</div>'
+        );
+        eql(
+            h('div', {innerHTML: 'a'}),
+            h('div', {innerHTML: undefined}),
+            '<div></div>'
+        );
+        eql(
+            h('div', {innerHTML: 'a'}),
+            h('div'),
+            '<div></div>'
+        );
+    });
+
     it('patch attributes', () => {
         eqlObj(
             h('div', {attributes: {a: 1, b: 'b'}}),

@@ -594,6 +594,9 @@ function removeProp(prop, lastValue, dom) {
             case 'dataset':
                 removeDataset(lastValue, dom);
                 return; 
+            case 'innerHTML':
+                dom.innerHTML = '';
+                return;
             default:
                 break;
         }
