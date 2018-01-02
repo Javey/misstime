@@ -69,6 +69,7 @@ function hydrateComponentClassOrInstance(vNode, dom, mountedQueue, parentDom, pa
     instance.isRender = true;
     instance.parentVNode = parentVNode;
     instance.isSVG = isSVG;
+    instance.vNode = vNode;
     let newDom = instance.hydrate(vNode, dom);
 
     vNode.dom = newDom;

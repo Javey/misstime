@@ -785,6 +785,7 @@ function createComponentClassOrInstance(vNode, parentDom, mountedQueue, lastVNod
     instance.isRender = isRender;
     instance.parentVNode = parentVNode;
     instance.isSVG = isSVG;
+    instance.vNode = vNode;
     var dom = instance.init(lastVNode, vNode);
     var ref = vNode.ref;
 
@@ -1091,6 +1092,7 @@ function patchComponentClass(lastVNode, nextVNode, parentDom, mountedQueue, pare
         instance.mountedQueue = mountedQueue;
         instance.isRender = false;
         instance.parentVNode = parentVNode;
+        instance.vNode = nextVNode;
         instance.isSVG = isSVG;
         newDom = instance.update(lastVNode, nextVNode);
         nextVNode.dom = newDom;
@@ -1942,6 +1944,7 @@ function hydrateComponentClassOrInstance(vNode, dom, mountedQueue, parentDom, pa
     instance.isRender = true;
     instance.parentVNode = parentVNode;
     instance.isSVG = isSVG;
+    instance.vNode = vNode;
     var newDom = instance.hydrate(vNode, dom);
 
     vNode.dom = newDom;

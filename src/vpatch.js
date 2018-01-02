@@ -142,6 +142,7 @@ function patchComponentClass(lastVNode, nextVNode, parentDom, mountedQueue, pare
         instance.mountedQueue = mountedQueue;
         instance.isRender = false;
         instance.parentVNode = parentVNode;
+        instance.vNode = nextVNode;
         instance.isSVG = isSVG;
         newDom = instance.update(lastVNode, nextVNode);
         nextVNode.dom = newDom;

@@ -116,6 +116,7 @@ export function createComponentClassOrInstance(vNode, parentDom, mountedQueue, l
     instance.isRender = isRender;
     instance.parentVNode = parentVNode;
     instance.isSVG = isSVG;
+    instance.vNode = vNode;
     const dom = instance.init(lastVNode, vNode);
     const ref = vNode.ref;
 
