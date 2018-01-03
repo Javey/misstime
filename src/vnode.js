@@ -61,8 +61,8 @@ export function createVNode(tag, props, children, className, key, ref) {
             if (tag.prototype.init) {
                 type = Types.ComponentClass;
             } else {
-                return tag(props);
-                // type = Types.ComponentFunction;
+                // return tag(props);
+                type = Types.ComponentFunction;
             }
             break;
         case 'object':
@@ -73,13 +73,16 @@ export function createVNode(tag, props, children, className, key, ref) {
             throw new Error(`unknown vNode type: ${tag}`);
     }
 
-    if (type & Types.ComponentClass) {
+    if (type & (Types.ComponentClass | Types.ComponentFunction)) {
         if (!isNullOrUndefined(children)) {
             if (props === EMPTY_OBJ) props = {};
             props.children = normalizeChildren(children, false);
             // props.children = children;
         } else if (!isNullOrUndefined(props.children)) {
             props.children = normalizeChildren(props.children, false);
+        }
+        if (type & Types.ComponentFunction) {
+            return tag(props);
         }
     } else {
         children = normalizeChildren(children, true);
