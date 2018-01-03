@@ -13,24 +13,24 @@ class ClassComponent {
     }
     init() {
         this.render();
-        return this.dom = render(this.vNode);
+        return this.dom = render(this._vNode);
     }
     toString() {
         this.render();
-        return renderString(this.vNode);
+        return renderString(this._vNode);
     }
     hydrate(vNode, dom) {
         this.render();
-        return this.dom = hydrate(this.vNode, dom, this.mountedQueue, this.parentDom, vNode);
+        return this.dom = hydrate(this._vNode, dom, this.mountedQueue, this.parentDom, vNode);
     }
     update(lastVNode, nextVNode) {
-        var oldVnode = this.vNode;
+        var oldVnode = this._vNode;
         this.props = nextVNode.props;
         this.render();
-        return this.dom = patch(oldVnode, this.vNode);
+        return this.dom = patch(oldVnode, this._vNode);
     }
     render() {
-        this.vNode = h('span', this.props, this.props.children);
+        this._vNode = h('span', this.props, this.props.children);
     }
 }
 
@@ -98,8 +98,8 @@ describe('hydrate', () => {
         });
         hy(vNode);
         sEql(vNode.dom, container.firstChild);
-        sEql(vNode.children.vNode.dom, container.firstChild);
-        sEql(vNode.children.vNode.children[0].dom, container.firstChild.firstChild);
+        sEql(vNode.children._vNode.dom, container.firstChild);
+        sEql(vNode.children._vNode.children[0].dom, container.firstChild.firstChild);
 
         patch(vNode, h(ClassComponent, {
             className: 'hello',

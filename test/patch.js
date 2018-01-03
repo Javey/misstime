@@ -9,16 +9,16 @@ class ClassComponent {
         this.props = props || {};
     }
     init() { 
-        this.vNode = h('span', this.props, this.props.children);
-        return this.dom = render(this.vNode);
+        this._vNode = h('span', this.props, this.props.children);
+        return this.dom = render(this._vNode);
     }
     update(lastVNode, nextVNode) {
-        var oldVnode = this.vNode;
-        this.vNode = h('span', nextVNode.props, nextVNode.props.children);
-        return this.dom = patch(oldVnode, this.vNode);
+        var oldVnode = this._vNode;
+        this._vNode = h('span', nextVNode.props, nextVNode.props.children);
+        return this.dom = patch(oldVnode, this._vNode);
     }
     destroy() {
-        remove(this.vNode);
+        remove(this._vNode);
     }
 } 
 
