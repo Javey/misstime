@@ -82,6 +82,11 @@ export function createVNode(tag, props, children, className, key, ref) {
             props.children = normalizeChildren(props.children, false);
         }
         if (type & Types.ComponentFunction) {
+            if (key || ref) {
+                if (props === EMPTY_OBJ) props = {};
+                if (key) props.key = key;
+                if (ref) props.ref = ref;
+            }
             return tag(props);
         }
     } else {
