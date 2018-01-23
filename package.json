@@ -1,6 +1,6 @@
 {
   "name": "misstime",
-  "version": "0.2.2-16",
+  "version": "0.2.2-17",
   "description": "",
   "main": "dist/index.js",
   "module": "src/index.js",
