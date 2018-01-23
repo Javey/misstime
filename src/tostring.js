@@ -89,7 +89,7 @@ export function toString(vNode, parent, disableSplitText, firstChild) {
                         }
                     }
                 } else {
-                    html += toString(children, vNode, true);
+                    html += toString(children, vNode, disableSplitText, true);
                 }
             }
 

@@ -481,7 +481,8 @@ var delegatedEvents = {};
 var unDelegatesEvents = {
     mouseenter: true,
     mouseleave: true,
-    propertychange: true
+    propertychange: true,
+    scroll: true
 };
 
 // change event can not be deletegated in IE8 
@@ -1772,7 +1773,7 @@ function toString$1(vNode, parent, disableSplitText, firstChild) {
                         }
                     }
                 } else {
-                    html += toString$1(children, vNode, true);
+                    html += toString$1(children, vNode, disableSplitText, true);
                 }
             }
 

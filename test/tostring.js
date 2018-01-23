@@ -97,6 +97,10 @@ describe('toString', () => {
             '<div>a<!---->b</div>'
         );
         eql(
+            h('div', null, h('div', null, ['a', 'b'])),
+            '<div><div>a<!---->b</div></div>'
+        );
+        eql(
             h('div', null, ['a', h('i'), 'b']),
             '<div>a<i></i>b</div>'
         );
