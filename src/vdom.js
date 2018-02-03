@@ -116,11 +116,13 @@ export function createComponentClassOrInstance(vNode, parentDom, mountedQueue, l
     instance.isRender = isRender;
     instance.parentVNode = parentVNode;
     instance.isSVG = isSVG;
+    instance.vNode = vNode;
     const dom = instance.init(lastVNode, vNode);
     const ref = vNode.ref;
 
     vNode.dom = dom;
     vNode.children = instance;
+    vNode.parentVNode = parentVNode;
 
     if (parentDom) {
         appendChild(parentDom, dom);
@@ -218,14 +220,14 @@ export function removeElements(vNodes, parentDom) {
     }
 }
 
-export function removeElement(vNode, parentDom) {
+export function removeElement(vNode, parentDom, nextVNode) {
     const type = vNode.type;
     if (type & Types.Element) {
         return removeHtmlElement(vNode, parentDom);
     } else if (type & Types.TextElement) {
         return removeText(vNode, parentDom);
     } else if (type & Types.ComponentClassOrInstance) {
-        return removeComponentClassOrInstance(vNode, parentDom);
+        return removeComponentClassOrInstance(vNode, parentDom, nextVNode);
     } else if (type & Types.ComponentFunction) {
         return removeComponentFunction(vNode, parentDom);
     }
@@ -285,15 +287,7 @@ export function removeComponentClassOrInstance(vNode, parentDom, nextVNode) {
     // removeElements(vNode.props.children, null);
 
     if (parentDom) {
-        // if (typeof instance.unmount === 'function') {
-            // if (!instance.unmount(vNode, nextVNode, parentDom)) {
-                // parentDom.removeChild(vNode.dom); 
-            // }
-        // } else {
-            // parentDom.removeChild(vNode.dom); 
-            removeChild(parentDom, vNode);
-        // }
-        // parentDom.removeChild(vNode.dom);
+        removeChild(parentDom, vNode);
     }
 }
 
@@ -305,7 +299,9 @@ export function removeAllChildren(dom, vNodes) {
 export function replaceChild(parentDom, lastVNode, nextVNode) {
     const lastDom = lastVNode.dom;
     const nextDom = nextVNode.dom;
-    if (!parentDom) parentDom = lastDom.parentNode;
+    const parentNode = lastDom.parentNode;
+    // maybe the lastDom has be moved
+    if (!parentDom || parentNode !== parentDom) parentDom = parentNode;
     if (lastDom._unmount) {
         lastDom._unmount(lastVNode, parentDom);
         if (!nextDom.parentNode) {

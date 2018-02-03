@@ -92,7 +92,6 @@ export const SimpleMap = typeof Map === 'function' ? Map : (function() {
     return SimpleMap;
 })();
 
-
 export const skipProps = {
     key: true,
     ref: true,
@@ -102,6 +101,11 @@ export const skipProps = {
     multiple: true,
     defaultValue: true,
 };
+
+export function isSkipProp(prop) {
+    // treat prop which start with '_' as private prop, so skip it
+    return skipProps[prop] || prop[0] === '_';
+}
 
 export const booleanProps = {
     muted: true,
@@ -119,16 +123,18 @@ export const booleanProps = {
     seamless: true,
     reversed: true,
     allowfullscreen: true,
-    novalidate: true,
+    noValidate: true,
     hidden: true,
-    autoFocus: true,
-    selected: true
+    autofocus: true,
+    selected: true,
+    indeterminate: true,
 };
 
 export const strictProps = {
     volume: true,
     defaultChecked: true,
     value: true,
+    htmlFor: true,
 };
 
 export const selfClosingTags = {
@@ -170,13 +176,21 @@ MountedQueue.prototype.trigger = function() {
 
 export const browser = {};
 if (typeof navigator !== 'undefined') {
-    const ua = navigator.userAgent;
-    const index = ua.indexOf('MSIE ');
+    const ua = navigator.userAgent.toLowerCase();
+    const index = ua.indexOf('msie ');
     if (~index) {
         browser.isIE = true;
         const version = parseInt(ua.substring(index + 5, ua.indexOf('.', index)), 10);
         browser.version = version;
         browser.isIE8 = version === 8;
+    } else if (~ua.indexOf('edge')) {
+        browser.isEdge = true;
+    } else if (~ua.indexOf('safari')) {
+        if (~ua.indexOf('chrome')) {
+            browser.isChrome = true;
+        } else {
+            browser.isSafari = true;
+        }
     }
 }
 

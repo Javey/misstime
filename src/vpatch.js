@@ -14,7 +14,7 @@ import {
     appendChild
 } from './vdom';
 import {isObject, isArray, isNullOrUndefined, 
-    skipProps, MountedQueue, isEventProp, 
+    isSkipProp, MountedQueue, isEventProp, 
     booleanProps, strictProps,
     browser, setTextContent, isStringOrNumber,
     namespaces
@@ -142,6 +142,7 @@ function patchComponentClass(lastVNode, nextVNode, parentDom, mountedQueue, pare
         instance.mountedQueue = mountedQueue;
         instance.isRender = false;
         instance.parentVNode = parentVNode;
+        instance.vNode = nextVNode;
         instance.isSVG = isSVG;
         newDom = instance.update(lastVNode, nextVNode);
         nextVNode.dom = newDom;
@@ -501,7 +502,7 @@ function insertOrAppend(pos, length, newDom, nodes, dom, detectParent) {
 }
 
 function replaceElement(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG) {
-    removeElement(lastVNode, null);
+    removeElement(lastVNode, null, nextVNode);
     createElement(nextVNode, null, mountedQueue, false, parentVNode, isSVG);
     replaceChild(parentDom, lastVNode, nextVNode);
 }
@@ -532,7 +533,7 @@ export function patchProps(lastVNode, nextVNode, isSVG) {
     if (lastProps !== EMPTY_OBJ) {
         for (prop in lastProps) {
             if (
-                !skipProps[prop] &&
+                !isSkipProp(prop) &&
                 isNullOrUndefined(nextProps[prop]) &&
                 !isNullOrUndefined(lastProps[prop])
             ) {
@@ -544,7 +545,7 @@ export function patchProps(lastVNode, nextVNode, isSVG) {
 
 export function patchProp(prop, lastValue, nextValue, dom, isFormElement, isSVG) {
     if (lastValue !== nextValue) {
-        if (skipProps[prop] || isFormElement && prop === 'value') {
+        if (isSkipProp(prop) || isFormElement && prop === 'value') {
             return;
         } else if (booleanProps[prop]) {
             dom[prop] = !!nextValue;
@@ -555,7 +556,7 @@ export function patchProp(prop, lastValue, nextValue, dom, isFormElement, isSVG)
             if (dom[prop] !== value || browser.isIE8) {
                 dom[prop] = value;
             }
-            // add a private property _value for select an object
+            // add a private property _value for selecting an non-string value 
             if (prop === 'value') {
                 dom._value = value;
             }
@@ -594,6 +595,9 @@ function removeProp(prop, lastValue, dom) {
             case 'dataset':
                 removeDataset(lastValue, dom);
                 return; 
+            case 'innerHTML':
+                dom.innerHTML = '';
+                return;
             default:
                 break;
         }
@@ -618,7 +622,7 @@ function removeProp(prop, lastValue, dom) {
     }
 }
 
-const removeDataset = browser.isIE ? 
+const removeDataset = browser.isIE || browser.isSafari ? 
     function(lastValue, dom) {
         for (let key in lastValue) {
             dom.removeAttribute(`data-${kebabCase(key)}`);

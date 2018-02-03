@@ -99,7 +99,8 @@ const delegatedEvents = {};
 const unDelegatesEvents = {
     'mouseenter': true,
     'mouseleave': true,
-    'propertychange': true
+    'propertychange': true,
+    'scroll': true,
 };
 
 // change event can not be deletegated in IE8 

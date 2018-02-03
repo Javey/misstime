@@ -61,8 +61,8 @@ export function createVNode(tag, props, children, className, key, ref) {
             if (tag.prototype.init) {
                 type = Types.ComponentClass;
             } else {
-                return tag(props);
-                // type = Types.ComponentFunction;
+                // return tag(props);
+                type = Types.ComponentFunction;
             }
             break;
         case 'object':
@@ -73,15 +73,24 @@ export function createVNode(tag, props, children, className, key, ref) {
             throw new Error(`unknown vNode type: ${tag}`);
     }
 
-    if (type & Types.ComponentClass) {
+    if (type & (Types.ComponentClass | Types.ComponentFunction)) {
         if (!isNullOrUndefined(children)) {
             if (props === EMPTY_OBJ) props = {};
-            props.children = normalizeChildren(children);
+            props.children = normalizeChildren(children, false);
+            // props.children = children;
         } else if (!isNullOrUndefined(props.children)) {
-            props.children = normalizeChildren(props.children);
+            props.children = normalizeChildren(props.children, false);
+        }
+        if (type & Types.ComponentFunction) {
+            if (key || ref) {
+                if (props === EMPTY_OBJ) props = {};
+                if (key) props.key = key;
+                if (ref) props.ref = ref;
+            }
+            return tag(props);
         }
     } else {
-        children = normalizeChildren(children);
+        children = normalizeChildren(children, true);
     }
 
     return new VNode(type, tag, props, children, 
@@ -114,9 +123,9 @@ export function createComponentInstanceVNode(instance) {
     );
 }
 
-function normalizeChildren(vNodes) {
+function normalizeChildren(vNodes, isAddKey) {
     if (isArray(vNodes)) {
-        const childNodes = addChild(vNodes, {index: 0});
+        const childNodes = addChild(vNodes, {index: 0}, isAddKey);
         return childNodes.length ? childNodes : null;
     } else if (isComponentInstance(vNodes)) {
         return createComponentInstanceVNode(vNodes);
@@ -124,14 +133,17 @@ function normalizeChildren(vNodes) {
     return vNodes;
 }
 
-function applyKey(vNode, reference) {
-    if (isNullOrUndefined(vNode.key)) {
+function applyKey(vNode, reference, isAddKey) {
+    if (!isAddKey) return vNode;
+    // start with '.' means the vNode has been set key by index
+    // we will reset the key when it coomes back again
+    if (isNullOrUndefined(vNode.key) || vNode.key[0] === '.') {
         vNode.key = `.$${reference.index++}`;
-    }
+    } 
     return vNode;
 }
 
-function addChild(vNodes, reference) {
+function addChild(vNodes, reference, isAddKey) {
     let newVNodes;
     for (let i = 0; i < vNodes.length; i++) {
         const n = vNodes[i];
@@ -143,22 +155,22 @@ function addChild(vNodes, reference) {
             if (!newVNodes) {
                 newVNodes = vNodes.slice(0, i);
             }
-            newVNodes = newVNodes.concat(addChild(n, reference));
+            newVNodes = newVNodes.concat(addChild(n, reference, isAddKey));
         } else if (isStringOrNumber(n)) {
             if (!newVNodes) {
                 newVNodes = vNodes.slice(0, i);
             }
-            newVNodes.push(applyKey(createTextVNode(n), reference));
+            newVNodes.push(applyKey(createTextVNode(n), reference, isAddKey));
         } else if (isComponentInstance(n)) {
             if (!newVNodes) {
                 newVNodes = vNodes.slice(0, i);
             }
-            newVNodes.push(applyKey(createComponentInstanceVNode(n), reference));
+            newVNodes.push(applyKey(createComponentInstanceVNode(n), reference, isAddKey));
         } else if (n.type) {
             if (!newVNodes) {
                 newVNodes = vNodes.slice(0, i);
             }
-            newVNodes.push(applyKey(n, reference));
+            newVNodes.push(applyKey(n, reference, isAddKey));
         }
     }
     return newVNodes || vNodes;

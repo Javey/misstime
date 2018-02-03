@@ -1,23 +1,24 @@
 import {h, hc, render, patch, remove} from '../src';
 import {removeComponentClassOrInstance} from '../src/vdom';
 import assert from 'assert';
-import {eqlHtml, isIE8} from './utils';
+import {eqlHtml, isIE8, dispatchEvent} from './utils';
+import {browser} from '../src/utils';
 
 class ClassComponent {
     constructor(props) {
         this.props = props || {};
     }
     init() { 
-        this.vNode = h('span', this.props, this.props.children);
-        return this.dom = render(this.vNode);
+        this._vNode = h('span', this.props, this.props.children);
+        return this.dom = render(this._vNode);
     }
     update(lastVNode, nextVNode) {
-        var oldVnode = this.vNode;
-        this.vNode = h('span', nextVNode.props, nextVNode.props.children);
-        return this.dom = patch(oldVnode, this.vNode);
+        var oldVnode = this._vNode;
+        this._vNode = h('span', nextVNode.props, nextVNode.props.children);
+        return this.dom = patch(oldVnode, this._vNode);
     }
     destroy() {
-        remove(this.vNode);
+        remove(this._vNode);
     }
 } 
 
@@ -218,26 +219,38 @@ describe('Patch', () => {
         eql(
             h('div', {style: 'color: red; font-size: 20px'}),
             h('div', {style: 'color: red;'}),
-            '<div style="color: red;"></div>',
-            '<div style="color: red"></div>'
+            [
+                '<div style="color: red;"></div>',
+                '<div style="color: red"></div>',
+                '<div style="color: red; "></div>',
+            ]
         );
         eql(
             h('div', {style: {color: 'red', fontSize: '20px'}}),
             h('div', {style: {color: 'red'}}),
-            '<div style="color: red;"></div>',
-            '<div style="color: red"></div>'
+            [
+                '<div style="color: red;"></div>',
+                '<div style="color: red"></div>',
+                '<div style="color: red; "></div>',
+            ]
         );
         eql(
             h('div', {style: {color: 'red', fontSize: '20px'}}),
             h('div', {style: 'color: red;'}),
-            '<div style="color: red;"></div>',
-            '<div style="color: red"></div>'
+            [
+                '<div style="color: red;"></div>',
+                '<div style="color: red"></div>',
+                '<div style="color: red; "></div>',
+            ]
         );
         eql(
             h('div', {style: 'color: red; font-size: 20px'}),
             h('div', {style: {color: 'red'}}),
-            '<div style="color: red;"></div>',
-            '<div style="color: red"></div>'
+            [
+                '<div style="color: red;"></div>',
+                '<div style="color: red"></div>',
+                '<div style="color: red; "></div>',
+            ]
         );
     });
 
@@ -265,6 +278,29 @@ describe('Patch', () => {
         eql(
             h('div', {dataset: {a: 1, b: 'b'}}),
             h('div', {dataset: null}),
+            '<div></div>'
+        );
+    });
+
+    it('patch innerHTML', () => {
+        eql(
+            h('div', {innerHTML: 'a'}),
+            h('div', {innerHTML: 'b'}),
+            '<div>b</div>'
+        );
+        eql(
+            h('div'),
+            h('div', {innerHTML: 'b'}),
+            '<div>b</div>'
+        );
+        eql(
+            h('div', {innerHTML: 'a'}),
+            h('div', {innerHTML: undefined}),
+            '<div></div>'
+        );
+        eql(
+            h('div', {innerHTML: 'a'}),
+            h('div'),
             '<div></div>'
         );
     });
@@ -317,6 +353,27 @@ describe('Patch', () => {
             '<div></div>'
         );
         assert.strictEqual(container.firstChild.p, undefined);
+    });
+
+    it('patch input', () => {
+        p(
+            h('input', {value: 'a'}),
+            h('input', {value: null}),
+        );
+        assert.strictEqual(container.firstChild.value, '');
+
+        // ie8 does not support change type for input
+        if (isIE8) return;
+        eql(
+            h('input', {type: 'text'}),
+            h('input', {type: 'password'}),
+            '<input type="password">'
+        );
+        eql(
+            h('input', {type: 'password'}),
+            h('input'),
+            '<input>'
+        );
     });
 
     it('patch select', () => {
@@ -572,6 +629,8 @@ describe('Patch', () => {
     });
 
     it('patch single select element', () => {
+        // safari can not set value to empty
+        if (browser.isSafari) return;
         eql(
             h('select', {value: ''}, [
                 h('option', {value: 1}, '1'),
@@ -698,7 +757,7 @@ describe('Patch', () => {
                 h('div', {'ev-click': fn}, 'test'),
                 h('div', {'ev-click': newFn}, 'test')
             );
-            container.firstChild.click();
+            dispatchEvent(container.firstChild, 'click');
             sEql(fn.callCount, 0);
             sEql(newFn.callCount, 1);
         });
@@ -709,7 +768,7 @@ describe('Patch', () => {
                 h('div', {'ev-click': fn}),
                 h('div')
             );
-            container.firstChild.click();
+            dispatchEvent(container.firstChild, 'click');
             sEql(fn.callCount, 0);
         });
 
@@ -719,7 +778,7 @@ describe('Patch', () => {
                 h('div'),
                 h('div', {'ev-click': fn})
             );
-            container.firstChild.click();
+            dispatchEvent(container.firstChild, 'click');
             sEql(fn.callCount, 1);
         });
 
@@ -730,7 +789,7 @@ describe('Patch', () => {
                 h('div', null, h('div', {'ev-click': fn})),
                 h('div', null, h('div', {'ev-click': newFn}))
             );
-            container.firstChild.firstChild.click();
+            dispatchEvent(container.firstChild.firstChild, 'click');
             sEql(fn.callCount, 0);
             sEql(newFn.callCount, 1);
         });
@@ -1128,6 +1187,8 @@ describe('Patch', () => {
     });
 
     describe('SVG', () => {
+        if (isIE8) return;
+
         it('patch svg', () => {
             p(
                 h('svg', null, h('circle', {cx: 50, cy: 50, r: 50, fill: 'red'})),

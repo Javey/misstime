@@ -1,7 +1,7 @@
 import {h, hc, render} from '../src';
 import assert from 'assert';
-import {innerHTML, eqlHtml, dispatchEvent} from './utils';
-import {MountedQueue, svgNS} from '../src/utils';
+import {innerHTML, eqlHtml, dispatchEvent, isIE8} from './utils';
+import {MountedQueue, svgNS, browser} from '../src/utils';
 
 class ClassComponent {
     constructor(props) {
@@ -372,7 +372,31 @@ describe('Render', () => {
         assert.strictEqual(o.i === i, true);
     });
 
+    it('render input', () => {
+        r(h('input', {value: 0}));
+        assert.strictEqual(container.firstChild.value, '0');
+
+        r(h('input', {value: true}));
+        assert.strictEqual(container.firstChild.value, 'true');
+
+        r(h('input', {value: false}));
+        assert.strictEqual(container.firstChild.value, 'false');
+
+        r(h('input', {value: ''}));
+        assert.strictEqual(container.firstChild.value, '');
+
+        r(h('input', {value: '1'}));
+        assert.strictEqual(container.firstChild.value, '1');
+
+        r(h('input', {value: undefined}));
+        assert.strictEqual(container.firstChild.value, '');
+
+        r(h('input', {value: null}));
+        assert.strictEqual(container.firstChild.value, '');
+    });
+
     it('render single select element', () => {
+        if (browser.isSafari) return;
         eql(
             h('select', {value: ''}, [
                 h('option', {value: 1}, '1'),
@@ -473,21 +497,21 @@ describe('Render', () => {
         it('attach event listener', () => {
             const fn = sinon.spy();
             r(h('div', {'ev-click': fn}));
-            container.firstChild.click();
+            dispatchEvent(container.firstChild, 'click');
             assert.strictEqual(fn.callCount, 1);
             assert.strictEqual(fn.args[0].length, 1);
             assert.strictEqual(fn.args[0][0].type, 'click');
             assert.strictEqual(fn.args[0][0].target, container.firstChild);
             assert.strictEqual(fn.args[0][0].currentTarget, container.firstChild);
 
-            container.firstChild.click();
+            dispatchEvent(container.firstChild, 'click');
             assert.strictEqual(fn.callCount, 2);
         });
 
         it('trigger event on child node', () => {
             const fn = sinon.spy();
             r(h('div', {'ev-click': fn}, h('div')));
-            container.firstChild.firstChild.click();
+            dispatchEvent(container.firstChild.firstChild, 'click');
             assert.strictEqual(fn.callCount, 1);
             assert.strictEqual(fn.args[0][0].target, container.firstChild.firstChild);
             assert.strictEqual(fn.args[0][0].currentTarget, container.firstChild);
@@ -498,7 +522,7 @@ describe('Render', () => {
             const fn1 = sinon.spy((e) => currentTargets.push(e.currentTarget));
             const fn2 = sinon.spy((e) => currentTargets.push(e.currentTarget));
             r(h('p', {'ev-click': fn2}, h('span', {'ev-click': fn1})));
-            container.firstChild.firstChild.click();
+            dispatchEvent(container.firstChild.firstChild, 'click');
             assert.strictEqual(fn1.callCount, 1);
             assert.strictEqual(fn2.callCount, 1);
             assert.strictEqual(fn2.calledAfter(fn1), true);
@@ -512,7 +536,7 @@ describe('Render', () => {
             const fn1 = sinon.spy((e) => e.stopPropagation());
             const fn2 = sinon.spy();
             r(h('p', {'ev-click': fn2}, h('span', {'ev-click': fn1}, 'span')));
-            container.firstChild.firstChild.click();
+            dispatchEvent(container.firstChild.firstChild, 'click');
             assert.strictEqual(fn1.callCount, 1);
             assert.strictEqual(fn2.callCount, 0);
         });
@@ -521,7 +545,7 @@ describe('Render', () => {
             const url = location.href;
             const fn = sinon.spy((e) => e.preventDefault());
             r(h('a', {'ev-click': fn, href: "https://www.baidu.com"}, 'test'));
-            container.firstChild.click();
+            dispatchEvent(container.firstChild, 'click');
             assert.strictEqual(location.href, url);
         });
 
@@ -610,6 +634,8 @@ describe('Render', () => {
     });
 
     describe('SVG', () => {
+        if (isIE8) return;
+
         it('render svg', () => {
             const vNode = h('svg', null, h('circle', {
                 cx: 100,
@@ -644,6 +670,7 @@ describe('Render', () => {
         });
 
         it('svg set event', (done) => {
+            if (!browser.isChrome) return done();
             const vNode = h('svg', null, h('circle', {
                 cx: 100,
                 cy: 50,

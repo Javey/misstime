@@ -1,8 +1,11 @@
 import {Types, EMPTY_OBJ} from './vnode';
-import {createElement, createRef,
-    createTextElement, createCommentElement
+import {
+    createElement, createRef,
+    createTextElement, createCommentElement,
+    render
 } from './vdom';
-import {isNullOrUndefined, setTextContent,
+import {
+    isNullOrUndefined, setTextContent,
     isStringOrNumber, isArray, MountedQueue
 } from './utils';
 import {patchProp} from './vpatch';
@@ -11,13 +14,16 @@ import {processForm} from './wrappers/process';
 export function hydrateRoot(vNode, parentDom, mountedQueue) {
     if (!isNullOrUndefined(parentDom)) {
         let dom = parentDom.firstChild;
+        if (isNullOrUndefined(dom)) {
+            return render(vNode, parentDom, mountedQueue, null, false);
+        }
         let newDom = hydrate(vNode, dom, mountedQueue, parentDom, null, false);
-        dom = parentDom.firstChild;
-        if (dom !== null) {
-            // should only one entry
-            while (dom = dom.nextSibling) {
-                parentDom.removeChild(dom);
-            }
+        dom = dom.nextSibling;
+        // should only one entry
+        while (dom) {
+            let next = dom.nextSibling;
+            parentDom.removeChild(dom);
+            dom = next;
         }
         return newDom;
     }
@@ -63,10 +69,12 @@ function hydrateComponentClassOrInstance(vNode, dom, mountedQueue, parentDom, pa
     instance.isRender = true;
     instance.parentVNode = parentVNode;
     instance.isSVG = isSVG;
+    instance.vNode = vNode;
     let newDom = instance.hydrate(vNode, dom);
 
     vNode.dom = newDom;
     vNode.children = instance;
+    vNode.parentVNode = parentVNode;
 
     if (typeof instance.mount === 'function') {
         mountedQueue.push(() => instance.mount(null, vNode));
