@@ -2136,3 +2136,4 @@ exports.MountedQueue = MountedQueue;
 exports.renderString = toString$1;
 exports.hydrateRoot = hydrateRoot;
 exports.hydrate = hydrate;
+exports.Types = Types;
