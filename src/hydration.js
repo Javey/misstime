@@ -209,17 +209,18 @@ function hydrateChildren(children, parentDom, mountedQueue, parentVNode, isSVG) 
     } else {
         if (dom !== null) {
             hydrateElement(children, dom, mountedQueue, parentDom, parentVNode, isSVG);
+            dom = dom.nextSibling;
         } else {
             createElement(children, parentDom, mountedQueue, true, parentVNode, isSVG);
         }
     }
 
     // clear any other DOM nodes, there should be on a single entry for the root
-    // while (dom) {
-        // const nextSibling = dom.nextSibling;
-        // parentDom.removeChild(dom);
-        // dom = nextSibling;
-    // }
+    while (dom) {
+        const nextSibling = dom.nextSibling;
+        parentDom.removeChild(dom);
+        dom = nextSibling;
+    }
 }
 
 function normalizeChildren(parentDom) {
