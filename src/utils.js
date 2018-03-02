@@ -100,6 +100,7 @@ export const skipProps = {
     checked: true,
     multiple: true,
     defaultValue: true,
+    'v-model': true,
 };
 
 export function isSkipProp(prop) {

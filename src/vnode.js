@@ -136,7 +136,7 @@ function normalizeChildren(vNodes, isAddKey) {
 function applyKey(vNode, reference, isAddKey) {
     if (!isAddKey) return vNode;
     // start with '.' means the vNode has been set key by index
-    // we will reset the key when it coomes back again
+    // we will reset the key when it comes back again
     if (isNullOrUndefined(vNode.key) || vNode.key[0] === '.') {
         vNode.key = `.$${reference.index++}`;
     } 
