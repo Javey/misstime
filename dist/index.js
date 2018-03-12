@@ -1,4 +1,8 @@
-'use strict';
+(function (global, factory) {
+	typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
+	typeof define === 'function' && define.amd ? define(['exports'], factory) :
+	(factory((global.misstime = global.misstime || {})));
+}(this, (function (exports) { 'use strict';
 
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) {
   return typeof obj;
@@ -107,7 +111,8 @@ var skipProps = {
     className: true,
     checked: true,
     multiple: true,
-    defaultValue: true
+    defaultValue: true,
+    'v-model': true
 };
 
 function isSkipProp(prop) {
@@ -350,7 +355,7 @@ function normalizeChildren(vNodes, isAddKey) {
 function applyKey(vNode, reference, isAddKey) {
     if (!isAddKey) return vNode;
     // start with '.' means the vNode has been set key by index
-    // we will reset the key when it coomes back again
+    // we will reset the key when it comes back again
     if (isNullOrUndefined(vNode.key) || vNode.key[0] === '.') {
         vNode.key = '.$' + reference.index++;
     }
@@ -2138,3 +2143,5 @@ exports.renderString = toString$1;
 exports.hydrateRoot = hydrateRoot;
 exports.hydrate = hydrate;
 exports.Types = Types;
+
+})));

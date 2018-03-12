@@ -4,7 +4,8 @@ const replace = require('rollup-plugin-replace');
 module.exports = {
     entry: 'src/index.js',
     dest: 'dist/index.js',
-    format: 'cjs',
+    format: 'umd',
+    moduleName: 'misstime',
     legacy: true,
     external: ['min-document'],
     plugins: [
