@@ -14,12 +14,12 @@ const customLaunchers = {
         platform: 'Windows 7',
         // version: '53'
     },
-    sl_opera: {
-        base: 'SauceLabs',
-        browserName: 'opera',
-        platform: 'Windows 7',
-        // version: '12'
-    },
+    // sl_opera: {
+        // base: 'SauceLabs',
+        // browserName: 'opera',
+        // platform: 'Windows 7',
+        // // version: '12'
+    // },
     sl_safari: {
         base: 'SauceLabs',
         browserName: 'safari',
