@@ -25,7 +25,31 @@ const customLaunchers = {
         browserName: 'safari',
         platform: 'macOS 10.12',
         version: '10'
-    }
+    },
+    sl_ios_safari_9: {
+        base: 'SauceLabs',
+        browserName: 'iphone',
+        version: '10.3'
+    },
+    'SL_ANDROID4.4': {
+        base: 'SauceLabs',
+        browserName: 'android',
+        platform: 'Linux',
+        version: '4.4'
+    },
+    SL_ANDROID5: {
+        base: 'SauceLabs',
+        browserName: 'android',
+        platform: 'Linux',
+        version: '5.1'
+    },
+    SL_ANDROID6: {
+        base: 'SauceLabs',
+        browserName: 'Chrome',
+        platform: 'Android',
+        version: '6.0',
+        device: 'Android Emulator'
+    },
 };
 
 [8, 9, 10, 11, 13, 14].forEach(v => {
