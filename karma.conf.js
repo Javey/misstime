@@ -50,6 +50,7 @@ module.exports = function(config) {
                 reporter: 'html'
             }
         },
+        concurrency: 2,
         singleRun: true
     });
 };
