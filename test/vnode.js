@@ -15,9 +15,12 @@ describe('VNode', () => {
             vNodes,
             h('i')
         ]);
-        ['.$0', 'a', 'b', '.$1', '.$2'].forEach((item, index) => {
+        const arr = ['.$0', 'a', 'b', '.$1', '.$2'];
+        for (let i = 0; i < arr.length; i++) {
+            const item = arr[i];
+            const index = i;
             assert.strictEqual(vNode2.children[index].key === item, true);
-        });
+        }
     });
 
     it('normalize children for FunctionComponent', () => {
@@ -32,9 +35,10 @@ describe('VNode', () => {
         ];
         function Component(props) {
             assert.strictEqual(props.children.length, 5);
-            props.children.forEach(item => {
+            for (let i = 0; i < props.children.length; i++) {
+                const item = props.children[i];
                 assert.strictEqual(item instanceof VNode, true);
-            });
+            }
         }
 
         h(Component, {children: vNodes});

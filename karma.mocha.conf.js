@@ -6,19 +6,19 @@ const customLaunchers = {
         base: 'SauceLabs',
         browserName: 'chrome',
         platform: 'Windows 7',
-        version: '58'
+        // version: '58'
     },
     sl_firefox: {
         base: 'SauceLabs',
         browserName: 'firefox',
         platform: 'Windows 7',
-        version: '53'
+        // version: '53'
     },
     sl_opera: {
         base: 'SauceLabs',
         browserName: 'opera',
         platform: 'Windows 7',
-        version: '12'
+        // version: '12'
     },
     sl_safari: {
         base: 'SauceLabs',

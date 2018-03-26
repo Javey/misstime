@@ -296,12 +296,18 @@ describe('Patch', () => {
         eql(
             h('div', {innerHTML: 'a'}),
             h('div', {innerHTML: undefined}),
-            '<div></div>'
+            [
+                '<div></div>',
+                '<div>&nbsp;</div>',
+            ]
         );
         eql(
             h('div', {innerHTML: 'a'}),
             h('div'),
-            '<div></div>'
+            [
+                '<div></div>',
+                '<div>&nbsp;</div>'
+            ]
         );
     });
 
@@ -672,8 +678,11 @@ describe('Patch', () => {
                 h('option', {value: 1}, '1'),
                 h('option', {value: 2}, '2')
             ]),
-            '<select><option value="1">1</option><option value="2">2</option></select>',
-            '<select><option selected value="1" _value="1">1</option><option value="2" _value="2">2</option></select>'
+            [
+                '<select><option value="1">1</option><option value="2">2</option></select>',
+                '<select><option selected value="1" _value="1">1</option><option value="2" _value="2">2</option></select>',
+                '<select><option value="1" selected _value="1">1</option><option value="2" _value="2">2</option></select>',
+            ]
         );
         assert.strictEqual(container.firstChild.value, '1');
         assert.strictEqual(container.firstChild.firstChild.selected, true);

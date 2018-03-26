@@ -1,7 +1,7 @@
 import {h, hc, render} from '../src';
 import assert from 'assert';
 import {innerHTML, eqlHtml, dispatchEvent, isIE8} from './utils';
-import {MountedQueue, svgNS, browser} from '../src/utils';
+import {MountedQueue, svgNS, browser, indexOf} from '../src/utils';
 
 class ClassComponent {
     constructor(props) {
@@ -82,16 +82,22 @@ describe('Render', () => {
         const style = 'color: red; font-size: 20px';
         r(h('div', {style: 'color: red; font-size: 20px'}));
         assert.strictEqual(
-            container.firstChild.getAttribute('style')
-                .toLowerCase().substr(0, style.length),
-            style
+            indexOf(
+                [style, 'font-size: 20px; color: red'],
+                container.firstChild.getAttribute('style')
+                    .toLowerCase().substr(0, style.length)
+            ) > -1,
+            true
         );
 
         r(h('div', {style: {color: 'red', fontSize: '20px'}}));
         assert.strictEqual(
-            container.firstChild.getAttribute('style')
-                .toLowerCase().substr(0, style.length),
-            style
+            indexOf(
+                [style, 'font-size: 20px; color: red'],
+                container.firstChild.getAttribute('style')
+                    .toLowerCase().substr(0, style.length)
+            ) > -1,
+            true
         );
     });
 
@@ -414,8 +420,11 @@ describe('Render', () => {
                 h('option', {value: 1}, '1'),
                 h('option', {value: 2}, '2')
             ]),
-            '<select><option value="1">1</option><option value="2">2</option></select>',
-            '<select><option value="1" _value="1">1</option><option selected value="2" _value="2">2</option></select>'
+            [
+                '<select><option value="1">1</option><option value="2">2</option></select>',
+                '<select><option value="1" _value="1">1</option><option selected value="2" _value="2">2</option></select>',
+                '<select><option value="1" _value="1">1</option><option value="2" selected _value="2">2</option></select>',
+            ]
         );
         assert.strictEqual(container.firstChild.value, '2');
         assert.strictEqual(container.firstChild.firstChild.selected, false);
@@ -426,8 +435,11 @@ describe('Render', () => {
                 h('option', {value: 1}, '1'),
                 h('option', {value: 2}, '2')
             ]),
-            '<select><option value="1">1</option><option value="2">2</option></select>',
-            '<select><option value="1" _value="1">1</option><option selected value="2" _value="2">2</option></select>'
+            [
+                '<select><option value="1">1</option><option value="2">2</option></select>',
+                '<select><option value="1" _value="1">1</option><option selected value="2" _value="2">2</option></select>',
+                '<select><option value="1" _value="1">1</option><option value="2" selected _value="2">2</option></select>'
+            ]
         );
         assert.strictEqual(container.firstChild.value, '2');
         assert.strictEqual(container.firstChild.firstChild.selected, false);
