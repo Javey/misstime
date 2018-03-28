@@ -1,4 +1,5 @@
 import {h, hc, render, patch, remove} from '../src';
+import {createTextVNode} from '../src/vnode';
 import {removeComponentClassOrInstance} from '../src/vdom';
 import assert from 'assert';
 import {eqlHtml, isIE8, dispatchEvent} from './utils';
@@ -759,11 +760,17 @@ describe('Patch', () => {
     });
 
     it('patch vNodes which has hoisted', () => {
-        const vNodes = [h('div', null, 1), h('div', null, 2), h(ClassComponent, {children: '3'})];
+        const vNodes = [
+            h('div', null, 1), 
+            h('div', null, 2), 
+            h(ClassComponent, {children: '3'}),
+            'test',
+            createTextVNode('text')
+        ];
         eql(
             h('div', null, ['a', vNodes, 'b']),
             h('div', null, ['a', h('div', null, 0), vNodes, 'b']),
-            '<div>a<div>0</div><div>1</div><div>2</div><span>3</span>b</div>'
+            '<div>a<div>0</div><div>1</div><div>2</div><span>3</span>testtextb</div>'
         );
     });
 

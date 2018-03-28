@@ -248,7 +248,7 @@ function directClone(vNode) {
             vNode.key, vNode.ref
         );
     } else if (type & Types.TextElement) {
-        newVNode = createTextElement(vNode.children);
+        newVNode = createTextVNode(vNode.children);
     }
 
     return newVNode;
