@@ -224,7 +224,7 @@ function directClone(vNode) {
                     }
                     newProps.children = tmpArray;
                 }
-            } else if (child.type) {
+            } else if (newChildren.type) {
                 newProps.children = directClone(newChildren);
             }
         }

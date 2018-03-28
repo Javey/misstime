@@ -434,16 +434,16 @@ function directClone(vNode) {
                     var tmpArray = [];
 
                     for (var i = 0; i < len; i++) {
-                        var _child = newChildren[i];
-                        if (isStringOrNumber(_child)) {
-                            tmpArray.push(_child);
-                        } else if (!isInvalid(_child) && _child.type) {
-                            tmpArray.push(directClone(_child));
+                        var child = newChildren[i];
+                        if (isStringOrNumber(child)) {
+                            tmpArray.push(child);
+                        } else if (!isInvalid(child) && child.type) {
+                            tmpArray.push(directClone(child));
                         }
                     }
                     newProps.children = tmpArray;
                 }
-            } else if (child.type) {
+            } else if (newChildren.type) {
                 newProps.children = directClone(newChildren);
             }
         }

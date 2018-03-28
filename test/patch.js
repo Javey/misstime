@@ -759,11 +759,11 @@ describe('Patch', () => {
     });
 
     it('patch vNodes which has hoisted', () => {
-        const vNodes = [h('div', null, 1), h('div', null, 2)];
+        const vNodes = [h('div', null, 1), h('div', null, 2), h(ClassComponent, {children: '3'})];
         eql(
             h('div', null, ['a', vNodes, 'b']),
             h('div', null, ['a', h('div', null, 0), vNodes, 'b']),
-            '<div>a<div>0</div><div>1</div><div>2</div>b</div>'
+            '<div>a<div>0</div><div>1</div><div>2</div><span>3</span>b</div>'
         );
     });
 
