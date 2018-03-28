@@ -770,7 +770,10 @@ describe('Patch', () => {
         eql(
             h('div', null, ['a', vNodes, 'b']),
             h('div', null, ['a', h('div', null, 0), vNodes, 'b']),
-            '<div>a<div>0</div><div>1</div><div>2</div><span>3</span>testtextb</div>'
+            [
+                '<div>a<div>0</div><div>1</div><div>2</div><span>3</span>testtextb</div>',
+                '<div>a\r\n<div>0</div>\r\n<div>1</div>\r\n<div>2</div><span>3</span>testtextb</div>',
+            ]
         );
     });
 
