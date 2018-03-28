@@ -24,6 +24,7 @@ module.exports = function(config) {
                     }
                 ]
             },
+            devtool: '#inline-source-map',
             plugins: [
                 new webpack.DefinePlugin({
                     'process.env': {

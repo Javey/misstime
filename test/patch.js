@@ -758,6 +758,15 @@ describe('Patch', () => {
         assert.strictEqual(container.firstChild.children[1].selected, false);
     });
 
+    it('patch vNodes which has hoisted', () => {
+        const vNodes = [h('div', null, 1), h('div', null, 2)];
+        eql(
+            h('div', null, ['a', vNodes, 'b']),
+            h('div', null, ['a', h('div', null, 0), vNodes, 'b']),
+            '<div>a<div>0</div><div>1</div><div>2</div>b</div>'
+        );
+    });
+
     describe('Event', () => {
         it('patch event', () => {
             const fn = sinon.spy();

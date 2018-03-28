@@ -1,6 +1,6 @@
 import {
     isArray, isStringOrNumber, isNullOrUndefined, 
-    isComponentInstance, browser
+    isComponentInstance, browser, isInvalid
 } from './utils';
 
 export const Types = {
@@ -89,7 +89,7 @@ export function createVNode(tag, props, children, className, key, ref) {
             }
             return tag(props);
         }
-    } else {
+    } else if (!isNullOrUndefined(children)) {
         children = normalizeChildren(children, true);
     }
 
@@ -129,6 +129,8 @@ function normalizeChildren(vNodes, isAddKey) {
         return childNodes.length ? childNodes : null;
     } else if (isComponentInstance(vNodes)) {
         return createComponentInstanceVNode(vNodes);
+    } else if (vNodes.type && !isNullOrUndefined(vNodes.dom)) {
+        return directClone(vNodes);
     }
     return vNodes;
 }
@@ -170,8 +172,84 @@ function addChild(vNodes, reference, isAddKey) {
             if (!newVNodes) {
                 newVNodes = vNodes.slice(0, i);
             }
-            newVNodes.push(applyKey(n, reference, isAddKey));
+            if (n.dom || (n.key && n.key[0] === '.')) {
+                newVNodes.push(applyKey(directClone(n), reference, isAddKey));
+            } else {
+                newVNodes.push(applyKey(n, reference, isAddKey));
+            }
         }
     }
     return newVNodes || vNodes;
+}
+
+function directClone(vNode) {
+    let newVNode;
+    const type = vNode.type;
+
+    if (type & Types.ComponentClassOrInstance) {
+        let props;
+        const propsToClone = vNode.props;
+        
+        if (propsToClone === EMPTY_OBJ || isNullOrUndefined(propsToClone)) {
+            props = EMPTY_OBJ;
+        } else {
+            props = {};
+            for (let key in propsToClone) {
+                props[key] = propsToClone[key];
+            }
+        }
+
+        newVNode = new VNode(
+            type, vNode.tag, props, 
+            vNode.children, null, 
+            vNode.key, vNode.ref
+        );
+
+        const newProps = newVNode.props;
+        const newChildren = newProps.children;
+
+        if (newChildren) {
+            if (isArray(newChildren)) {
+                const len = newChildren.length;
+                if (len > 0) {
+                    const tmpArray = [];
+
+                    for (let i = 0; i < len; i++) {
+                        const child = newChildren[i];
+                        if (isStringOrNumber(child)) {
+                            tmpArray.push(child);
+                        } else if (!isInvalid(child) && child.type) {
+                            tmpArray.push(directClone(child));
+                        }
+                    }
+                    newProps.children = tmpArray;
+                }
+            } else if (child.type) {
+                newProps.children = directClone(newChildren);
+            }
+        }
+    } else if (type & Types.Element) {
+        const children = vNode.children;
+        let props;
+        const propsToClone = vNode.props;
+
+        if (propsToClone === EMPTY_OBJ || isNullOrUndefined(propsToClone)) {
+            props = EMPTY_OBJ;
+        } else {
+            props = {};
+            for (let key in propsToClone) {
+                props[key] = propsToClone[key];
+            }
+        }
+
+        newVNode = new VNode(
+            type, vNode.tag, vNode.props,
+            children, vNode.className,
+            vNode.key, vNode.ref
+        );
+    } else if (type & Types.TextElement) {
+        newVNode = createTextElement(vNode.children);
+    }
+
+    return newVNode;
 }

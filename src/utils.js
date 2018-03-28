@@ -27,6 +27,10 @@ export function isEventProp(propName) {
     return propName.substr(0, 3) === 'ev-';
 }
 
+export function isInvalid(o) {
+    return isNullOrUndefined(o) || o === false || o === true;
+}
+
 export const indexOf = (function() {
     if (Array.prototype.indexOf) {
         return function(arr, value) {
