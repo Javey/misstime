@@ -1801,8 +1801,8 @@ function toString$1(vNode, parent, disableSplitText, firstChild) {
                 } else if (prop === 'children' || prop === 'className' || prop === 'key' || prop === 'ref') {
                     // ignore
                 } else if (prop === 'defaultValue') {
-                    if (isNullOrUndefined(props.value)) {
-                        html += ' value="' + escapeText(value) + '"';
+                    if (isNullOrUndefined(props.value) && !isNullOrUndefined(value)) {
+                        html += ' value="' + (isString(value) ? escapeText(value) : value) + '"';
                     }
                 } else if (prop === 'defaultChecked') {
                     if (isNullOrUndefined(props.checked) && value === true) {

@@ -38,8 +38,8 @@ export function toString(vNode, parent, disableSplitText, firstChild) {
                 ) {
                     // ignore
                 } else if (prop === 'defaultValue') {
-                    if (isNullOrUndefined(props.value)) {
-                        html += ` value="${escapeText(value)}"`;
+                    if (isNullOrUndefined(props.value) && !isNullOrUndefined(value)) {
+                        html += ` value="${isString(value) ? escapeText(value) : value}"`;
                     }
                 } else if (prop === 'defaultChecked') {
                     if (isNullOrUndefined(props.checked) && value === true) {
