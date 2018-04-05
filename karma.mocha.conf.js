@@ -31,12 +31,12 @@ const customLaunchers = {
         browserName: 'iphone',
         version: '10.3'
     },
-    'SL_ANDROID4.4': {
-        base: 'SauceLabs',
-        browserName: 'android',
-        platform: 'Linux',
-        version: '4.4'
-    },
+    // 'SL_ANDROID4.4': {
+        // base: 'SauceLabs',
+        // browserName: 'android',
+        // platform: 'Linux',
+        // version: '4.4'
+    // },
     SL_ANDROID5: {
         base: 'SauceLabs',
         browserName: 'android',

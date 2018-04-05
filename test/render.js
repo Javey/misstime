@@ -463,6 +463,7 @@ describe('Render', () => {
                 h('option', {value: 2}, '2')
             ])
         );
+        // FIXME: it can not select the second value in android 4.4 
         assert.strictEqual(container.firstChild.value, '2');
         assert.strictEqual(container.firstChild.firstChild.selected, false);
         assert.strictEqual(container.firstChild.children[1].selected, true);
