@@ -19,9 +19,9 @@
     "karma:test": "karma start karma.server.conf.js",
     "release": "npm run release-patch",
     "prelease": "npm version prerelease && git push --tags --force && npm publish",
-    "release-patch": "git checkout master && npm version patch && git push origin master --tags && npm publish",
-    "release-minor": "git checkout master && npm version minor && git push origin master --tags && npm publish",
-    "release-major": "git checkout master && npm version major && git push origin master --tags && npm publish"
+    "release-patch": "git checkout master && git push && npm version patch && git push --all && npm publish",
+    "release-minor": "git checkout master && git push && npm version minor && git push --all && npm publish",
+    "release-major": "git checkout master && git push && npm version major && git push --all && npm publish"
   },
   "author": "javey",
   "license": "MIT",
