@@ -18,7 +18,7 @@
     "karma:benchmark": "karma start karma.benchmark.conf.js",
     "karma:test": "karma start karma.server.conf.js",
     "release": "npm run release-patch",
-    "prelease": "npm version prerelease && git push --tags --force && npm publish",
+    "prelease": "npm version prerelease && git push --tags --force && git push && npm publish",
     "release-patch": "git checkout master && git push && npm version patch && git push --tags && git push && npm publish",
     "release-minor": "git checkout master && git push && npm version minor && git push --tags && git push && npm publish",
     "release-major": "git checkout master && git push && npm version major && git push --tags && git push && npm publish"
