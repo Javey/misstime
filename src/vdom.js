@@ -248,7 +248,7 @@ export function removeHtmlElement(vNode, parentDom) {
     for (let name in props) {
         const prop = props[name];
         if (!isNullOrUndefined(prop) && isEventProp(name)) {
-            handleEvent(name.substr(0, 3), prop, null, dom);
+            handleEvent(name.substr(3), prop, null, dom);
         }
     }
 

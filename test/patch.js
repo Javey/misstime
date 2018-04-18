@@ -791,12 +791,21 @@ describe('Patch', () => {
         });
         
         it('remove event', () => {
-            const fn = sinon.spy();
+            const fn = sinon.spy(() => console.log(111));
             p(
-                h('div', {'ev-click': fn}),
-                h('div')
+                h('div', {'ev-click': fn}, 'test'),
+                h('div', null, 'test')
             );
             dispatchEvent(container.firstChild, 'click');
+            sEql(fn.callCount, 0);
+
+            const vNode1 = h('div', null, [h('div', {'ev-click': fn}, 'test')]);
+            const vNode2 = h('span');
+            r(vNode1);
+            const firstDom = container.firstChild;
+            patch(vNode1, vNode2);
+            container.appendChild(firstDom);
+            dispatchEvent(firstDom.firstChild, 'click');
             sEql(fn.callCount, 0);
         });
 

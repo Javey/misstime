@@ -132,7 +132,7 @@ export function handleEvent(name, lastEvent, nextEvent, dom) {
             if (items.delete(dom)) {
                 if (items.size === 0) {
                     removeEventListener(document, name, delegatedRoots.docEvent);
-                    delete delegatedRoots[name];
+                    delete delegatedEvents[name];
                 }
             }
         }
