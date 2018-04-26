@@ -116,12 +116,17 @@ function patchElement(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode
             }
         }
 
+        const lastRef = lastVNode.ref;
         const nextRef = nextVNode.ref;
-        if (!isNullOrUndefined(nextRef) && lastVNode.ref !== nextRef) {
-            createRef(dom, nextRef, mountedQueue);
+        if (lastRef !== nextRef) {
+            if (!isNullOrUndefined(lastRef)) {
+                lastRef(null);
+            }
+            if (!isNullOrUndefined(nextRef)) {
+                createRef(dom, nextRef, mountedQueue);
+            }
         }
     }
-
 }
 
 function patchComponentClass(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG) {
@@ -152,9 +157,15 @@ function patchComponentClass(lastVNode, nextVNode, parentDom, mountedQueue, pare
         // for intact.js, the dom will not be removed and
         // the component will not be destoryed, so the ref
         // function need be called in update method.
-        const ref = nextVNode.ref;
-        if (typeof ref === 'function') {
-            ref(instance);
+        const lastRef = lastVNode.ref;
+        const nextRef = nextVNode.ref;
+        if (lastRef !== nextRef) {
+            if (!isNullOrUndefined(lastRef)) {
+                lastRef(null);
+            }
+            if (!isNullOrUndefined(nextRef)) {
+                nextRef(instance);
+            }
         }
     }
 

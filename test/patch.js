@@ -457,7 +457,8 @@ describe('Patch', () => {
             h('div', {ref: (dom) => a.newDom = dom}),
             '<div></div>'
         );
-        assert.strictEqual(a.dom, a.newDom);
+        assert.strictEqual(a.dom, null);
+        assert.strictEqual(a.newDom, container.firstChild);
 
         eql(
             h('div', {ref: (dom) => a.dom = dom}),
@@ -466,6 +467,13 @@ describe('Patch', () => {
         );
         assert.strictEqual(a.dom, null);
         assert.strictEqual(a.newDom, container.firstChild);
+
+        eql(
+            h('div', {ref: (dom) => a.dom = dom}),
+            h('div'),
+            '<div></div>'
+        );
+        assert.strictEqual(a.dom, null);
     });
 
     it('patch class component with element', () => {
