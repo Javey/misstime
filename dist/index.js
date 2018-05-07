@@ -365,6 +365,9 @@ function applyKey(vNode, reference, isAddKey) {
     if (isNullOrUndefined(vNode.key) || vNode.key[0] === '.') {
         vNode.key = '.$' + reference.index++;
     }
+    // add a flag to indicate that we have handle the vNode
+    // when it came back we should clone it
+    vNode.$ = true;
     return vNode;
 }
 
@@ -395,7 +398,7 @@ function addChild(vNodes, reference, isAddKey) {
             if (!newVNodes) {
                 newVNodes = vNodes.slice(0, i);
             }
-            if (n.dom || n.key && n.key[0] === '.') {
+            if (n.dom || n.$) {
                 newVNodes.push(applyKey(directClone(n), reference, isAddKey));
             } else {
                 newVNodes.push(applyKey(n, reference, isAddKey));
@@ -1155,9 +1158,15 @@ function patchElement(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode
             }
         }
 
+        var lastRef = lastVNode.ref;
         var nextRef = nextVNode.ref;
-        if (!isNullOrUndefined(nextRef) && lastVNode.ref !== nextRef) {
-            createRef(dom, nextRef, mountedQueue);
+        if (lastRef !== nextRef) {
+            if (!isNullOrUndefined(lastRef)) {
+                lastRef(null);
+            }
+            if (!isNullOrUndefined(nextRef)) {
+                createRef(dom, nextRef, mountedQueue);
+            }
         }
     }
 }
@@ -1190,9 +1199,15 @@ function patchComponentClass(lastVNode, nextVNode, parentDom, mountedQueue, pare
         // for intact.js, the dom will not be removed and
         // the component will not be destoryed, so the ref
         // function need be called in update method.
-        var ref = nextVNode.ref;
-        if (typeof ref === 'function') {
-            ref(instance);
+        var lastRef = lastVNode.ref;
+        var nextRef = nextVNode.ref;
+        if (lastRef !== nextRef) {
+            if (!isNullOrUndefined(lastRef)) {
+                lastRef(null);
+            }
+            if (!isNullOrUndefined(nextRef)) {
+                nextRef(instance);
+            }
         }
     }
 
