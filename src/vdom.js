@@ -332,7 +332,9 @@ export function appendChild(parentDom, dom) {
 
 export function createRef(dom, ref, mountedQueue) {
     if (typeof ref === 'function') {
-        mountedQueue.push(() => ref(dom));
+        // mountedQueue.push(() => ref(dom));
+        // set ref immediately, because we have unset it before
+        ref(dom);
     } else {
         throw new Error(`ref must be a function, but got "${JSON.stringify(ref)}"`);
     }
