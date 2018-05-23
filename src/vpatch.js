@@ -48,7 +48,7 @@ export function patchVNode(lastVNode, nextVNode, parentDom, mountedQueue, parent
                 replaceElement(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG);
             }
         } else if (nextType & Types.TextElement) {
-            if (lastType & Types.TextElement) {
+            if (lastType === nextType) {
                 patchText(lastVNode, nextVNode);
             } else {
                 replaceElement(lastVNode, nextVNode, parentDom, mountedQueue, isSVG);

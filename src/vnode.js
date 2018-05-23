@@ -250,8 +250,10 @@ function directClone(vNode) {
             children, vNode.className,
             vNode.key, vNode.ref
         );
-    } else if (type & Types.TextElement) {
+    } else if (type & Types.Text) {
         newVNode = createTextVNode(vNode.children);
+    } else if (type & Types.HtmlComment) {
+        newVNode = createCommentVNode(vNode.children);
     }
 
     return newVNode;

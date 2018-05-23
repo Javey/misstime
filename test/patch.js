@@ -171,6 +171,14 @@ describe('Patch', () => {
         );
     });
 
+    it('patch comment with text', () => {
+        eql(
+            h('div', null, ['a', hc('b')]),
+            h('div', null, [hc('b'), 'a']),
+            '<div><!--b-->a</div>'
+        );
+    });
+
     it('patch properties', () => {
         eql(
             h('div', {className: 'a'}),
