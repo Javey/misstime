@@ -305,7 +305,11 @@ export function replaceChild(parentDom, lastVNode, nextVNode) {
     if (lastDom._unmount) {
         lastDom._unmount(lastVNode, parentDom);
         if (!nextDom.parentNode) {
-            parentDom.appendChild(nextDom);
+            if (parentDom.lastChild === lastDom) {
+                parentDom.appendChild(nextDom);
+            } else {
+                parentDom.insertBefore(nextDom, lastDom.nextSibling);
+            }
         }
     } else {
         parentDom.replaceChild(nextDom, lastDom);
