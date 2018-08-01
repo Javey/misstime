@@ -38,7 +38,7 @@ export function createElement(vNode, parentDom, mountedQueue, isRender, parentVN
     } else if (type & Types.HtmlComment) {
         return createCommentElement(vNode, parentDom);
     } else {
-        throw new Error(`unknown vnode type ${type}`);
+        throw new Error(`expect a vNode but got ${vNode}`);
     }
 }
 
