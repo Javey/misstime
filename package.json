@@ -26,7 +26,7 @@
   "author": "javey",
   "license": "MIT",
   "devDependencies": {
-    "babel-core": "^6.24.1",
+    "babel-core": "^6.26.3",
     "babel-loader": "^7.0.0",
     "babel-plugin-external-helpers": "^6.22.0",
     "babel-plugin-minify-constant-folding": "0.0.4",
@@ -43,7 +43,7 @@
     "karma-firefox-launcher": "^1.0.1",
     "karma-html-reporter": "^0.2.7",
     "karma-mocha": "^1.3.0",
-    "karma-sauce-launcher": "^1.1.0",
+    "karma-sauce-launcher": "^1.2.0",
     "karma-webpack": "^2.0.3",
     "mocha": "^3.3.0",
     "rollup": "^0.41.6",
