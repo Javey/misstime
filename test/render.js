@@ -521,6 +521,19 @@ describe('Render', () => {
             assert.strictEqual(fn.callCount, 2);
         });
 
+        it('attach event listener by array', () => {
+            const fn1 = sinon.spy();
+            const fn2 = sinon.spy();
+            r(h('div', {'ev-click': [fn1, fn2]}));
+            dispatchEvent(container.firstChild, 'click');
+            assert.strictEqual(fn1.callCount, 1);
+            assert.strictEqual(fn2.callCount, 1);
+
+            dispatchEvent(container.firstChild, 'click');
+            assert.strictEqual(fn1.callCount, 2);
+            assert.strictEqual(fn2.callCount, 2);
+        });
+
         it('trigger event on child node', () => {
             const fn = sinon.spy();
             r(h('div', {'ev-click': fn}, h('div')));

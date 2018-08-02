@@ -604,10 +604,26 @@ function handleEvent(name, lastEvent, nextEvent, dom) {
         }
     } else {
         if (lastEvent) {
-            removeEventListener(dom, name, lastEvent);
+            if (isArray(lastEvent)) {
+                for (var i = 0; i < lastEvent.length; i++) {
+                    if (lastEvent[i]) {
+                        removeEventListener(dom, name, lastEvent[i]);
+                    }
+                }
+            } else {
+                removeEventListener(dom, name, lastEvent);
+            }
         }
         if (nextEvent) {
-            addEventListener(dom, name, nextEvent);
+            if (isArray(nextEvent)) {
+                for (var _i = 0; _i < nextEvent.length; _i++) {
+                    if (nextEvent[_i]) {
+                        addEventListener(dom, name, nextEvent[_i]);
+                    }
+                }
+            } else {
+                addEventListener(dom, name, nextEvent);
+            }
         }
     }
 }
@@ -617,7 +633,16 @@ function dispatchEvent(event, target, items, count, isClick) {
     if (eventToTrigger) {
         count--;
         event.currentTarget = target;
-        eventToTrigger(event);
+        if (isArray(eventToTrigger)) {
+            for (var i = 0; i < eventToTrigger.length; i++) {
+                var _eventToTrigger = eventToTrigger[i];
+                if (_eventToTrigger) {
+                    _eventToTrigger(event);
+                }
+            }
+        } else {
+            eventToTrigger(event);
+        }
         if (event._rawEvent.cancelBubble) {
             return;
         }
@@ -803,7 +828,7 @@ function createElement(vNode, parentDom, mountedQueue, isRender, parentVNode, is
     } else if (type & Types.HtmlComment) {
         return createCommentElement(vNode, parentDom);
     } else {
-        throw new Error('unknown vnode type ' + type);
+        throw new Error('expect a vNode but got ' + vNode);
     }
 }
 

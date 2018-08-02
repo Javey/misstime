@@ -805,6 +805,20 @@ describe('Patch', () => {
             sEql(fn.callCount, 0);
             sEql(newFn.callCount, 1);
         });
+
+        it('patch event by array', () => {
+            const fn = sinon.spy();
+            const newFn1 = sinon.spy(); 
+            const newFn2 = sinon.spy();
+            p(
+                h('div', {'ev-click': fn}, 'test'),
+                h('div', {'ev-click': [newFn1, newFn2]}, 'test')
+            );
+            dispatchEvent(container.firstChild, 'click');
+            sEql(fn.callCount, 0);
+            sEql(newFn1.callCount, 1);
+            sEql(newFn2.callCount, 1);
+        });
         
         it('remove event', () => {
             const fn = sinon.spy(() => console.log(111));
@@ -825,6 +839,16 @@ describe('Patch', () => {
             sEql(fn.callCount, 0);
         });
 
+        it('remove array event', () => {
+            const fn = sinon.spy();
+            p(
+                h('div', {'ev-click': [fn]}, 'test'),
+                h('div', null, 'test')
+            );
+            dispatchEvent(container.firstChild, 'click');
+            sEql(fn.callCount, 0);
+        });
+
         it('add event', () => {
             const fn = sinon.spy();
             p(
@@ -833,6 +857,18 @@ describe('Patch', () => {
             );
             dispatchEvent(container.firstChild, 'click');
             sEql(fn.callCount, 1);
+        });
+
+        it('add event by array', () => {
+            const fn1 = sinon.spy();
+            const fn2 = sinon.spy();
+            p(
+                h('div'),
+                h('div', {'ev-click': [fn1, fn2]})
+            );
+            dispatchEvent(container.firstChild, 'click');
+            sEql(fn1.callCount, 1);
+            sEql(fn2.callCount, 1);
         });
 
         it('patch event on children', () => {

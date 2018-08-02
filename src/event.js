@@ -1,4 +1,7 @@
-import {SimpleMap, isNullOrUndefined, createObject, doc as document, browser} from './utils';
+import {
+    SimpleMap, isNullOrUndefined, createObject, 
+    doc as document, browser, isArray
+} from './utils';
 
 const ALL_PROPS = [
     "altKey", "bubbles", "cancelable", "ctrlKey",
@@ -138,10 +141,26 @@ export function handleEvent(name, lastEvent, nextEvent, dom) {
         }
     } else {
         if (lastEvent) {
-            removeEventListener(dom, name, lastEvent);
+            if (isArray(lastEvent)) {
+                for (let i = 0; i < lastEvent.length; i++) {
+                    if (lastEvent[i]) {
+                        removeEventListener(dom, name, lastEvent[i]);
+                    }
+                }
+            } else {
+                removeEventListener(dom, name, lastEvent);
+            }
         }
         if (nextEvent) {
-            addEventListener(dom, name, nextEvent);
+            if (isArray(nextEvent)) {
+                for (let i = 0; i < nextEvent.length; i++) {
+                    if (nextEvent[i]) {
+                        addEventListener(dom, name, nextEvent[i]);
+                    }
+                }
+            } else {
+                addEventListener(dom, name, nextEvent);
+            }
         }
     }
 }
@@ -151,7 +170,16 @@ function dispatchEvent(event, target, items, count, isClick) {
     if (eventToTrigger) {
         count--;
         event.currentTarget = target;
-        eventToTrigger(event);
+        if (isArray(eventToTrigger)) {
+            for (let i = 0; i < eventToTrigger.length; i++) {
+                const _eventToTrigger = eventToTrigger[i];
+                if (_eventToTrigger) {
+                    _eventToTrigger(event);
+                }
+            }
+        } else {
+            eventToTrigger(event);
+        }
         if (event._rawEvent.cancelBubble) {
             return;
         }
