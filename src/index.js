@@ -1,4 +1,4 @@
-import {createVNode, createCommentVNode, createUnescapeTextVNode, Types} from './vnode';
+import {createVNode, createCommentVNode, createUnescapeTextVNode, Types, VNode} from './vnode';
 import {patch} from './vpatch';
 import {render, removeElement} from './vdom';
 import {MountedQueue} from './utils';
@@ -17,4 +17,5 @@ export {
     hydrateRoot, 
     hydrate,
     Types,
+    VNode, // for type check
 };
