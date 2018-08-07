@@ -52,7 +52,7 @@ const customLaunchers = {
     },
 };
 
-[8, 9, 10, 11, 13, 14].forEach(v => {
+[9, 10, 11, 13, 14].forEach(v => {
     customLaunchers[`sl_ie${v}`] = {
         base: 'SauceLabs',
         browserName: v === 13 || v === 14 ? 'MicrosoftEdge' : 'internet explorer',
