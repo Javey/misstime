@@ -26,11 +26,11 @@ const customLaunchers = {
         platform: 'macOS 10.12',
         version: '10'
     },
-    sl_ios_safari_9: {
-        base: 'SauceLabs',
-        browserName: 'iphone',
-        version: '10.3'
-    },
+    // sl_ios_safari_9: {
+        // base: 'SauceLabs',
+        // browserName: 'iphone',
+        // version: '10.3'
+    // },
     // 'SL_ANDROID4.4': {
         // base: 'SauceLabs',
         // browserName: 'android',
