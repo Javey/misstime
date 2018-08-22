@@ -3,7 +3,6 @@
   "version": "0.3.6",
   "description": "",
   "main": "dist/index.js",
-  "module": "src/index.js",
   "directories": {
     "test": "test"
   },
@@ -14,7 +13,7 @@
   "scripts": {
     "test": "karma start karma.mocha.conf.js",
     "test:local": "karma start karma.conf.js",
-    "build": "node script/build.js",
+    "build": "rollup -c rollup.config.js",
     "karma:benchmark": "karma start karma.benchmark.conf.js",
     "karma:test": "karma start karma.server.conf.js",
     "release": "npm run release-patch",
@@ -46,7 +45,7 @@
     "karma-sauce-launcher": "^1.2.0",
     "karma-webpack": "^3.0.0",
     "mocha": "^4.1.0",
-    "rollup": "^0.41.6",
+    "rollup": "^0.42.0",
     "rollup-plugin-babel": "^2.7.1",
     "rollup-plugin-replace": "^1.1.1",
     "sinon": "^1.17.7",

@@ -1,13 +1,8 @@
 const babel = require('rollup-plugin-babel');
 const replace = require('rollup-plugin-replace');
 
-module.exports = {
+const config = {
     entry: 'src/index.js',
-    dest: 'dist/index.js',
-    format: 'umd',
-    moduleName: 'misstime',
-    legacy: true,
-    external: ['min-document'],
     plugins: [
         babel({
             exclude: 'node_modules/**',
@@ -24,3 +19,17 @@ module.exports = {
         })
     ]
 };
+
+
+module.exports = [
+    Object.assign({}, config, {
+        dest: 'dist/misstime.js',
+        format: 'umd',
+        moduleName: 'misstime',
+        legacy: true,
+    }),
+    Object.assign({}, config, {
+        dest: 'dist/index.js',
+        format: 'cjs'
+    }),
+];

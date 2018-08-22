@@ -1,6 +1,8 @@
-'use strict';
-
-Object.defineProperty(exports, '__esModule', { value: true });
+(function (global, factory) {
+	typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
+	typeof define === 'function' && define.amd ? define(['exports'], factory) :
+	(factory((global.misstime = global.misstime || {})));
+}(this, (function (exports) { 'use strict';
 
 var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) {
   return typeof obj;
@@ -2262,3 +2264,5 @@ exports.hydrateRoot = hydrateRoot;
 exports.hydrate = hydrate;
 exports.Types = Types;
 exports.VNode = VNode;
+
+})));
