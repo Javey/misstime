@@ -186,6 +186,7 @@ function addChild(vNodes, reference, isAddKey) {
 }
 
 function directClone(vNode) {
+    debugger;
     let newVNode;
     const type = vNode.type;
 
@@ -209,30 +210,11 @@ function directClone(vNode) {
         );
 
         const newProps = newVNode.props;
-        const newChildren = newProps.children;
-
+        const newChildren = directCloneChildren(newProps.children);
         if (newChildren) {
-            if (isArray(newChildren)) {
-                const len = newChildren.length;
-                if (len > 0) {
-                    const tmpArray = [];
-
-                    for (let i = 0; i < len; i++) {
-                        const child = newChildren[i];
-                        if (isStringOrNumber(child)) {
-                            tmpArray.push(child);
-                        } else if (!isInvalid(child) && child.type) {
-                            tmpArray.push(directClone(child));
-                        }
-                    }
-                    newProps.children = tmpArray;
-                }
-            } else if (newChildren.type) {
-                newProps.children = directClone(newChildren);
-            }
+            newProps.children = newChildren;
         }
     } else if (type & Types.Element) {
-        const children = vNode.children;
         let props;
         const propsToClone = vNode.props;
 
@@ -247,7 +229,7 @@ function directClone(vNode) {
 
         newVNode = new VNode(
             type, vNode.tag, vNode.props,
-            children, vNode.className,
+            directCloneChildren(vNode.children), vNode.className,
             vNode.key, vNode.ref
         );
     } else if (type & Types.Text) {
@@ -257,4 +239,29 @@ function directClone(vNode) {
     }
 
     return newVNode;
+}
+
+function directCloneChildren(children) {
+    if (children) {
+        if (isArray(children)) {
+            const len = children.length;
+            if (len > 0) {
+                const tmpArray = [];
+
+                for (let i = 0; i < len; i++) {
+                    const child = children[i];
+                    if (isStringOrNumber(child)) {
+                        tmpArray.push(child);
+                    } else if (!isInvalid(child) && child.type) {
+                        tmpArray.push(directClone(child));
+                    }
+                }
+                return tmpArray;
+            }
+        } else if (children.type) {
+            return directClone(children);
+        }
+    }
+
+    return children;
 }

@@ -51,7 +51,7 @@ describe('Patch', () => {
     });
 
     afterEach(() => {
-        document.body.removeChild(container);
+        // document.body.removeChild(container);
     });
 
     function reset() {
@@ -791,6 +791,20 @@ describe('Patch', () => {
                 '<div>a\r\n<div>0</div>\r\n<div>1</div>\r\n<div>2</div><span>3</span>testtextb</div>',
             ]
         );
+    });
+
+    it('patch vNodes which hoisted should clone children', () => {
+        const vNodes = [
+            h('span', null, createTextVNode('1')),
+            h('span', null, createTextVNode('2'))
+        ];
+
+        const v1 = h('div', null, vNodes);
+        r(v1);
+        const v2 = h('div', null, ['a', vNodes]);
+        patch(v1, v2);
+        const v3 = h('div', null, vNodes);
+        patch(v2, v3);
     });
 
     describe('Event', () => {
