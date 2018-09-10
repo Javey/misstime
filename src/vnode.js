@@ -186,7 +186,6 @@ function addChild(vNodes, reference, isAddKey) {
 }
 
 function directClone(vNode) {
-    debugger;
     let newVNode;
     const type = vNode.type;
 

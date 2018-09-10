@@ -409,7 +409,6 @@ function addChild(vNodes, reference, isAddKey) {
 }
 
 function directClone(vNode) {
-    debugger;
     var newVNode = void 0;
     var type = vNode.type;
 
