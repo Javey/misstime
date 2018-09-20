@@ -140,6 +140,8 @@ export const strictProps = {
     defaultChecked: true,
     value: true,
     htmlFor: true,
+    scrollLeft: true,
+    scrollTop: true,
 };
 
 export const selfClosingTags = {
