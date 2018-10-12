@@ -1,6 +1,6 @@
 <p align="center">
     <a href="https://travis-ci.org/Javey/misstime">
-        <img src="https://img.shields.io/travis/Javey/misstime.svg" />
+        <img src="https://travis-ci.org/Javey/misstime.svg?branch=master" />
     </a>
     <br />
     <a href="https://saucelabs.com/u/JaveyZ">
