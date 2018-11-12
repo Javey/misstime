@@ -1226,7 +1226,9 @@ function patchComponentClass(lastVNode, nextVNode, parentDom, mountedQueue, pare
     } else {
         instance = lastVNode.children;
         instance.mountedQueue = mountedQueue;
-        instance.isRender = false;
+        if (instance.mounted) {
+            instance.isRender = false;
+        }
         instance.parentVNode = parentVNode;
         instance.vNode = nextVNode;
         instance.isSVG = isSVG;
@@ -1270,7 +1272,9 @@ function patchComponentIntance(lastVNode, nextVNode, parentDom, mountedQueue, pa
         newDom = createComponentClassOrInstance(nextVNode, parentDom, mountedQueue, lastVNode, false, parentVNode, isSVG);
     } else {
         lastInstance.mountedQueue = mountedQueue;
-        lastInstance.isRender = false;
+        if (instance.mounted) {
+            instance.isRender = false;
+        }
         lastInstance.parentVNode = parentVNode;
         newDom = lastInstance.update(lastVNode, nextVNode);
         nextVNode.dom = newDom;

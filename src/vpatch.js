@@ -192,7 +192,7 @@ function patchComponentIntance(lastVNode, nextVNode, parentDom, mountedQueue, pa
         newDom = createComponentClassOrInstance(nextVNode, parentDom, mountedQueue, lastVNode, false, parentVNode, isSVG);
     } else {
         lastInstance.mountedQueue = mountedQueue;
-        if (instance.mounted) {
+        if (lastInstance.mounted) {
             instance.isRender = false;
         }
         lastInstance.parentVNode = parentVNode;
