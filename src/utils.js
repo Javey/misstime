@@ -166,6 +166,8 @@ export const selfClosingTags = {
 
 export function MountedQueue() {
     this.queue = [];
+    // if done is true, it indicate that this queue should be discarded
+    this.done = false;
 }
 MountedQueue.prototype.push = function(fn) {
     this.queue.push(fn);
@@ -179,6 +181,7 @@ MountedQueue.prototype.trigger = function() {
     while (callback = queue.shift()) {
         callback();
     }
+    this.done = true;
 };
 
 export const browser = {};
