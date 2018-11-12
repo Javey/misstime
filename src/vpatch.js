@@ -193,7 +193,7 @@ function patchComponentIntance(lastVNode, nextVNode, parentDom, mountedQueue, pa
     } else {
         lastInstance.mountedQueue = mountedQueue;
         if (lastInstance.mounted) {
-            instance.isRender = false;
+            lastInstance.isRender = false;
         }
         lastInstance.parentVNode = parentVNode;
         newDom = lastInstance.update(lastVNode, nextVNode);
