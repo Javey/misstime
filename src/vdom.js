@@ -188,20 +188,20 @@ export function createCommentElement(vNode, parentDom) {
     return dom;
 }
 
-export function createComponentFunctionVNode(vNode) {
-    let result = vNode.tag(vNode.props);
-    if (isStringOrNumber(result)) {
-        result = createTextVNode(result);
-    } else if (process.env.NODE_ENV !== 'production') {
-        if (isArray(result)) {
-            throw new Error(`ComponentFunction ${vNode.tag.name} returned a invalid vNode`);
-        }
-    }
+// export function createComponentFunctionVNode(vNode) {
+    // let result = vNode.tag(vNode.props);
+    // if (isStringOrNumber(result)) {
+        // result = createTextVNode(result);
+    // } else if (process.env.NODE_ENV !== 'production') {
+        // if (isArray(result)) {
+            // throw new Error(`ComponentFunction ${vNode.tag.name} returned a invalid vNode`);
+        // }
+    // }
 
-    vNode.children = result;
+    // vNode.children = result;
 
-    return vNode;
-}
+    // return vNode;
+// }
 
 export function createElements(vNodes, parentDom, mountedQueue, isRender, parentVNode, isSVG) {
     if (isStringOrNumber(vNodes)) {

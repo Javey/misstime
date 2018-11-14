@@ -7,8 +7,8 @@ import {
     removeComponentClassOrInstance,
     removeAllChildren,
     createComponentClassOrInstance,
-    createComponentFunction,
-    createComponentFunctionVNode,
+    // createComponentFunction,
+    // createComponentFunctionVNode,
     createRef,
     replaceChild,
     appendChild
