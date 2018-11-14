@@ -9,13 +9,18 @@ export function toString(vNode, parent, disableSplitText, firstChild) {
     const tag = vNode.tag;
     const props = vNode.props;
     const children = vNode.children;
+    vNode.parentVNode = parent;
 
     let html;
     if (type & Types.ComponentClass) {
         const instance = new tag(props); 
+        instance.parentVNode = parent;
+        instance.vNode = vNode;
         html = instance.toString();
     } else if (type & Types.ComponentInstance) {
-        html = vNode.children.toString();
+        children.parentVNode = parent;
+        children.vNode = vNode;
+        html = children.toString();
     } else if (type & Types.Element) {
         let innerHTML;
         html = `<${tag}`;
