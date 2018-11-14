@@ -151,10 +151,10 @@ function patchComponentClass(lastVNode, nextVNode, parentDom, mountedQueue, pare
         instance.parentVNode = parentVNode;
         instance.vNode = nextVNode;
         instance.isSVG = isSVG;
-        newDom = instance.update(lastVNode, nextVNode);
-        nextVNode.dom = newDom;
         nextVNode.children = instance;
         nextVNode.parentVNode = parentVNode;
+        newDom = instance.update(lastVNode, nextVNode);
+        nextVNode.dom = newDom;
         
         // for intact.js, the dom will not be removed and
         // the component will not be destoryed, so the ref

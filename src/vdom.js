@@ -117,12 +117,12 @@ export function createComponentClassOrInstance(vNode, parentDom, mountedQueue, l
     instance.parentVNode = parentVNode;
     instance.isSVG = isSVG;
     instance.vNode = vNode;
+    vNode.children = instance;
+    vNode.parentVNode = parentVNode;
     const dom = instance.init(lastVNode, vNode);
     const ref = vNode.ref;
 
     vNode.dom = dom;
-    vNode.children = instance;
-    vNode.parentVNode = parentVNode;
 
     if (parentDom) {
         appendChild(parentDom, dom);
