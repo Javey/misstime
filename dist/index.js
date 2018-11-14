@@ -904,7 +904,7 @@ function createTextElement(vNode, parentDom) {
     return dom;
 }
 
-function createComponentClassOrInstance(vNode, parentDom, mountedQueue, lastVNode, isRender, parentVNode, isSVG) {
+function createOrHydrateComponentClassOrInstance(vNode, parentDom, mountedQueue, lastVNode, isRender, parentVNode, isSVG, createDom) {
     var props = vNode.props;
     var instance = vNode.type & Types.ComponentClass ? new vNode.tag(props) : vNode.children;
     instance.parentDom = parentDom;
@@ -913,17 +913,13 @@ function createComponentClassOrInstance(vNode, parentDom, mountedQueue, lastVNod
     instance.parentVNode = parentVNode;
     instance.isSVG = isSVG;
     instance.vNode = vNode;
-    var dom = instance.init(lastVNode, vNode);
-    var ref = vNode.ref;
-
-    vNode.dom = dom;
     vNode.children = instance;
     vNode.parentVNode = parentVNode;
 
-    if (parentDom) {
-        appendChild(parentDom, dom);
-        // parentDom.appendChild(dom);
-    }
+    var dom = createDom(instance);
+    var ref = vNode.ref;
+
+    vNode.dom = dom;
 
     if (typeof instance.mount === 'function') {
         mountedQueue.push(function () {
@@ -938,7 +934,46 @@ function createComponentClassOrInstance(vNode, parentDom, mountedQueue, lastVNod
     return dom;
 }
 
+function createComponentClassOrInstance(vNode, parentDom, mountedQueue, lastVNode, isRender, parentVNode, isSVG) {
+    return createOrHydrateComponentClassOrInstance(vNode, parentDom, mountedQueue, lastVNode, isRender, parentVNode, isSVG, function (instance) {
+        var dom = instance.init(lastVNode, vNode);
+        if (parentDom) {
+            appendChild(parentDom, dom);
+        }
 
+        return dom;
+    });
+}
+
+// export function createComponentFunction(vNode, parentDom, mountedQueue) {
+// const props = vNode.props;
+// const ref = vNode.ref;
+
+// createComponentFunctionVNode(vNode);
+
+// let children = vNode.children;
+// let dom;
+// // support ComponentFunction return an array for macro usage
+// if (isArray(children)) {
+// dom = [];
+// for (let i = 0; i < children.length; i++) {
+// dom.push(createElement(children[i], parentDom, mountedQueue));
+// }
+// } else {
+// dom = createElement(vNode.children, parentDom, mountedQueue);
+// }
+// vNode.dom = dom;
+
+// // if (parentDom) {
+// // parentDom.appendChild(dom);
+// // }
+
+// if (ref) {
+// createRef(dom, ref, mountedQueue);
+// }
+
+// return dom;
+// }
 
 function createCommentElement(vNode, parentDom) {
     var dom = doc.createComment(vNode.children);
@@ -951,7 +986,20 @@ function createCommentElement(vNode, parentDom) {
     return dom;
 }
 
+// export function createComponentFunctionVNode(vNode) {
+// let result = vNode.tag(vNode.props);
+// if (isStringOrNumber(result)) {
+// result = createTextVNode(result);
+// } else if (process.env.NODE_ENV !== 'production') {
+// if (isArray(result)) {
+// throw new Error(`ComponentFunction ${vNode.tag.name} returned a invalid vNode`);
+// }
+// }
 
+// vNode.children = result;
+
+// return vNode;
+// }
 
 function createElements(vNodes, parentDom, mountedQueue, isRender, parentVNode, isSVG) {
     if (isStringOrNumber(vNodes)) {
@@ -1233,10 +1281,10 @@ function patchComponentClass(lastVNode, nextVNode, parentDom, mountedQueue, pare
         instance.parentVNode = parentVNode;
         instance.vNode = nextVNode;
         instance.isSVG = isSVG;
-        newDom = instance.update(lastVNode, nextVNode);
-        nextVNode.dom = newDom;
         nextVNode.children = instance;
         nextVNode.parentVNode = parentVNode;
+        newDom = instance.update(lastVNode, nextVNode);
+        nextVNode.dom = newDom;
 
         // for intact.js, the dom will not be removed and
         // the component will not be destoryed, so the ref
@@ -1834,13 +1882,19 @@ function toString$1(vNode, parent, disableSplitText, firstChild) {
     var tag = vNode.tag;
     var props = vNode.props;
     var children = vNode.children;
+    vNode.parentVNode = parent;
 
     var html = void 0;
     if (type & Types.ComponentClass) {
         var instance = new tag(props);
+        instance.parentVNode = parent;
+        instance.vNode = vNode;
+        vNode.children = instance;
         html = instance.toString();
     } else if (type & Types.ComponentInstance) {
-        html = vNode.children.toString();
+        children.parentVNode = parent;
+        children.vNode = vNode;
+        html = children.toString();
     } else if (type & Types.Element) {
         var innerHTML = void 0;
         html = '<' + tag;
@@ -2084,36 +2138,14 @@ function hydrateElement(vNode, dom, mountedQueue, parentDom, parentVNode, isSVG)
 }
 
 function hydrateComponentClassOrInstance(vNode, dom, mountedQueue, parentDom, parentVNode, isSVG) {
-    var props = vNode.props;
-    var instance = vNode.type & Types.ComponentClass ? new vNode.tag(props) : vNode.children;
-    instance.parentDom = parentDom;
-    instance.mountedQueue = mountedQueue;
-    instance.isRender = true;
-    instance.parentVNode = parentVNode;
-    instance.isSVG = isSVG;
-    instance.vNode = vNode;
-    var newDom = instance.hydrate(vNode, dom);
+    return createOrHydrateComponentClassOrInstance(vNode, parentDom, mountedQueue, null, true, parentVNode, isSVG, function (instance) {
+        var newDom = instance.hydrate(vNode, dom);
+        if (dom !== newDom && dom.parentNode) {
+            dom.parentNode.replaceChild(newDom, dom);
+        }
 
-    vNode.dom = newDom;
-    vNode.children = instance;
-    vNode.parentVNode = parentVNode;
-
-    if (typeof instance.mount === 'function') {
-        mountedQueue.push(function () {
-            return instance.mount(null, vNode);
-        });
-    }
-
-    var ref = vNode.ref;
-    if (typeof ref === 'function') {
-        ref(instance);
-    }
-
-    if (dom !== newDom && dom.parentNode) {
-        dom.parentNode.replaceChild(newDom, dom);
-    }
-
-    return dom;
+        return newDom;
+    });
 }
 
 function hydrateComment(vNode, dom) {
