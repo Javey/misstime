@@ -61,7 +61,7 @@ export function hydrateElement(vNode, dom, mountedQueue, parentDom, parentVNode,
 }
 
 function hydrateComponentClassOrInstance(vNode, dom, mountedQueue, parentDom, parentVNode, isSVG) {
-    return createOrHydrateComponentClassOrInstance(vNode, parentDom, mountedQueue, null, true, parentVNode, isSVG, () => {
+    return createOrHydrateComponentClassOrInstance(vNode, parentDom, mountedQueue, null, true, parentVNode, isSVG, (instance) => {
         const newDom = instance.hydrate(vNode, dom);
         if (dom !== newDom && dom.parentNode) {
             dom.parentNode.replaceChild(newDom, dom);

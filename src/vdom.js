@@ -120,7 +120,7 @@ export function createOrHydrateComponentClassOrInstance(vNode, parentDom, mounte
     vNode.children = instance;
     vNode.parentVNode = parentVNode;
 
-    const dom = createDom();
+    const dom = createDom(instance);
     const ref = vNode.ref;
 
     vNode.dom = dom;
@@ -137,7 +137,7 @@ export function createOrHydrateComponentClassOrInstance(vNode, parentDom, mounte
 }
 
 export function createComponentClassOrInstance(vNode, parentDom, mountedQueue, lastVNode, isRender, parentVNode, isSVG) {
-    return createOrHydrateComponentClassOrInstance(vNode, parentDom, mountedQueue, lastVNode, isRender, parentVNode, isSVG, () => {
+    return createOrHydrateComponentClassOrInstance(vNode, parentDom, mountedQueue, lastVNode, isRender, parentVNode, isSVG, (instance) => {
         const dom = instance.init(lastVNode, vNode);
         if (parentDom) {
             appendChild(parentDom, dom);
