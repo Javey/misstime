@@ -2,7 +2,7 @@ import {Types, EMPTY_OBJ} from './vnode';
 import {
     createElement, createRef,
     createTextElement, createCommentElement,
-    render
+    render, createOrHydrateComponentClassOrInstance
 } from './vdom';
 import {
     isNullOrUndefined, setTextContent,
@@ -61,35 +61,14 @@ export function hydrateElement(vNode, dom, mountedQueue, parentDom, parentVNode,
 }
 
 function hydrateComponentClassOrInstance(vNode, dom, mountedQueue, parentDom, parentVNode, isSVG) {
-    const props = vNode.props;
-    const instance = vNode.type & Types.ComponentClass ?
-        new vNode.tag(props) : vNode.children;
-    instance.parentDom = parentDom;
-    instance.mountedQueue = mountedQueue;
-    instance.isRender = true;
-    instance.parentVNode = parentVNode;
-    instance.isSVG = isSVG;
-    instance.vNode = vNode;
-    let newDom = instance.hydrate(vNode, dom);
+    return createOrHydrateComponentClassOrInstance(vNode, parentDom, mountedQueue, null, true, parentVNode, isSVG, () => {
+        const newDom = instance.hydrate(vNode, dom);
+        if (dom !== newDom && dom.parentNode) {
+            dom.parentNode.replaceChild(newDom, dom);
+        }
 
-    vNode.dom = newDom;
-    vNode.children = instance;
-    vNode.parentVNode = parentVNode;
-
-    if (typeof instance.mount === 'function') {
-        mountedQueue.push(() => instance.mount(null, vNode));
-    }
-
-    const ref = vNode.ref;
-    if (typeof ref === 'function') {
-        ref(instance);
-    }
-
-    if (dom !== newDom && dom.parentNode) {
-        dom.parentNode.replaceChild(newDom, dom);
-    }
-
-    return dom;
+        return newDom;
+    });
 }
 
 function hydrateComment(vNode, dom) {

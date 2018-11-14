@@ -107,7 +107,7 @@ export function createTextElement(vNode, parentDom) {
     return dom;
 }
 
-export function createComponentClassOrInstance(vNode, parentDom, mountedQueue, lastVNode, isRender, parentVNode, isSVG) {
+export function createOrHydrateComponentClassOrInstance(vNode, parentDom, mountedQueue, lastVNode, isRender, parentVNode, isSVG, createDom) {
     const props = vNode.props;
     const instance = vNode.type & Types.ComponentClass ?
         new vNode.tag(props) : vNode.children;
@@ -119,15 +119,11 @@ export function createComponentClassOrInstance(vNode, parentDom, mountedQueue, l
     instance.vNode = vNode;
     vNode.children = instance;
     vNode.parentVNode = parentVNode;
-    const dom = instance.init(lastVNode, vNode);
+
+    const dom = createDom();
     const ref = vNode.ref;
 
     vNode.dom = dom;
-
-    if (parentDom) {
-        appendChild(parentDom, dom);
-        // parentDom.appendChild(dom);
-    }
 
     if (typeof instance.mount === 'function') {
         mountedQueue.push(() => instance.mount(lastVNode, vNode));
@@ -140,35 +136,46 @@ export function createComponentClassOrInstance(vNode, parentDom, mountedQueue, l
     return dom;
 }
 
-export function createComponentFunction(vNode, parentDom, mountedQueue) {
-    const props = vNode.props;
-    const ref = vNode.ref;
-
-    createComponentFunctionVNode(vNode);
-
-    let children = vNode.children;
-    let dom;
-    // support ComponentFunction return an array for macro usage
-    if (isArray(children)) {
-        dom = [];
-        for (let i = 0; i < children.length; i++) {
-            dom.push(createElement(children[i], parentDom, mountedQueue));
+export function createComponentClassOrInstance(vNode, parentDom, mountedQueue, lastVNode, isRender, parentVNode, isSVG) {
+    return createOrHydrateComponentClassOrInstance(vNode, parentDom, mountedQueue, lastVNode, isRender, parentVNode, isSVG, () => {
+        const dom = instance.init(lastVNode, vNode);
+        if (parentDom) {
+            appendChild(parentDom, dom);
         }
-    } else {
-        dom = createElement(vNode.children, parentDom, mountedQueue);
-    }
-    vNode.dom = dom;
 
-    // if (parentDom) {
-        // parentDom.appendChild(dom);
+        return dom;
+    });
+}
+
+// export function createComponentFunction(vNode, parentDom, mountedQueue) {
+    // const props = vNode.props;
+    // const ref = vNode.ref;
+
+    // createComponentFunctionVNode(vNode);
+
+    // let children = vNode.children;
+    // let dom;
+    // // support ComponentFunction return an array for macro usage
+    // if (isArray(children)) {
+        // dom = [];
+        // for (let i = 0; i < children.length; i++) {
+            // dom.push(createElement(children[i], parentDom, mountedQueue));
+        // }
+    // } else {
+        // dom = createElement(vNode.children, parentDom, mountedQueue);
+    // }
+    // vNode.dom = dom;
+
+    // // if (parentDom) {
+        // // parentDom.appendChild(dom);
+    // // }
+
+    // if (ref) {
+        // createRef(dom, ref, mountedQueue);
     // }
 
-    if (ref) {
-        createRef(dom, ref, mountedQueue);
-    }
-
-    return dom;
-}
+    // return dom;
+// }
 
 export function createCommentElement(vNode, parentDom) {
     const dom = document.createComment(vNode.children);

@@ -16,6 +16,7 @@ export function toString(vNode, parent, disableSplitText, firstChild) {
         const instance = new tag(props); 
         instance.parentVNode = parent;
         instance.vNode = vNode;
+        vNode.children = instance;
         html = instance.toString();
     } else if (type & Types.ComponentInstance) {
         children.parentVNode = parent;
