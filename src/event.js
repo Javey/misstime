@@ -157,6 +157,8 @@ function attachEventToDocument(name, delegatedRoots) {
             } catch (e) {
                 // ie8
             }
+            // for compatibility
+            event._rawEvent = event
             dispatchEvent(
                 event, 
                 event.target, 
