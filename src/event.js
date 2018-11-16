@@ -3,98 +3,43 @@ import {
     doc as document, browser, isArray
 } from './utils';
 
-const ALL_PROPS = [
-    "altKey", "bubbles", "cancelable", "ctrlKey",
-    "eventPhase", "metaKey", "relatedTarget", "shiftKey",
-    "target", "timeStamp", "type", "view", "which"
-];
-const KEY_PROPS = ["char", "charCode", "key", "keyCode"];
-const MOUSE_PROPS = [
-    "button", "buttons", "clientX", "clientY", "layerX",
-    "layerY", "offsetX", "offsetY", "pageX", "pageY",
-    "screenX", "screenY", "toElement"
-];
-
-const rkeyEvent = /^key|input/;
-const rmouseEvent = /^(?:mouse|pointer|contextmenu)|click/;
-
-function Event(e) {
-    for (let i = 0; i < ALL_PROPS.length; i++) {
-        let propKey = ALL_PROPS[i];
-        this[propKey] = e[propKey];
-    }
-    
-    if (!e.target) {
-        this.target = e.srcElement;
-    }
-
-    this._rawEvent = e;
+function preventDefault() {
+    this.returnValue = false;
 }
-Event.prototype.preventDefault = function() {
-    const e = this._rawEvent;
-    if (e.preventDefault) {
-        e.preventDefault();
-    } else {
-        e.returnValue = false;
-    }
-};
-Event.prototype.stopPropagation = function() {
-    const e = this._rawEvent;    
-    e.cancelBubble = true;
-    e.stopImmediatePropagation && e.stopImmediatePropagation();
-};
 
-function MouseEvent(e) {
-    Event.call(this, e);
-    for (let j = 0; j < MOUSE_PROPS.length; j++) {
-        let mousePropKey = MOUSE_PROPS[j];
-        this[mousePropKey] = e[mousePropKey];
-    }
-}
-MouseEvent.prototype = createObject(Event.prototype);
-MouseEvent.prototype.constructor = MouseEvent;
-
-function KeyEvent(e) {
-    Event.call(this, e);
-    for (let j = 0; j < KEY_PROPS.length; j++) {
-        let keyPropKey = KEY_PROPS[j];
-        this[keyPropKey] = e[keyPropKey];
-    }
-}
-KeyEvent.prototype = createObject(Event.prototype);
-KeyEvent.prototype.constructor = KeyEvent;
-
-function proxyEvent(e) {
-    if (rkeyEvent.test(e.type)) {
-        return new KeyEvent(e);
-    } else if (rmouseEvent.test(e.type)) {
-        return new MouseEvent(e);
-    } else {
-        return new Event(e);
-    }
+function stopPropagation() {
+    this.cancelBubble = true;
+    this.stopImmediatePropagation && this.stopImmediatePropagation();
 }
 
 let addEventListener;
 let removeEventListener;
+function fixEvent(fn) {
+    return (event) => {
+        event.stopPropagation = stopPropagation;
+        if (!event.preventDefault) {
+            event.preventDefault = preventDefault;
+        }
+        fn(event);
+    }
+}
 if ('addEventListener' in document) {
     addEventListener = function(dom, name, fn) {
-        dom.addEventListener(name, fn, false);
+        fn._$cb = fixEvent(fn);
+        dom.addEventListener(name, fn._$cb, false);
     };
 
     removeEventListener = function(dom, name, fn) {
-        dom.removeEventListener(name, fn);
+        dom.removeEventListener(name, fn._$cb || fn);
     };
 } else {
     addEventListener = function(dom, name, fn) {
-        fn.cb = (e) => {
-            e = proxyEvent(e);
-            fn(e);
-        };
-        dom.attachEvent(`on${name}`, fn.cb);
+        fn._$cb = fixEvent(fn);
+        dom.attachEvent(`on${name}`, fn._$cb);
     };
 
     removeEventListener = function(dom, name, fn) {
-        dom.detachEvent(`on${name}`, fn.cb || fn);
+        dom.detachEvent(`on${name}`, fn._$cb || fn);
     };
 }
 
@@ -165,11 +110,13 @@ export function handleEvent(name, lastEvent, nextEvent, dom) {
     }
 }
 
-function dispatchEvent(event, target, items, count, isClick) {
+function dispatchEvent(event, target, items, count, isClick, eventData) {
     const eventToTrigger = items.get(target);
     if (eventToTrigger) {
         count--;
-        event.currentTarget = target;
+        eventData.dom = target;
+        // for fallback when Object.defineProperty is undefined
+        event._currentTarget = target;
         if (isArray(eventToTrigger)) {
             for (let i = 0; i < eventToTrigger.length; i++) {
                 const _eventToTrigger = eventToTrigger[i];
@@ -180,7 +127,7 @@ function dispatchEvent(event, target, items, count, isClick) {
         } else {
             eventToTrigger(event);
         }
-        if (event._rawEvent.cancelBubble) {
+        if (event.cancelBubble) {
             return;
         }
     }
@@ -189,17 +136,35 @@ function dispatchEvent(event, target, items, count, isClick) {
         if (isNullOrUndefined(parentDom) || (isClick && parentDom.nodeType === 1 && parentDom.disabled)) {
             return;
         }
-        dispatchEvent(event, parentDom, items, count, isClick);
+        dispatchEvent(event, parentDom, items, count, isClick, eventData);
     }
 }
 
 function attachEventToDocument(name, delegatedRoots) {
     var docEvent = function(event) {
         const count = delegatedRoots.items.size;
-        event || (event = window.event);
         if (count > 0) {
-            event = proxyEvent(event);
-            dispatchEvent(event, event.target, delegatedRoots.items, count, event.type === 'click'); 
+            const eventData = {
+                dom: document
+            };
+            try {
+                Object.defineProperty(event, 'currentTarget', {
+                    configurable: true,
+                    get() {
+                        return eventData.dom;
+                    }
+                });
+            } catch (e) {
+                // ie8
+            }
+            dispatchEvent(
+                event, 
+                event.target, 
+                delegatedRoots.items, 
+                count, 
+                event.type === 'click',
+                eventData
+            ); 
         }
     };
     addEventListener(document, name, docEvent);
