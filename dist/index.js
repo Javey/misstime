@@ -317,16 +317,16 @@ function createVNode(tag, props, children, className, key, ref) {
     return new VNode(type, tag, props, children, className || props.className, key || props.key, ref || props.ref);
 }
 
-function createCommentVNode(children) {
-    return new VNode(Types.HtmlComment, null, EMPTY_OBJ, children);
+function createCommentVNode(children, key) {
+    return new VNode(Types.HtmlComment, null, EMPTY_OBJ, children, null, key);
 }
 
 function createUnescapeTextVNode(children) {
     return new VNode(Types.UnescapeText, null, EMPTY_OBJ, children);
 }
 
-function createTextVNode(text) {
-    return new VNode(Types.Text, null, EMPTY_OBJ, text);
+function createTextVNode(text, key) {
+    return new VNode(Types.Text, null, EMPTY_OBJ, text, null, key);
 }
 
 
@@ -437,9 +437,9 @@ function directClone(vNode) {
 
         newVNode = new VNode(type, vNode.tag, vNode.props, directCloneChildren(vNode.children), vNode.className, vNode.key, vNode.ref);
     } else if (type & Types.Text) {
-        newVNode = createTextVNode(vNode.children);
+        newVNode = createTextVNode(vNode.children, vNode.key);
     } else if (type & Types.HtmlComment) {
-        newVNode = createCommentVNode(vNode.children);
+        newVNode = createCommentVNode(vNode.children, vNode.key);
     }
 
     return newVNode;
@@ -578,6 +578,12 @@ function handleEvent(name, lastEvent, nextEvent, dom) {
 }
 
 function dispatchEvent(event, target, items, count, isClick, eventData) {
+    // if event has cancelled bubble, return directly  
+    // otherwise it is also triggered sometimes, e.g in React
+    if (event.cancelBubble) {
+        return;
+    }
+
     var eventToTrigger = items.get(target);
     if (eventToTrigger) {
         count--;
@@ -593,9 +599,6 @@ function dispatchEvent(event, target, items, count, isClick, eventData) {
             }
         } else {
             eventToTrigger(event);
-        }
-        if (event.cancelBubble) {
-            return;
         }
     }
     if (count > 0) {
@@ -621,9 +624,11 @@ function attachEventToDocument(name, delegatedRoots) {
                         return eventData.dom;
                     }
                 });
-            } catch (e) {
-                // ie8
-            }
+            } catch (e) {}
+            // ie8
+
+            // for compatibility
+            event._rawEvent = event;
             dispatchEvent(event, event.target, delegatedRoots.items, count, event.type === 'click', eventData);
         }
     };

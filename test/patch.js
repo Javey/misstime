@@ -51,7 +51,7 @@ describe('Patch', () => {
     });
 
     afterEach(() => {
-        document.body.removeChild(container);
+        // document.body.removeChild(container);
     });
 
     function reset() {
@@ -805,6 +805,24 @@ describe('Patch', () => {
         patch(v1, v2);
         const v3 = h('div', null, vNodes);
         patch(v2, v3);
+    });
+
+    it('patch vNodes which hoisted and with text should clone clildren', () => {
+        const vNode = h(ClassComponent, {
+            children: h('span', null, [
+                '1',
+                h('span', null, '2'),
+                '3',
+                h('span', null, '4')
+            ])
+        });
+
+        const v1 = h('div', null, vNode);
+        r(v1);
+        v1.children.children.update(null, vNode);
+        v1.children.children.update(null, vNode);
+
+        eqlHtml(container, '<div><span><span>1<span>2</span>3<span>4</span></span></span></div>');
     });
 
     describe('Event', () => {
