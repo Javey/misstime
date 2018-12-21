@@ -1,5 +1,5 @@
 import {Types, createTextVNode, EMPTY_OBJ} from './vnode';
-import {patchProp} from './vpatch';
+import {patchProps} from './vpatch';
 import {handleEvent} from './event';
 import {
     MountedQueue, isArray, isStringOrNumber,
@@ -72,25 +72,16 @@ export function createHtmlElement(vNode, parentDom, mountedQueue, isRender, pare
     // in IE8, the select value will be set to the first option's value forcely
     // when it is appended to parent dom. We change its value in processForm does not
     // work. So processForm after it has be appended to parent dom.
-    let isFormElement;
+    if (parentDom) {
+        appendChild(parentDom, dom);
+    }
     if (props !== EMPTY_OBJ) {
-        isFormElement = (vNode.type & Types.FormElement) > 0;
-        for (let prop in props) {
-            patchProp(prop, null, props[prop], dom, isFormElement, isSVG);
-        }
+        patchProps(null, vNode, isSVG, true);
     }
 
     const ref = vNode.ref;
     if (!isNullOrUndefined(ref)) {
         createRef(dom, ref, mountedQueue);
-    }
-
-    if (parentDom) {
-        appendChild(parentDom, dom);
-    }
-
-    if (isFormElement) {
-        processForm(vNode, dom, props, true);
     }
 
     return dom;

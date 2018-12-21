@@ -101,7 +101,7 @@ function patchElement(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode
         }
 
         if (lastProps !== nextProps) {
-            patchProps(lastVNode, nextVNode, isSVG);
+            patchProps(lastVNode, nextVNode, isSVG, false);
         }
 
         if (lastClassName !== nextClassName) {
@@ -531,18 +531,20 @@ function patchText(lastVNode, nextVNode, parentDom) {
     }
 }
 
-export function patchProps(lastVNode, nextVNode, isSVG) {
-    const lastProps = lastVNode.props;
+export function patchProps(lastVNode, nextVNode, isSVG, isRender) {
+    const lastProps = lastVNode && lastVNode.props || EMPTY_OBJ;
     const nextProps = nextVNode.props;
     const dom = nextVNode.dom;
     let prop;
+
     if (nextProps !== EMPTY_OBJ) {
         const isFormElement = (nextVNode.type & Types.FormElement) > 0;
+        const isInputOrTextArea = (nextVNode.type & (Types.InputElement | Types.TextareaElement)) > 0;
         for (prop in nextProps) {
-            patchProp(prop, lastProps[prop], nextProps[prop], dom, isFormElement, isSVG);
+            patchProp(prop, lastProps[prop], nextProps[prop], dom, isFormElement, isSVG, isInputOrTextArea);
         }
         if (isFormElement) {
-            processForm(nextVNode, dom, nextProps, false);
+            processForm(nextVNode, dom, nextProps, isRender);
         }
     }
     if (lastProps !== EMPTY_OBJ) {
@@ -558,7 +560,7 @@ export function patchProps(lastVNode, nextVNode, isSVG) {
     }
 }
 
-export function patchProp(prop, lastValue, nextValue, dom, isFormElement, isSVG) {
+export function patchProp(prop, lastValue, nextValue, dom, isFormElement, isSVG, isInputOrTextArea) {
     if (lastValue !== nextValue) {
         if (isSkipProp(prop) || isFormElement && prop === 'value') {
             return;
@@ -587,6 +589,40 @@ export function patchProp(prop, lastValue, nextValue, dom, isFormElement, isSVG)
             if (isSVG && namespaces[prop]) {
                 dom.setAttributeNS(namespaces[prop], prop, nextValue);
             } else {
+                // https://github.com/Javey/Intact/issues/19
+                // IE 10/11 set placeholder will trigger input event
+                if (
+                    isInputOrTextArea &&
+                    browser.isIE && 
+                    (browser.version === 10 || browser.version === 11) &&
+                    prop === 'placeholder' &&
+                    !dom.__ignoreInputEvent
+                ) {
+                    if (!dom.__ignoreInputEvent) {
+                        const cb = (e) => {
+                            e.stopImmediatePropagation();
+                            dom.__ignoreInputEvent = false;
+                            dom.removeEventListener('input', cb);
+                        };
+                        dom.addEventListener('input', cb);
+                        dom.__ignoreInputEvent = true;
+                    }
+                   
+                    if (!dom.__addFocusEvent && nextValue) {
+                        let ignore = false;
+                        const inputCb = (e) => {
+                            if (ignore) e.stopImmediatePropagation();
+                            ignore = false;
+                        };
+                        const focusCb = () => {
+                            ignore = true;
+                        };
+                        dom.addEventListener('input', inputCb);
+                        dom.addEventListener('focusin', focusCb);
+                        dom.addEventListener('focusout', focusCb);
+                        dom.__addFocusEvent = true;
+                    }
+                }
                 dom.setAttribute(prop, nextValue);
             }
         }

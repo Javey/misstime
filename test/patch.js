@@ -922,6 +922,14 @@ describe('Patch', () => {
                 h('div')
             );
         });
+
+        it('shuold not trigger input event when set placeholder in IE10/11', () => {
+            const fn = sinon.spy(() => console.log('input'));
+            p(
+                h('input', {'ev-input': fn, placeholder: 'a'}),
+                h('input', {'ev-input': fn, placeholder: 'b'}),
+            );
+        });
     });
 
     describe('Key', () => {

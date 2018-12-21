@@ -57,6 +57,7 @@ if (browser.isIE8) {
 }
 
 export function handleEvent(name, lastEvent, nextEvent, dom) {
+    // debugger;
     if (name === 'blur') {
         name = 'focusout';
     } else if (name === 'focus') {
@@ -73,6 +74,19 @@ export function handleEvent(name, lastEvent, nextEvent, dom) {
                 delegatedRoots = {items: new SimpleMap(), docEvent: null};
                 delegatedRoots.docEvent = attachEventToDocument(name, delegatedRoots); 
                 delegatedEvents[name] = delegatedRoots;
+            }
+            if (
+                browser.isIE && 
+                (browser.version === 10 || browser.version === 11) &&
+                name === 'input'
+            ) {
+                const _nextEvent = nextEvent;
+                nextEvent = (e) => {
+                    if (dom.__ignoreInputEvent) {
+                        return;
+                    }
+                    _nextEvent(e);
+                }
             }
             delegatedRoots.items.set(dom, nextEvent);
         } else if (delegatedRoots) {

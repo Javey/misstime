@@ -193,6 +193,15 @@ if (typeof navigator !== 'undefined') {
         const version = parseInt(ua.substring(index + 5, ua.indexOf('.', index)), 10);
         browser.version = version;
         browser.isIE8 = version === 8;
+    } else if (navigator.appName === 'Netscape') {
+        browser.isIE = true;
+        // in IE 11 the navigator.appVersion says 'trident'
+        // in Edge the navigator.appVersion does not say trident
+        if(navigator.appVersion.indexOf('Trident') === -1) {
+            browser.version = 12;
+        } else {
+            browser.version = 11;
+        }
     } else if (~ua.indexOf('edge')) {
         browser.isEdge = true;
     } else if (~ua.indexOf('safari')) {

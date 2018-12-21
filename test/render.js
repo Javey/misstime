@@ -27,7 +27,7 @@ describe('Render', () => {
     });
 
     afterEach(() => {
-        document.body.removeChild(container);
+        // document.body.removeChild(container);
     });
 
     function reset() {
