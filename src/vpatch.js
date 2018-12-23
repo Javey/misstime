@@ -537,9 +537,9 @@ export function patchProps(lastVNode, nextVNode, isSVG, isRender) {
     const dom = nextVNode.dom;
     let prop;
 
+    const isInputOrTextArea = (nextVNode.type & (Types.InputElement | Types.TextareaElement)) > 0;
     if (nextProps !== EMPTY_OBJ) {
         const isFormElement = (nextVNode.type & Types.FormElement) > 0;
-        const isInputOrTextArea = (nextVNode.type & (Types.InputElement | Types.TextareaElement)) > 0;
         for (prop in nextProps) {
             patchProp(prop, lastProps[prop], nextProps[prop], dom, isFormElement, isSVG, isInputOrTextArea);
         }
@@ -554,7 +554,7 @@ export function patchProps(lastVNode, nextVNode, isSVG, isRender) {
                 isNullOrUndefined(nextProps[prop]) &&
                 !isNullOrUndefined(lastProps[prop])
             ) {
-                removeProp(prop, lastProps[prop], dom);
+                removeProp(prop, lastProps[prop], dom, isInputOrTextArea);
             } 
         }
     }
@@ -578,11 +578,11 @@ export function patchProp(prop, lastValue, nextValue, dom, isFormElement, isSVG,
                 dom._value = value;
             }
         } else if (isNullOrUndefined(nextValue)) {
-            removeProp(prop, lastValue, dom);
+            removeProp(prop, lastValue, dom, isInputOrTextArea);
         } else if (isEventProp(prop)) {
             handleEvent(prop.substr(3), lastValue, nextValue, dom);
         } else if (isObject(nextValue)) {
-            patchPropByObject(prop, lastValue, nextValue, dom);
+            patchPropByObject(prop, lastValue, nextValue, dom, isInputOrTextArea);
         } else if (prop === 'innerHTML') {
             dom.innerHTML = nextValue;
         } else {
@@ -595,32 +595,13 @@ export function patchProp(prop, lastValue, nextValue, dom, isFormElement, isSVG,
                     isInputOrTextArea &&
                     browser.isIE && 
                     (browser.version === 10 || browser.version === 11) &&
-                    prop === 'placeholder' &&
-                    !dom.__ignoreInputEvent
+                    prop === 'placeholder'
                 ) {
-                    if (!dom.__ignoreInputEvent) {
-                        const cb = (e) => {
-                            e.stopImmediatePropagation();
-                            dom.__ignoreInputEvent = false;
-                            dom.removeEventListener('input', cb);
-                        };
-                        dom.addEventListener('input', cb);
-                        dom.__ignoreInputEvent = true;
-                    }
-                   
-                    if (!dom.__addFocusEvent && nextValue) {
-                        let ignore = false;
-                        const inputCb = (e) => {
-                            if (ignore) e.stopImmediatePropagation();
-                            ignore = false;
-                        };
-                        const focusCb = () => {
-                            ignore = true;
-                        };
-                        dom.addEventListener('input', inputCb);
-                        dom.addEventListener('focusin', focusCb);
-                        dom.addEventListener('focusout', focusCb);
-                        dom.__addFocusEvent = true;
+                    ignoreInputEvent(dom);
+                    if (nextValue !== '') {
+                        addFocusEvent(dom);
+                    } else {
+                        removeFocusEvent(dom);
                     }
                 }
                 dom.setAttribute(prop, nextValue);
@@ -629,7 +610,48 @@ export function patchProp(prop, lastValue, nextValue, dom, isFormElement, isSVG,
     }
 }
 
-function removeProp(prop, lastValue, dom) {
+function ignoreInputEvent(dom) {
+    if (!dom.__ignoreInputEvent) {
+        const cb = (e) => {
+            e.stopImmediatePropagation();
+            delete dom.__ignoreInputEvent;
+            dom.removeEventListener('input', cb);
+        };
+        dom.addEventListener('input', cb);
+        dom.__ignoreInputEvent = true;
+    }
+}
+
+function addFocusEvent(dom) {
+    if (!dom.__addFocusEvent) {
+        let ignore = false;
+        const inputCb = (e) => {
+            if (ignore) e.stopImmediatePropagation();
+            ignore = false;
+        };
+        const focusCb = () => {
+            ignore = true;
+        };
+        dom.addEventListener('input', inputCb);
+        dom.addEventListener('focusin', focusCb);
+        dom.addEventListener('focusout', focusCb);
+        dom.__addFocusEvent = {
+            focusCb, inputCb
+        };
+    }
+}
+
+function removeFocusEvent(dom) {
+    const cbs = dom.__addFocusEvent;
+    if (cbs) {
+        dom.addEventListener('input', cbs.inputCb);
+        dom.addEventListener('focusin', cbs.focusCb);
+        dom.addEventListener('focusout', cbs.focusCb);
+        delete dom.__addFocusEvent;
+    }
+}
+
+function removeProp(prop, lastValue, dom, isInputOrTextArea) {
     if (!isNullOrUndefined(lastValue)) {
         switch (prop) {
             case 'value':
@@ -668,6 +690,14 @@ function removeProp(prop, lastValue, dom) {
                 }
             }
         } else {
+            if (
+                isInputOrTextArea &&
+                browser.isIE && 
+                (browser.version === 10 || browser.version === 11) &&
+                prop === 'placeholder'
+            ) {
+                removeFocusEvent(dom);
+            }
             dom.removeAttribute(prop);
         }
     }
@@ -686,9 +716,9 @@ const removeDataset = browser.isIE || browser.isSafari ?
         }
     };
 
-function patchPropByObject(prop, lastValue, nextValue, dom) {
+function patchPropByObject(prop, lastValue, nextValue, dom, isInputOrTextArea) {
     if (lastValue && !isObject(lastValue) && !isNullOrUndefined(lastValue)) {
-        removeProp(prop, lastValue, dom);
+        removeProp(prop, lastValue, dom, isInputOrTextArea);
         lastValue = null;
     }
     switch (prop) {
