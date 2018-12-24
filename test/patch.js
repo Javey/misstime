@@ -923,12 +923,65 @@ describe('Patch', () => {
             );
         });
 
-        it('shuold not trigger input event when set placeholder in IE10/11', () => {
-            const fn = sinon.spy(() => console.log('input'));
-            p(
-                h('input', {'ev-input': fn, placeholder: 'a'}),
-                h('input', {'ev-input': fn, placeholder: 'b'}),
-            );
+        describe('input event in IE10/11', () => {
+            if (!(browser.isIE && (browser.version === 10 || browser.version === 11))) return;
+            it('shuold not trigger input event when set placeholder in IE10/11', (done) => {
+                const fn = sinon.spy();
+                p(
+                    h('input', {'ev-input': fn, placeholder: 'a'}),
+                    h('input', {'ev-input': fn, placeholder: 'b'}),
+                );
+                sEql(fn.callCount, 0);
+                container.firstChild.focus();
+                sEql(fn.callCount, 0);
+                setTimeout(() => {
+                    container.firstChild.value = 'a';
+                    dispatchEvent(container.firstChild, 'input');
+                    sEql(fn.callCount, 1);
+                    container.firstChild.blur();
+                    sEql(fn.callCount, 1);
+    
+                    done();
+                });            
+            });
+    
+            it('should remove focus event hack callback when placeholder is empty in IE10/11', (done) => {
+                const fn = sinon.spy();
+                p(
+                    h('input', {'ev-input': fn, placeholder: 'a'}),
+                    h('input', {'ev-input': fn, placeholder: ''}),
+                );
+                container.firstChild.focus();
+                sEql(fn.callCount, 0);
+                setTimeout(() => {
+                    container.firstChild.value = 'a';
+                    dispatchEvent(container.firstChild, 'input');
+                    sEql(fn.callCount, 1);
+                    container.firstChild.blur();
+                    sEql(fn.callCount, 1);
+    
+                    done();
+                });
+            });
+    
+            it('should remove focus event hack callback when placeholder is removed in IE10/11', (done) => {
+                const fn = sinon.spy();
+                p(
+                    h('input', {'ev-input': fn, placeholder: 'a'}),
+                    h('input', {'ev-input': fn}),
+                );
+                container.firstChild.focus();
+                sEql(fn.callCount, 0);
+                setTimeout(() => {
+                    container.firstChild.value = 'a';
+                    dispatchEvent(container.firstChild, 'input');
+                    sEql(fn.callCount, 1);
+                    container.firstChild.blur();
+                    sEql(fn.callCount, 1);
+    
+                    done();
+                });
+            });
         });
     });
 

@@ -631,6 +631,11 @@ function addFocusEvent(dom) {
         };
         const focusCb = () => {
             ignore = true;
+            // if we call input.focus(), the input event will not
+            // be called, so we reset it next tick
+            setTimeout(() => {
+                ignore = false;
+            });
         };
         dom.addEventListener('input', inputCb);
         dom.addEventListener('focusin', focusCb);
