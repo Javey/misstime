@@ -924,7 +924,7 @@ describe('Patch', () => {
         });
 
         describe('input event in IE10/11', () => {
-            if (!(browser.isIE && (browser.version === 10 || browser.version === 11))) return;
+            // if (!(browser.isIE && (browser.version === 10 || browser.version === 11))) return;
             it('shuold not trigger input event when set placeholder in IE10/11', (done) => {
                 const fn = sinon.spy();
                 p(
