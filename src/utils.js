@@ -230,3 +230,7 @@ export const namespaces = {
     'xml:lang': xmlNS,
     'xml:space': xmlNS,
 };
+
+export const hooks = {
+    beforeInsert: null
+};

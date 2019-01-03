@@ -4,7 +4,7 @@ import {handleEvent} from './event';
 import {
     MountedQueue, isArray, isStringOrNumber,
     isNullOrUndefined, isEventProp, doc as document,
-    setTextContent, svgNS
+    setTextContent, svgNS, hooks
 } from './utils';
 import {processForm} from './wrappers/process';
 
@@ -67,6 +67,10 @@ export function createHtmlElement(vNode, parentDom, mountedQueue, isRender, pare
         } else {
             dom.className = className;
         }
+    }
+
+    if (hooks.beforeInsert) {
+        hooks.beforeInsert(vNode);
     }
 
     // in IE8, the select value will be set to the first option's value forcely

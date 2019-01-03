@@ -228,6 +228,10 @@ var namespaces = {
     'xml:space': xmlNS
 };
 
+var hooks = {
+    beforeInsert: null
+};
+
 var Types = {
     Text: 1,
     HtmlElement: 2,
@@ -827,6 +831,10 @@ function createHtmlElement(vNode, parentDom, mountedQueue, isRender, parentVNode
         } else {
             dom.className = className;
         }
+    }
+
+    if (hooks.beforeInsert) {
+        hooks.beforeInsert(vNode);
     }
 
     // in IE8, the select value will be set to the first option's value forcely
@@ -2324,3 +2332,4 @@ exports.hydrateRoot = hydrateRoot;
 exports.hydrate = hydrate;
 exports.Types = Types;
 exports.VNode = VNode;
+exports.hooks = hooks;
