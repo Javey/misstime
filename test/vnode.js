@@ -43,4 +43,11 @@ describe('VNode', () => {
 
         h(Component, {children: vNodes});
     });
+
+    it('should clone the reused vNode which is used as the only child element', () => {
+        const vNode = h('div');
+        const div = h('div', null, [h('div', null, vNode), h('div', null, vNode)]);
+
+        assert.strictEqual(div.children[0].children !== div.children[1].children, true);
+    });
 });
