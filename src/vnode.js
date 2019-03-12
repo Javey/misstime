@@ -191,7 +191,7 @@ function addChild(vNodes, reference, isAddKey) {
     return newVNodes || vNodes;
 }
 
-function directClone(vNode) {
+export function directClone(vNode) {
     let newVNode;
     const type = vNode.type;
 
@@ -210,7 +210,7 @@ function directClone(vNode) {
 
         newVNode = new VNode(
             type, vNode.tag, props, 
-            vNode.children, null, 
+            vNode.children, vNode.className, 
             vNode.key, vNode.ref
         );
 

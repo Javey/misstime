@@ -429,7 +429,7 @@ function directClone(vNode) {
             }
         }
 
-        newVNode = new VNode(type, vNode.tag, props, vNode.children, null, vNode.key, vNode.ref);
+        newVNode = new VNode(type, vNode.tag, props, vNode.children, vNode.className, vNode.key, vNode.ref);
 
         var newProps = newVNode.props;
         var newChildren = directCloneChildren(newProps.children);
@@ -2339,3 +2339,4 @@ exports.hydrate = hydrate;
 exports.Types = Types;
 exports.VNode = VNode;
 exports.hooks = hooks;
+exports.clone = directClone;

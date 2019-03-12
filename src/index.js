@@ -1,4 +1,11 @@
-import {createVNode, createCommentVNode, createUnescapeTextVNode, Types, VNode} from './vnode';
+import {
+    createVNode, 
+    createCommentVNode, 
+    createUnescapeTextVNode,
+    Types, 
+    VNode,
+    directClone
+} from './vnode';
 import {patch} from './vpatch';
 import {render, removeElement} from './vdom';
 import {MountedQueue, hooks} from './utils';
@@ -19,4 +26,5 @@ export {
     Types,
     VNode, // for type check
     hooks,
+    directClone as clone,
 };
