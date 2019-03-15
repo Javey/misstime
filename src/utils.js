@@ -133,6 +133,7 @@ export const booleanProps = {
     autofocus: true,
     selected: true,
     indeterminate: true,
+    multiple: true,
 };
 
 export const strictProps = {
