@@ -1050,6 +1050,7 @@ function removeComponentClassOrInstance(vNode, parentDom, nextVNode) {
     var ref = vNode.ref;
 
     if (typeof instance.destroy === 'function') {
+        instance._isRemoveDirectly = !!parentDom;
         instance.destroy(vNode, nextVNode, parentDom);
     }
 

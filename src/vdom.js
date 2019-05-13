@@ -278,6 +278,7 @@ export function removeComponentClassOrInstance(vNode, parentDom, nextVNode) {
     const ref = vNode.ref;
 
     if (typeof instance.destroy === 'function') {
+        instance._isRemoveDirectly = !!parentDom;
         instance.destroy(vNode, nextVNode, parentDom);
     }
 
