@@ -16,6 +16,9 @@ let addEventListener;
 let removeEventListener;
 function fixEvent(fn) {
     return (event) => {
+        // for compatibility
+        event._rawEvent = event
+
         event.stopPropagation = stopPropagation;
         if (!event.preventDefault) {
             event.preventDefault = preventDefault;
@@ -49,6 +52,7 @@ const unDelegatesEvents = {
     'mouseleave': true,
     'propertychange': true,
     'scroll': true,
+    'wheel': true,
 };
 
 // change event can not be deletegated in IE8 
@@ -161,8 +165,7 @@ function attachEventToDocument(name, delegatedRoots) {
             } catch (e) {
                 // ie8
             }
-            // for compatibility
-            event._rawEvent = event
+            // nt._rawEvent = event
             dispatchEvent(
                 event, 
                 event.target, 

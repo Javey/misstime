@@ -500,6 +500,9 @@ var addEventListener = void 0;
 var removeEventListener = void 0;
 function fixEvent(fn) {
     return function (event) {
+        // for compatibility
+        event._rawEvent = event;
+
         event.stopPropagation = stopPropagation;
         if (!event.preventDefault) {
             event.preventDefault = preventDefault;
@@ -532,7 +535,8 @@ var unDelegatesEvents = {
     mouseenter: true,
     mouseleave: true,
     propertychange: true,
-    scroll: true
+    scroll: true,
+    wheel: true
 };
 
 // change event can not be deletegated in IE8 
@@ -645,8 +649,7 @@ function attachEventToDocument(name, delegatedRoots) {
             } catch (e) {}
             // ie8
 
-            // for compatibility
-            event._rawEvent = event;
+            // nt._rawEvent = event
             dispatchEvent(event, event.target, delegatedRoots.items, count, event.type === 'click', eventData);
         }
     };
