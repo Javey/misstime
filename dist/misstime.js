@@ -493,9 +493,6 @@ function preventDefault() {
 
 function stopPropagation() {
     this.cancelBubble = true;
-    // if we get cancelBubble in setTimeout and capture phase
-    // the value always is true, even if we stop propagation
-    this._cancelBubble = true;
     this.stopImmediatePropagation && this.stopImmediatePropagation();
 }
 
