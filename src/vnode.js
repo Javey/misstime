@@ -199,23 +199,30 @@ export function directClone(vNode, extraProps) {
         let props = vNode.props || EMPTY_OBJ;
         if (extraProps) {
             // if exist extraProps, shadow copy
-            let _props;
+            let _props = {};
             for (let key in props) {
                 _props[key] = props[key];
             }
             for (let key in extraProps) {
                 _props[key] = extraProps[key];
             }
-            props = _props;
-        }
 
-        newVNode = new VNode(
-            type, vNode.tag, props,
-            vNode.children,
-            props.className || vNode.className,
-            props.key || vNode.key,
-            props.ref || vNode.ref
-        );
+            newVNode = new VNode(
+                type, vNode.tag, _props,
+                vNode.children,
+                _props.className || vNode.className,
+                _props.key || vNode.key,
+                _props.ref || vNode.ref
+            );
+        } else {
+            newVNode = new VNode(
+                type, vNode.tag, props,
+                vNode.children,
+                vNode.className,
+                vNode.key,
+                vNode.ref
+            );
+        }
     } else if (type & Types.Text) {
         newVNode = createTextVNode(vNode.children, vNode.key);
     } else if (type & Types.HtmlComment) {
