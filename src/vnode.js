@@ -77,7 +77,6 @@ export function createVNode(tag, props, children, className, key, ref) {
         if (!isNullOrUndefined(children)) {
             if (props === EMPTY_OBJ) props = {};
             props.children = normalizeChildren(children, false);
-            // props.children = children;
         } else if (!isNullOrUndefined(props.children)) {
             props.children = normalizeChildren(props.children, false);
         }
@@ -191,52 +190,31 @@ function addChild(vNodes, reference, isAddKey) {
     return newVNodes || vNodes;
 }
 
-export function directClone(vNode) {
+export function directClone(vNode, extraProps) {
     let newVNode;
     const type = vNode.type;
 
-    // if (type & Types.ComponentClassOrInstance) {
-        // let props;
-        // const propsToClone = vNode.props;
-        
-        // if (propsToClone === EMPTY_OBJ || isNullOrUndefined(propsToClone)) {
-            // props = EMPTY_OBJ;
-        // } else {
-            // props = {};
-            // for (let key in propsToClone) {
-                // props[key] = propsToClone[key];
-            // }
-        // }
-
-        // newVNode = new VNode(
-            // type, vNode.tag, props, 
-            // vNode.children, vNode.className, 
-            // vNode.key, vNode.ref
-        // );
-
-        // const newProps = newVNode.props;
-        // const newChildren = directCloneChildren(newProps.children);
-        // if (newChildren) {
-            // newProps.children = newChildren;
-        // }
-    // } else if (type & Types.Element) {
-    if (type & Types.ComponentClassOrInstance || type & Types.Element) {
-        let props;
-        const propsToClone = vNode.props;
-
-        if (propsToClone === EMPTY_OBJ || isNullOrUndefined(propsToClone)) {
-            props = EMPTY_OBJ;
-        } else {
-            props = {};
-            for (let key in propsToClone) {
-                props[key] = propsToClone[key];
+    if (type & (Types.ComponentClassOrInstance | Types.Element)) {
+        // maybe we does not shadow copy props
+        let props = vNode.props || EMPTY_OBJ;
+        if (extraProps) {
+            // if exist extraProps, shadow copy
+            let _props;
+            for (let key in props) {
+                _props[key] = props[key];
             }
+            for (let key in extraProps) {
+                _props[key] = extraProps[key];
+            }
+            props = _props;
         }
 
         newVNode = new VNode(
             type, vNode.tag, props,
-            vNode.children, vNode.className,
-            vNode.key, vNode.ref
+            vNode.children,
+            props.className || vNode.className,
+            props.key || vNode.key,
+            props.ref || vNode.ref
         );
     } else if (type & Types.Text) {
         newVNode = createTextVNode(vNode.children, vNode.key);
