@@ -129,7 +129,7 @@ function normalizeChildren(vNodes, isAddKey) {
         return childNodes.length ? childNodes : null;
     } else if (isComponentInstance(vNodes)) {
         return createComponentInstanceVNode(vNodes);
-    } else if (vNodes.type) {
+    } else if (vNodes.type && isAddKey) {
         if (!isNullOrUndefined(vNodes.dom) || vNodes.$) {
             return directClone(vNodes);
         }
@@ -181,7 +181,7 @@ function addChild(vNodes, reference, isAddKey) {
             if (!newVNodes) {
                 newVNodes = vNodes.slice(0, i);
             }
-            if (n.dom || n.$) {
+            if (isAddKey && (n.dom || n.$)) {
                 newVNodes.push(applyKey(directClone(n), reference, isAddKey));
             } else {
                 newVNodes.push(applyKey(n, reference, isAddKey));
