@@ -825,6 +825,40 @@ describe('Patch', () => {
         eqlHtml(container, '<div><span><span>1<span>2</span>3<span>4</span></span></span></div>');
     });
 
+    it('patch reused vNode', () => {
+        const child = h('span', null, 'test')
+        const vNode = h('div', null, child);
+        const v1 = h('div', null, [
+            h('div', null, vNode),
+            h('div', null, vNode),
+        ]);
+        r(v1);
+        const v2 = h('div', null, [
+            h('div', null, h('div', null, h('span', null, 'changed'))),
+            h('div', null, vNode),
+        ]);
+        p(v1, v2);
+
+        eqlHtml(container, '<div><div><div><span>changed</span></div></div><div><div><span>test</span></div></div></div>');
+    });
+
+    it('patch multiple reused vNodes', () => {
+        const child = h('span', null, 'test')
+        const vNode = h('div', null, [child]);
+        const v1 = h('div', null, [
+            h('div', null, vNode),
+            h('div', null, vNode),
+        ]);
+        r(v1);
+        const v2 = h('div', null, [
+            h('div', null, h('div', null, [h('span', null, 'changed')])),
+            h('div', null, vNode),
+        ]);
+        p(v1, v2);
+
+        eqlHtml(container, '<div><div><div><span>changed</span></div></div><div><div><span>test</span></div></div></div>');
+    });
+
     describe('Event', () => {
         it('patch event', () => {
             const fn = sinon.spy();

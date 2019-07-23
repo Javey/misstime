@@ -1,4 +1,4 @@
-import {Types, createTextVNode, EMPTY_OBJ} from './vnode';
+import {Types, createTextVNode, EMPTY_OBJ, directClone} from './vnode';
 import {patchProps} from './vpatch';
 import {handleEvent} from './event';
 import {
@@ -202,10 +202,22 @@ export function createElements(vNodes, parentDom, mountedQueue, isRender, parent
     if (isStringOrNumber(vNodes)) {
         setTextContent(parentDom, vNodes);
     } else if (isArray(vNodes)) {
+        let cloned = false;
         for (let i = 0; i < vNodes.length; i++) {
-            createElement(vNodes[i], parentDom, mountedQueue, isRender, parentVNode, isSVG);
+            let child = vNodes[i];
+            if (child.dom) {
+                if (!cloned) {
+                    parentVNode.children = vNodes = vNodes.slice(0);
+                    cloned = true;
+                }
+                vNodes[i] = child = directClone(child);
+            }
+            createElement(child, parentDom, mountedQueue, isRender, parentVNode, isSVG);
         }
     } else {
+        if (vNodes.dom) {
+            parentVNode.children = vNodes = directClone(vNodes);
+        }
         createElement(vNodes, parentDom, mountedQueue, isRender, parentVNode, isSVG);
     }
 }

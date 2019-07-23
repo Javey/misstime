@@ -37,42 +37,41 @@ export function patch(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode
 }
 
 export function patchVNode(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG) {
-    if (lastVNode !== nextVNode) {
-        const nextType = nextVNode.type;
-        const lastType = lastVNode.type;
+    const nextType = nextVNode.type;
+    const lastType = lastVNode.type;
 
-        if (nextType & Types.Element) {
-            if (lastType & Types.Element) {
-                patchElement(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG);
-            } else {
-                replaceElement(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG);
-            }
-        } else if (nextType & Types.TextElement) {
-            if (lastType === nextType) {
-                patchText(lastVNode, nextVNode);
-            } else {
-                replaceElement(lastVNode, nextVNode, parentDom, mountedQueue, isSVG);
-            }
-        } else if (nextType & Types.ComponentClass) {
-            if (lastType & Types.ComponentClass) {
-                patchComponentClass(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG);
-            } else {
-                replaceElement(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG);
-            }
-        // } else if (nextType & Types.ComponentFunction) {
-            // if (lastType & Types.ComponentFunction) {
-                // patchComponentFunction(lastVNode, nextVNode, parentDom, mountedQueue);
-            // } else {
-                // replaceElement(lastVNode, nextVNode, parentDom, mountedQueue);
-            // }
-        } else if (nextType & Types.ComponentInstance) {
-            if (lastType & Types.ComponentInstance) {
-                patchComponentIntance(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG);
-            } else {
-                replaceElement(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG);
-            }
+    if (nextType & Types.Element) {
+        if (lastType & Types.Element) {
+            patchElement(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG);
+        } else {
+            replaceElement(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG);
+        }
+    } else if (nextType & Types.TextElement) {
+        if (lastType === nextType) {
+            patchText(lastVNode, nextVNode);
+        } else {
+            replaceElement(lastVNode, nextVNode, parentDom, mountedQueue, isSVG);
+        }
+    } else if (nextType & Types.ComponentClass) {
+        if (lastType & Types.ComponentClass) {
+            patchComponentClass(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG);
+        } else {
+            replaceElement(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG);
+        }
+    // } else if (nextType & Types.ComponentFunction) {
+        // if (lastType & Types.ComponentFunction) {
+            // patchComponentFunction(lastVNode, nextVNode, parentDom, mountedQueue);
+        // } else {
+            // replaceElement(lastVNode, nextVNode, parentDom, mountedQueue);
+        // }
+    } else if (nextType & Types.ComponentInstance) {
+        if (lastType & Types.ComponentInstance) {
+            patchComponentIntance(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG);
+        } else {
+            replaceElement(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG);
         }
     }
+
     return nextVNode.dom;
 }
 

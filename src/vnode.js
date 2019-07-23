@@ -195,31 +195,32 @@ export function directClone(vNode) {
     let newVNode;
     const type = vNode.type;
 
-    if (type & Types.ComponentClassOrInstance) {
-        let props;
-        const propsToClone = vNode.props;
+    // if (type & Types.ComponentClassOrInstance) {
+        // let props;
+        // const propsToClone = vNode.props;
         
-        if (propsToClone === EMPTY_OBJ || isNullOrUndefined(propsToClone)) {
-            props = EMPTY_OBJ;
-        } else {
-            props = {};
-            for (let key in propsToClone) {
-                props[key] = propsToClone[key];
-            }
-        }
+        // if (propsToClone === EMPTY_OBJ || isNullOrUndefined(propsToClone)) {
+            // props = EMPTY_OBJ;
+        // } else {
+            // props = {};
+            // for (let key in propsToClone) {
+                // props[key] = propsToClone[key];
+            // }
+        // }
 
-        newVNode = new VNode(
-            type, vNode.tag, props, 
-            vNode.children, vNode.className, 
-            vNode.key, vNode.ref
-        );
+        // newVNode = new VNode(
+            // type, vNode.tag, props, 
+            // vNode.children, vNode.className, 
+            // vNode.key, vNode.ref
+        // );
 
-        const newProps = newVNode.props;
-        const newChildren = directCloneChildren(newProps.children);
-        if (newChildren) {
-            newProps.children = newChildren;
-        }
-    } else if (type & Types.Element) {
+        // const newProps = newVNode.props;
+        // const newChildren = directCloneChildren(newProps.children);
+        // if (newChildren) {
+            // newProps.children = newChildren;
+        // }
+    // } else if (type & Types.Element) {
+    if (type & Types.ComponentClassOrInstance || type & Types.Element) {
         let props;
         const propsToClone = vNode.props;
 
@@ -233,8 +234,8 @@ export function directClone(vNode) {
         }
 
         newVNode = new VNode(
-            type, vNode.tag, vNode.props,
-            directCloneChildren(vNode.children), vNode.className,
+            type, vNode.tag, props,
+            vNode.children, vNode.className,
             vNode.key, vNode.ref
         );
     } else if (type & Types.Text) {
