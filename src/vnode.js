@@ -206,6 +206,10 @@ export function directClone(vNode, extraProps) {
             for (let key in extraProps) {
                 _props[key] = extraProps[key];
             }
+            const children = extraProps.children;
+            if (children) {
+                _props.children = normalizeChildren(children, false);
+            }
 
             newVNode = new VNode(
                 type, vNode.tag, _props,
