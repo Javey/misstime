@@ -65,7 +65,7 @@ export function patchVNode(lastVNode, nextVNode, parentDom, mountedQueue, parent
         // }
     } else if (nextType & Types.ComponentInstance) {
         if (lastType & Types.ComponentInstance) {
-            patchComponentIntance(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG);
+            patchComponentInstance(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG);
         } else {
             replaceElement(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG);
         }
@@ -178,7 +178,7 @@ function patchComponentClass(lastVNode, nextVNode, parentDom, mountedQueue, pare
     }
 }
 
-function patchComponentIntance(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG) {
+function patchComponentInstance(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG) {
     const lastInstance = lastVNode.children;
     const nextInstance = nextVNode.children;
     const dom = lastVNode.dom;

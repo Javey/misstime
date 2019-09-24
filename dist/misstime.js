@@ -420,7 +420,9 @@ function directClone(vNode, extraProps) {
         // maybe we does not shadow copy props
         var props = vNode.props || EMPTY_OBJ;
         // if this is a instance vNode, then we must change its type to new instance again
-        var _type = type & Types.ComponentInstance ? Types.ComponentClass : type;
+        // 
+        // but if we change the type, it will lead to replace element because of different type.
+        // let _type = type & Types.ComponentInstance ? Types.ComponentClass : type;
         if (extraProps) {
             // if exist extraProps, shadow copy
             var _props = {};
@@ -435,9 +437,9 @@ function directClone(vNode, extraProps) {
                 _props.children = normalizeChildren(children, false);
             }
 
-            newVNode = new VNode(_type, vNode.tag, _props, vNode.children, _props.className || vNode.className, _props.key || vNode.key, _props.ref || vNode.ref);
+            newVNode = new VNode(type, vNode.tag, _props, vNode.children, _props.className || vNode.className, _props.key || vNode.key, _props.ref || vNode.ref);
         } else {
-            newVNode = new VNode(_type, vNode.tag, props, vNode.children, vNode.className, vNode.key, vNode.ref);
+            newVNode = new VNode(type, vNode.tag, props, vNode.children, vNode.className, vNode.key, vNode.ref);
         }
     } else if (type & Types.Text) {
         newVNode = createTextVNode(vNode.children, vNode.key);
@@ -1137,7 +1139,7 @@ function patchVNode(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, 
         // }
     } else if (nextType & Types.ComponentInstance) {
         if (lastType & Types.ComponentInstance) {
-            patchComponentIntance(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG);
+            patchComponentInstance(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG);
         } else {
             replaceElement(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG);
         }
@@ -1247,7 +1249,7 @@ function patchComponentClass(lastVNode, nextVNode, parentDom, mountedQueue, pare
     }
 }
 
-function patchComponentIntance(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG) {
+function patchComponentInstance(lastVNode, nextVNode, parentDom, mountedQueue, parentVNode, isSVG) {
     var lastInstance = lastVNode.children;
     var nextInstance = nextVNode.children;
     var dom = lastVNode.dom;
