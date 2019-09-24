@@ -77,7 +77,7 @@ export function createHtmlElement(vNode, parentDom, mountedQueue, isRender, pare
     // when it is appended to parent dom. We change its value in processForm does not
     // work. So processForm after it has be appended to parent dom.
     if (parentDom) {
-        appendChild(parentDom, dom);
+        parentDom.appendChild(dom);
     }
     if (props !== EMPTY_OBJ) {
         patchProps(null, vNode, isSVG, true);
@@ -134,8 +134,8 @@ export function createOrHydrateComponentClassOrInstance(vNode, parentDom, mounte
 export function createComponentClassOrInstance(vNode, parentDom, mountedQueue, lastVNode, isRender, parentVNode, isSVG) {
     return createOrHydrateComponentClassOrInstance(vNode, parentDom, mountedQueue, lastVNode, isRender, parentVNode, isSVG, (instance) => {
         const dom = instance.init(lastVNode, vNode);
-        if (parentDom) {
-            appendChild(parentDom, dom);
+        if (parentDom && (!lastVNode || lastVNode.dom !== dom)) {
+            parentDom.appendChild(dom);
         }
 
         return dom;
@@ -337,15 +337,6 @@ export function removeChild(parentDom, vNode) {
         dom._unmount(vNode, parentDom);
     } else {
         parentDom.removeChild(dom);
-    }
-}
-
-export function appendChild(parentDom, dom) {
-    // in IE8, when a element has appendChild,
-    // then its parentNode will be HTMLDocument object,
-    // so check the tagName for this case
-    if (!dom.parentNode || !dom.parentNode.tagName) {
-        parentDom.appendChild(dom);
     }
 }
 

@@ -10,8 +10,7 @@ import {
     // createComponentFunction,
     // createComponentFunctionVNode,
     createRef,
-    replaceChild,
-    appendChild
+    replaceChild
 } from './vdom';
 import {isObject, isArray, isNullOrUndefined, 
     isSkipProp, MountedQueue, isEventProp, 
@@ -511,7 +510,6 @@ function insertOrAppend(pos, length, newDom, nodes, dom, detectParent) {
         dom.insertBefore(newDom, nodes[nextPos].dom);
     } else {
         dom.appendChild(newDom);
-        // appendChild(dom, newDom);
     }
 }
 
