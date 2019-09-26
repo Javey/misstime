@@ -1059,6 +1059,22 @@ describe('Patch', () => {
             });
         });
 
+        it('replace children with non-string keys', () => {
+            function createVNodeFromArray(arr) {
+                return h('div', null, map(arr, value => h('span', {key: value}, value.key || value)));
+            }
+            const keys = [1, 2, 3, 4, 5, 6, 7].map(item => ({key: item}));
+            const vNode = createVNodeFromArray(keys);
+            r(vNode);
+            const childNodes = saveChildren();
+
+            patch(vNode, createVNodeFromArray(['a', keys[1], keys[2], keys[3], 'b', keys[5], keys[6]]));
+            each([null, 1, 2, 3, null, 5, 6], (order, index) => {
+                if (order === null) return;
+                sEql(container.firstChild.children[index], childNodes[order]);
+            });
+        });
+
         it('mix keys without keys', () => {
             const vNode = h('div', null, [
                 h('span'),

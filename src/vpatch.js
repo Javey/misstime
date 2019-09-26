@@ -16,7 +16,7 @@ import {isObject, isArray, isNullOrUndefined,
     isSkipProp, MountedQueue, isEventProp, 
     booleanProps, strictProps,
     browser, setTextContent, isStringOrNumber,
-    namespaces
+    namespaces, SimpleMap
 } from './utils';
 import {handleEvent} from './event';
 import {processForm} from './wrappers/process';
@@ -376,14 +376,14 @@ function patchChildrenByKey(a, b, dom, mountedQueue, parentVNode, isSVG) {
                 }
             }
         } else {
-            var keyIndex = {};
+            var keyIndex = new SimpleMap();
             for (i = bStart; i <= bEnd; i++) {
-                keyIndex[b[i].key] = i;
+                keyIndex.set(b[i].key, i);
             }
             for (i = aStart; i <= aEnd; i++) {
                 aNode = a[i];
                 if (patched < bLength) {
-                    j = keyIndex[aNode.key];
+                    j = keyIndex.get(aNode.key);
                     if (j !== undefined) {
                         bNode = b[j];
                         sources[j - bStart] = i;

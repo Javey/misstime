@@ -419,11 +419,14 @@ function directClone(vNode, extraProps) {
     if (type & (Types.ComponentClassOrInstance | Types.Element)) {
         // maybe we does not shadow copy props
         var props = vNode.props || EMPTY_OBJ;
-        // if this is a instance vNode, then we must change its type to new instance again
-        // 
-        // but if we change the type, it will lead to replace element because of different type.
-        // let _type = type & Types.ComponentInstance ? Types.ComponentClass : type;
         if (extraProps) {
+            /**
+             * if this is a instance vNode, then we must change its type to new instance again
+             * 
+             * but if we change the type, it will lead to replace element because of different type.
+             * only change the type, when we really clone it
+             */
+            var _type = type & Types.ComponentInstance ? Types.ComponentClass : type;
             // if exist extraProps, shadow copy
             var _props = {};
             for (var key in props) {
@@ -437,7 +440,7 @@ function directClone(vNode, extraProps) {
                 _props.children = normalizeChildren(children, false);
             }
 
-            newVNode = new VNode(type, vNode.tag, _props, vNode.children, _props.className || vNode.className, _props.key || vNode.key, _props.ref || vNode.ref);
+            newVNode = new VNode(_type, vNode.tag, _props, vNode.children, _props.className || vNode.className, _props.key || vNode.key, _props.ref || vNode.ref);
         } else {
             newVNode = new VNode(type, vNode.tag, props, vNode.children, vNode.className, vNode.key, vNode.ref);
         }
@@ -1443,14 +1446,14 @@ function patchChildrenByKey(a, b, dom, mountedQueue, parentVNode, isSVG) {
                 }
             }
         } else {
-            var keyIndex = {};
+            var keyIndex = new SimpleMap();
             for (i = bStart; i <= bEnd; i++) {
-                keyIndex[b[i].key] = i;
+                keyIndex.set(b[i].key, i);
             }
             for (i = aStart; i <= aEnd; i++) {
                 aNode = a[i];
                 if (patched < bLength) {
-                    j = keyIndex[aNode.key];
+                    j = keyIndex.get(aNode.key);
                     if (j !== undefined) {
                         bNode = b[j];
                         sources[j - bStart] = i;
