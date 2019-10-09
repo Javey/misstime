@@ -193,10 +193,11 @@ function patchComponentInstance(lastVNode, nextVNode, parentDom, mountedQueue, p
         if (lastInstance.mounted) {
             lastInstance.isRender = false;
         }
+        lastInstance.vNode = nextVNode;
         lastInstance.parentVNode = parentVNode;
+        nextVNode.parentVNode = parentVNode;
         newDom = lastInstance.update(lastVNode, nextVNode);
         nextVNode.dom = newDom;
-        nextVNode.parentVNode = parentVNode;
 
         const ref = nextVNode.ref;
         if (typeof ref === 'function') {
