@@ -134,7 +134,14 @@ export function createOrHydrateComponentClassOrInstance(vNode, parentDom, mounte
 export function createComponentClassOrInstance(vNode, parentDom, mountedQueue, lastVNode, isRender, parentVNode, isSVG) {
     return createOrHydrateComponentClassOrInstance(vNode, parentDom, mountedQueue, lastVNode, isRender, parentVNode, isSVG, (instance) => {
         const dom = instance.init(lastVNode, vNode);
-        if (parentDom && (!lastVNode || lastVNode.dom !== dom)) {
+        if (
+            parentDom && 
+            (
+                !lastVNode || 
+                // maybe we have reused the component and replaced the dom
+                lastVNode.dom !== dom && !dom.parentNode || !dom.parentNode.tagName
+            )
+        ) {
             parentDom.appendChild(dom);
         }
 

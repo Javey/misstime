@@ -518,9 +518,9 @@ describe('Patch', () => {
 
     it('patch class component with class component', () => {
         eql(
-            h('div', null, h(ClassComponent)),
-            h('div', null, h(NewComponent)),
-            '<div><section></section></div>'
+            h('div', null, [h(ClassComponent), h('i')]),
+            h('div', null, [h(NewComponent), h('i')]),
+            '<div><section></section><i></i></div>'
         );
     });
 
