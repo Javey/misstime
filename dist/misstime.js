@@ -524,7 +524,7 @@ function handleEvent(name, lastEvent, nextEvent, dom) {
         name = 'propertychange';
     }
 
-    if (config.disableDelegate || !unDelegatesEvents[name]) {
+    if (!config.disableDelegate && !unDelegatesEvents[name]) {
         var delegatedRoots = delegatedEvents[name];
 
         if (nextEvent) {
