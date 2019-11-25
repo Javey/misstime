@@ -8,7 +8,7 @@ import {
 } from './vnode';
 import {patch} from './vpatch';
 import {render, removeElement} from './vdom';
-import {MountedQueue, hooks} from './utils';
+import {MountedQueue, hooks, config} from './utils';
 import {toString} from './tostring';
 import {hydrateRoot, hydrate} from './hydration';
 
@@ -27,4 +27,5 @@ export {
     VNode, // for type check
     hooks,
     directClone as clone,
+    config,
 };

@@ -1,6 +1,6 @@
 import {
     SimpleMap, isNullOrUndefined, createObject, 
-    doc as document, browser, isArray
+    doc as document, browser, isArray, config
 } from './utils';
 
 function preventDefault() {
@@ -70,7 +70,7 @@ export function handleEvent(name, lastEvent, nextEvent, dom) {
         name = 'propertychange';
     }
 
-    if (!unDelegatesEvents[name]) {
+    if (config.disableDelegate || !unDelegatesEvents[name]) {
         let delegatedRoots = delegatedEvents[name];
 
         if (nextEvent) {

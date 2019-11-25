@@ -235,3 +235,7 @@ export const namespaces = {
 export const hooks = {
     beforeInsert: null
 };
+
+export const config = {
+    disableDelegate: false, // for using in React/Vue, disable delegate the event
+};

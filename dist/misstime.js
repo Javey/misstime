@@ -233,6 +233,10 @@ var hooks = {
     beforeInsert: null
 };
 
+var config = {
+    disableDelegate: false // for using in React/Vue, disable delegate the event
+};
+
 var Types = {
     Text: 1,
     HtmlElement: 2,
@@ -520,7 +524,7 @@ function handleEvent(name, lastEvent, nextEvent, dom) {
         name = 'propertychange';
     }
 
-    if (!unDelegatesEvents[name]) {
+    if (config.disableDelegate || !unDelegatesEvents[name]) {
         var delegatedRoots = delegatedEvents[name];
 
         if (nextEvent) {
@@ -877,7 +881,9 @@ function createOrHydrateComponentClassOrInstance(vNode, parentDom, mountedQueue,
 function createComponentClassOrInstance(vNode, parentDom, mountedQueue, lastVNode, isRender, parentVNode, isSVG) {
     return createOrHydrateComponentClassOrInstance(vNode, parentDom, mountedQueue, lastVNode, isRender, parentVNode, isSVG, function (instance) {
         var dom = instance.init(lastVNode, vNode);
-        if (parentDom && (!lastVNode || lastVNode.dom !== dom)) {
+        if (parentDom && (!lastVNode ||
+        // maybe we have reused the component and replaced the dom
+        lastVNode.dom !== dom && !dom.parentNode || !dom.parentNode.tagName)) {
             parentDom.appendChild(dom);
         }
 
@@ -1267,10 +1273,11 @@ function patchComponentInstance(lastVNode, nextVNode, parentDom, mountedQueue, p
         if (lastInstance.mounted) {
             lastInstance.isRender = false;
         }
+        lastInstance.vNode = nextVNode;
         lastInstance.parentVNode = parentVNode;
+        nextVNode.parentVNode = parentVNode;
         newDom = lastInstance.update(lastVNode, nextVNode);
         nextVNode.dom = newDom;
-        nextVNode.parentVNode = parentVNode;
 
         var ref = nextVNode.ref;
         if (typeof ref === 'function') {
@@ -2314,5 +2321,6 @@ exports.Types = Types;
 exports.VNode = VNode;
 exports.hooks = hooks;
 exports.clone = directClone;
+exports.config = config;
 
 })));
