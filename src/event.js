@@ -15,21 +15,24 @@ function stopPropagation() {
 let addEventListener;
 let removeEventListener;
 function fixEvent(fn) {
-    return (event) => {
-        // for compatibility
-        event._rawEvent = event
+    if (!fn._$cb) {
+        fn._$cb = (event) => {
+            // for compatibility
+            event._rawEvent = event
 
-        event.stopPropagation = stopPropagation;
-        if (!event.preventDefault) {
-            event.preventDefault = preventDefault;
+            event.stopPropagation = stopPropagation;
+            if (!event.preventDefault) {
+                event.preventDefault = preventDefault;
+            }
+            fn(event);
         }
-        fn(event);
     }
+    return fn._$cb;
 }
 if ('addEventListener' in document) {
     addEventListener = function(dom, name, fn) {
-        fn._$cb = fixEvent(fn);
-        dom.addEventListener(name, fn._$cb, false);
+        fn = fixEvent(fn);
+        dom.addEventListener(name, fn, false);
     };
 
     removeEventListener = function(dom, name, fn) {
@@ -37,8 +40,8 @@ if ('addEventListener' in document) {
     };
 } else {
     addEventListener = function(dom, name, fn) {
-        fn._$cb = fixEvent(fn);
-        dom.attachEvent(`on${name}`, fn._$cb);
+        fn = fixEvent(fn);
+        dom.attachEvent(`on${name}`, fn);
     };
 
     removeEventListener = function(dom, name, fn) {

@@ -469,21 +469,24 @@ function stopPropagation() {
 var addEventListener = void 0;
 var removeEventListener = void 0;
 function fixEvent(fn) {
-    return function (event) {
-        // for compatibility
-        event._rawEvent = event;
+    if (!fn._$cb) {
+        fn._$cb = function (event) {
+            // for compatibility
+            event._rawEvent = event;
 
-        event.stopPropagation = stopPropagation;
-        if (!event.preventDefault) {
-            event.preventDefault = preventDefault;
-        }
-        fn(event);
-    };
+            event.stopPropagation = stopPropagation;
+            if (!event.preventDefault) {
+                event.preventDefault = preventDefault;
+            }
+            fn(event);
+        };
+    }
+    return fn._$cb;
 }
 if ('addEventListener' in doc) {
     addEventListener = function addEventListener(dom, name, fn) {
-        fn._$cb = fixEvent(fn);
-        dom.addEventListener(name, fn._$cb, false);
+        fn = fixEvent(fn);
+        dom.addEventListener(name, fn, false);
     };
 
     removeEventListener = function removeEventListener(dom, name, fn) {
@@ -491,8 +494,8 @@ if ('addEventListener' in doc) {
     };
 } else {
     addEventListener = function addEventListener(dom, name, fn) {
-        fn._$cb = fixEvent(fn);
-        dom.attachEvent('on' + name, fn._$cb);
+        fn = fixEvent(fn);
+        dom.attachEvent('on' + name, fn);
     };
 
     removeEventListener = function removeEventListener(dom, name, fn) {
