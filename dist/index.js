@@ -290,7 +290,8 @@ function createVNode(tag, props, children, className, key, ref) {
             }
             break;
         case 'function':
-            if (tag.prototype.init) {
+            // arrow function has not prototype
+            if (tag.prototype && tag.prototype.init) {
                 type = Types.ComponentClass;
             } else {
                 // return tag(props);
