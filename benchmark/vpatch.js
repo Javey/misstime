@@ -2,14 +2,14 @@ import {Store} from './store.es6';
 import {createVNode} from 'inferno';
 import {mount} from 'inferno/dist/DOM/mounting';
 import {render} from 'inferno/dist/DOM/rendering';
-import {h} from '../index';
-import {render as r} from '../vdom';
-import {patch as p} from '../vpatch';
+import {h} from '../src/index';
+import {render as r} from '../src/vdom';
+import {patch as p} from '../src/vpatch';
 
 const store = new Store();
 // store.add(2);
 store.runLots();
-process.env.NODE_ENV = 'production'; 
+process.env.NODE_ENV = 'production';
 
 function createRows() {
     var rows = [];
@@ -22,11 +22,11 @@ function createRows() {
 
         rows.push(
             createVNode(66, 'tr', id === selected ? 'danger' : '', [
-                createVNode(2, 'td', 'col-md-1', id + ''), 
-                createVNode(2, 'td', 'col-md-4', 
-                    createVNode(2, 'a', null, d.label)), 
-                createVNode(2, 'td', 'col-md-1', 
-                    createVNode(2, 'a', null, 
+                createVNode(2, 'td', 'col-md-1', id + ''),
+                createVNode(2, 'td', 'col-md-4',
+                    createVNode(2, 'a', null, d.label)),
+                createVNode(2, 'td', 'col-md-1',
+                    createVNode(2, 'a', null,
                         createVNode(2, 'span', 'glyphicon glyphicon-remove', null, {
                             'aria-hidden': 'true'
                         }))),
@@ -48,13 +48,13 @@ function createRows() {
 
         // rows.push(
             // h('tr', {className: id === selected ? 'danger' : ''}, [
-                // h('td', {className: 'col-md-1'}, id + ''), 
-                // h('td', {className: 'col-md-4'}, 
+                // h('td', {className: 'col-md-1'}, id + ''),
+                // h('td', {className: 'col-md-4'},
                     // h('a', null, d.label)
-                // ), 
-                // h('td', {className: 'col-md-1'}, 
-                    // h('a', null,  
-                        // h('span', { 
+                // ),
+                // h('td', {className: 'col-md-1'},
+                    // h('a', null,
+                        // h('span', {
                             // className: 'glyphicon glyphicon-remove',
                             // 'aria-hidden': 'true'
                         // })
@@ -78,14 +78,14 @@ function createRowsByMiss() {
 
         rows.push(
             h('tr', null, [
-                h('td', null, id + '', 'col-md-1'), 
-                h('td', null, 
+                h('td', null, id + '', 'col-md-1'),
+                h('td', null,
                     h('a', null, d.label)
-                , 'col-md-4'), 
-                h('td', null, 
-                    h('a', null,  
-                        h('span', 
-                            { 
+                , 'col-md-4'),
+                h('td', null,
+                    h('a', null,
+                        h('span',
+                            {
                                 'aria-hidden': 'true'
                             }, null, 'glyphicon glyphicon-remove'
                         )

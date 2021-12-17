@@ -5,10 +5,10 @@ module.exports = function(config) {
         logLevel: config.LOG_INFO,
         files: [
             'node_modules/sinon/pkg/sinon.js',
-            'src/__benchmark__/vnode.js'
+            'benchmark/vnode.js'
         ],
         preprocessors: {
-            'src/__benchmark__/**/*.js': ['webpack']
+            'benchmark/**/*.js': ['webpack']
         },
         webpack: {
             module: {
