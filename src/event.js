@@ -1,5 +1,5 @@
 import {
-    SimpleMap, isNullOrUndefined, createObject, 
+    SimpleMap, isNullOrUndefined, createObject,
     doc as document, browser, isArray, config
 } from './utils';
 
@@ -58,7 +58,7 @@ const unDelegatesEvents = {
     'wheel': true,
 };
 
-// change event can not be deletegated in IE8 
+// change event can not be deletegated in IE8
 if (browser.isIE8) {
     unDelegatesEvents.change = true;
 }
@@ -79,7 +79,7 @@ export function handleEvent(name, lastEvent, nextEvent, dom) {
         if (nextEvent) {
             if (!delegatedRoots) {
                 delegatedRoots = {items: new SimpleMap(), docEvent: null};
-                delegatedRoots.docEvent = attachEventToDocument(name, delegatedRoots); 
+                delegatedRoots.docEvent = attachEventToDocument(name, delegatedRoots);
                 delegatedEvents[name] = delegatedRoots;
             }
             delegatedRoots.items.set(dom, nextEvent);
@@ -119,7 +119,7 @@ export function handleEvent(name, lastEvent, nextEvent, dom) {
 }
 
 function dispatchEvent(event, target, items, count, isClick, eventData) {
-    // if event has cancelled bubble, return directly  
+    // if event has cancelled bubble, return directly
     // otherwise it is also triggered sometimes, e.g in React
     if (event.cancelBubble) {
         return;
@@ -170,15 +170,15 @@ function attachEventToDocument(name, delegatedRoots) {
             }
             // nt._rawEvent = event
             dispatchEvent(
-                event, 
-                event.target, 
-                delegatedRoots.items, 
-                count, 
+                event,
+                event.target,
+                delegatedRoots.items,
+                count,
                 event.type === 'click',
                 eventData
-            ); 
+            );
         }
     };
-    addEventListener(document, name, docEvent);
+    addEventListener(config.delegateTarget, name, docEvent);
     return docEvent;
 }

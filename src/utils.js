@@ -238,4 +238,5 @@ export const hooks = {
 
 export const config = {
     disableDelegate: false, // for using in React/Vue, disable delegate the event
+    delegateTarget: doc
 };
